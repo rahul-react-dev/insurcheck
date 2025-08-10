@@ -1,0 +1,131 @@
+I want to create a new SaaS-based monorepo from scratch for a project named "InsurCheck".
+
+====================
+📌 GOAL FOR THIS PHASE
+====================
+In this phase, ONLY set up:
+1. Monorepo folder structure (exactly as below)
+2. React + Vite + Tailwind CSS boilerplates for both frontends
+3. Node.js + Express backend boilerplate with PostgreSQL connection
+4. Shared theme & color palette
+5. A single login page in both frontends (role selection + email/password)
+
+No extra features for now — we will add functionality in later phases.
+
+====================
+📌 TECH STACK
+====================
+- Frontend: React + Vite + Tailwind CSS, Axios, Redux + Redux-Saga, React Router
+- Backend: Node.js + Express.js
+- Database: PostgreSQL (single DB, shared schema, tenant isolation via tenant_id)
+- Authentication placeholder (no real login yet — just routing)
+
+====================
+📌 COLOR PALETTE
+====================
+:root {
+  /* Primary Colors */
+  --color-primary-dark: #0A0A23;
+  --color-primary-base: #1E3A8A;
+  --color-primary-accent: #007BFF;
+  --color-secondary: #00C6FF;
+
+  /* Neutral Colors */
+  --color-neutral-light: #F5F7FA;
+  --color-neutral-medium: #6B7280;
+  --color-neutral-dark: #1F2937;
+
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
+
+Theme requirements:
+- Dark blue gradient backgrounds
+- Rounded input boxes
+- Clean typography
+- Login page should include: project logo, email & password fields, role selection buttons (Super Admin, Tenant Admin, User)
+- Same theme in both frontends
+
+====================
+📌 FOLDER STRUCTURE
+====================
+root/
+  client-admin/                # React + Vite app for Super Admin & Tenant Admin
+    public/
+    src/
+      assets/
+      components/               # UI components specific to admin
+      pages/                    # Includes Login page
+      hooks/
+      store/                    # Redux + Sagas
+      utils/
+      App.jsx
+      main.jsx
+    package.json
+    vite.config.js
+
+  client-user/                  # React + Vite app for Tenant Users
+    public/
+    src/
+      assets/
+      components/               # UI components specific to users
+      pages/                    # Includes Login page
+      hooks/
+      store/
+      utils/
+      App.jsx
+      main.jsx
+    package.json
+    vite.config.js
+
+  server/                         # Node.js + Express backend
+    src/
+      config/                     # DB config, env config
+      middleware/
+      models/                      # PostgreSQL models
+      routes/
+      controllers/
+      services/
+      utils/
+      app.js
+      server.js
+    package.json
+    .env.example
+
+  .gitignore
+  README.md
+
+====================
+📌 DEVELOPMENT PORTS
+====================
+- client-admin → 3000
+- client-user → 3001
+- server → 5000
+
+====================
+📌 IMPLEMENTATION INSTRUCTIONS
+====================
+1. Create the above folder structure exactly.
+2. In both `client-admin` and `client-user`:
+   - Set up React + Vite + Tailwind CSS
+   - Apply the theme and color palette
+   - Create a `Login` page with:
+     - Project logo placeholder
+     - Email and password input fields
+     - Role selection buttons (Super Admin, Tenant Admin, User)
+     - Responsive layout
+3. In `server/`:
+   - Set up Express app
+   - Add PostgreSQL connection config
+   - Add a sample `/health` endpoint
+4. Do not add any business logic or complex features yet.
+5. Keep code clean, modular, and production-ready.
+
+====================
+📌 IMPORTANT
+====================
+- Only focus on boilerplate setup and login page
+- Do not implement AI document processing or other advanced features yet
+- Keep the structure and theme exactly as described
