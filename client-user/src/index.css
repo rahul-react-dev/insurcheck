@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primary Colors */
+  --color-primary-dark: hsl(242, 67%, 9%);
+  --color-primary-base: hsl(218, 70%, 30%);
+  --color-primary-accent: hsl(212, 100%, 50%);
+  --color-secondary: hsl(194, 100%, 50%);
+
+  /* Neutral Colors */
+  --color-neutral-light: hsl(210, 20%, 96%);
+  --color-neutral-medium: hsl(220, 13%, 46%);
+  --color-neutral-dark: hsl(215, 28%, 17%);
+
+  /* Status Colors */
+  --color-success: hsl(158, 64%, 52%);
+  --color-warning: hsl(43, 96%, 56%);
+  --color-error: hsl(0, 84%, 60%);
+
+  /* Font Families */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+.dark {
+  /* Dark mode variants if needed */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary-base) 50%, var(--color-primary-accent) 100%);
+  }
+  
+  .gradient-secondary {
+    background: linear-gradient(135deg, var(--color-primary-base) 0%, var(--color-primary-accent) 100%);
+  }
+}
