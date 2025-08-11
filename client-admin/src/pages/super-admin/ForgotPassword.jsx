@@ -1,8 +1,7 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -21,10 +20,11 @@ const ForgotPassword = () => {
               Forgot Password
             </h2>
             <p className="text-gray-600 mb-6">
-              This feature is coming soon. Please contact your system administrator for password reset assistance.
+              This feature is coming soon. Please contact your system
+              administrator for password reset assistance.
             </p>
             <Button
-              onClick={() => navigate('/super-admin/login')}
+              onClick={() => navigate("/super-admin/login")}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               Back to Login

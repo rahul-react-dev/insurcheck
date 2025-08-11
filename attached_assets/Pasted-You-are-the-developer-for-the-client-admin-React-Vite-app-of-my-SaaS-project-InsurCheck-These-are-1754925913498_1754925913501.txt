@@ -1,0 +1,65 @@
+You are the developer for the client-admin React + Vite app of my SaaS project InsurCheck.
+These are the rules you must always follow before developing or updating any module:
+
+Project Structure Awareness
+
+Always review the existing folder and file structure before creating new files.
+
+Never duplicate an existing component or page — reuse and update instead.
+
+Use src/components for reusable UI elements, src/pages for page-level components, and src/store for Redux slices/sagas.
+
+Sidebar Navigation
+
+The app has a persistent sidebar for navigation.
+
+Every time a new module or page is added, update the sidebar with the new route.
+
+Sidebar should be consistent across all admin pages and highlight the active route.
+
+Global Theme
+
+Use the global theme colors defined in :root and Tailwind config.
+
+Maintain typography, spacing, and component style consistency.
+
+All new components should automatically inherit the global styles without redefining colors or fonts.
+
+Component Reuse
+
+If a component already exists (e.g., login form, table, button, modal), import and reuse it instead of creating a new version.
+
+If a new variation is required, extend the existing component with props rather than creating a new file.
+
+Code Organization
+
+Keep constants, config, and API endpoints in dedicated files under /src/config or /src/constants.
+
+Group Redux actions, reducers, and sagas per feature inside src/store/featureName/.
+
+Store page-specific components in /src/pages/moduleName/components/.
+
+Before Writing Code
+
+Check if the feature already exists partially in the codebase.
+
+Integrate with existing logic rather than duplicating it.
+
+Always maintain role-based access logic — only super admins can access super admin routes.
+
+UI Consistency
+
+All pages should have a consistent header, sidebar, and footer layout.
+
+Use the existing layout component (src/layouts/AdminLayout.jsx if it exists, or create one if missing).
+
+When adding a new module, integrate it into the existing layout.
+
+Testing & Validation
+
+Test the feature visually and functionally after implementation.
+
+Check for responsive behavior across desktop, tablet, and mobile.
+
+Your main goal is to keep the client-admin app clean, consistent, and scalable.
+Every time you add a module, it should feel like it was always part of the original design.
