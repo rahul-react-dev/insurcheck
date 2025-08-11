@@ -4,6 +4,24 @@
 @tailwind utilities;
 
 :root {
+  /* Primary Colors */
+  --color-primary-dark: #0A0A23;
+  --color-primary-base: #1E3A8A;
+  --color-primary-accent: #007BFF;
+  --color-secondary: #00C6FF;
+
+  /* Neutral Colors */
+  --color-neutral-light: #F5F7FA;
+  --color-neutral-medium: #6B7280;
+  --color-neutral-dark: #1F2937;
+
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
+
+:root {
   --color-primary-dark: #0A0A23;
   --color-primary-base: #1E3A8A;
   --color-primary-accent: #007BFF;
