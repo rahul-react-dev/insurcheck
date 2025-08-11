@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from '../../components/super-admin/MetricCard';
 import ErrorLogsTable from '../../components/super-admin/ErrorLogsTable';
-import { Button } from '../../components/ui/Button';
+import Button from '../../components/ui/Button';
 import {
   fetchSystemMetricsRequest,
   fetchErrorLogsRequest,
