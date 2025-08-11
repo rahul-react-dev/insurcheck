@@ -6,17 +6,19 @@ import { combineReducers } from '@reduxjs/toolkit';
 
 import authReducer from './authSlice';
 import superAdminReducer from './super-admin/superAdminSlice';
+import subscriptionReducer from './super-admin/subscriptionSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'superAdmin'] // Persist both auth and superAdmin slices
+  whitelist: ['auth', 'superAdmin', 'subscription'] // Persist auth, superAdmin and subscription slices
 };
 
 const rootReducer = combineReducers({
   auth: authReducer,
   superAdmin: superAdminReducer,
+  subscription: subscriptionReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

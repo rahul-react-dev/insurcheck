@@ -6,6 +6,7 @@ import { persistor } from './store';
 import Login from './pages/Login';
 import SuperAdminLogin from './pages/super-admin/SuperAdminLogin';
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
+import SubscriptionManagement from './pages/super-admin/SubscriptionManagement';
 import ForgotPassword from './pages/super-admin/ForgotPassword';
 import './index.css';
 
@@ -21,6 +22,7 @@ function App() {
             {/* Super Admin routes */}
             <Route path="/super-admin/login" element={<SuperAdminLogin />} />
             <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+            <Route path="/super-admin/subscriptions" element={<SubscriptionManagement />} />
             <Route path="/super-admin/forgot-password" element={<ForgotPassword />} />
 
             {/* Default redirect */}

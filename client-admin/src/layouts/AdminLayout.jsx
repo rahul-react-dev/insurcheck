@@ -22,6 +22,12 @@ const AdminLayout = ({ children }) => {
       path: '/super-admin/dashboard',
       icon: 'fas fa-chart-line',
       roles: ['super-admin']
+    },
+    {
+      name: 'Manage Subscriptions',
+      path: '/super-admin/subscriptions',
+      icon: 'fas fa-credit-card',
+      roles: ['super-admin']
     }
   ];
 
