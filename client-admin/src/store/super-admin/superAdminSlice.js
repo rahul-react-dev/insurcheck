@@ -13,15 +13,7 @@ const initialState = {
   lockoutTime: null,
   
   // Dashboard state
-  systemMetrics: {
-    uptime: null,
-    activeTenants: null,
-    activeUsers: null,
-    documentUploads: null,
-    complianceChecks: null,
-    errorRate: null,
-    avgProcessingTime: null
-  },
+  systemMetrics: [],
   errorLogs: [],
   filteredErrorLogs: [],
   filters: {
