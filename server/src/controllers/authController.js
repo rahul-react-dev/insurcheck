@@ -44,10 +44,11 @@ export const login = async (req, res) => {
     }
 
     // Check role matches
+    console.log(`Login attempt - User role: ${user.role}, Requested role: ${role}`);
     if (user.role !== role) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid role for this user'
+        message: `Invalid role for this user. User has role '${user.role}' but requested '${role}'`
       });
     }
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

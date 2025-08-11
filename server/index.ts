@@ -1,4 +1,3 @@
-
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import cors from 'cors';
@@ -39,7 +38,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl requests, etc.)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001', 
@@ -47,16 +46,16 @@ const corsOptions = {
       'https://4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev',
       process.env.CLIENT_URL,
     ].filter(Boolean);
-    
+
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
+
     // Allow any replit.dev domain
     if (origin && origin.includes('.replit.dev')) {
       return callback(null, true);
     }
-    
+
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -126,7 +125,7 @@ function log(message: string, source = "express") {
 (async () => {
   // Test database connection first
   await testDbConnection();
-  
+
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
   const port = parseInt(process.env.PORT || '5000', 10);
