@@ -1,11 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { 
-  login,
-  register,
-  logout,
-  getCurrentUser 
-} from '../controllers/authController.js';
+import * as authController from '../controllers/authController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -26,9 +21,9 @@ const registerValidation = [
 ];
 
 // Routes
-router.post('/login', loginValidation, login);
-router.post('/register', registerValidation, register);
-router.post('/logout', logout);
-router.get('/me', authMiddleware, getCurrentUser);
+router.post('/login', loginValidation, authController.login);
+router.post('/register', registerValidation, authController.register);
+router.post('/logout', authController.logout);
+router.get('/me', authMiddleware, authController.getCurrentUser);
 
 export default router;
