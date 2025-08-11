@@ -1,61 +1,95 @@
 
 import bcrypt from 'bcryptjs';
-import { pool } from '../db.ts';
+import { db } from '../db.ts';
+import { users, tenants, insertUserSchema } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 const createTestUsers = async () => {
   try {
-    console.log('🚀 Creating test users...');
+    console.log('🚀 Creating test users and tenants...');
 
     // Test database connection first
     console.log('🔍 Testing database connection...');
-    await pool.query('SELECT NOW()');
+    const testConnection = await db.execute(sql`SELECT NOW()`);
     console.log('✅ Database connected successfully');
 
     // Hash the password
     const hashedPassword = await bcrypt.hash('Solulab@123', 12);
 
-    // First ensure tables exist by calling the createTables function
-    await createTables();
+    // First create a test tenant
+    console.log('🏢 Creating test tenant...');
+    const tenant = await db.insert(tenants).values({
+      name: 'InsurCheck Demo',
+      domain: 'insurcheck.demo'
+    }).returning();
 
-    // Test users data - using the schema from shared/schema.ts
+    const tenantId = tenant[0].id;
+    console.log(`✅ Created tenant: ${tenant[0].name} (ID: ${tenantId})`);
+
+    // Test users data using the new schema
     const testUsers = [
       {
-        username: 'superadmin@insurcheck.com',
-        password: hashedPassword
+        username: 'superadmin',
+        email: 'superadmin@insurcheck.com',
+        password: hashedPassword,
+        role: 'super-admin',
+        tenantId: null  // Super admin doesn't belong to a specific tenant
       },
       {
-        username: 'admin@insurcheck.com', 
-        password: hashedPassword
+        username: 'admin',
+        email: 'admin@insurcheck.com', 
+        password: hashedPassword,
+        role: 'tenant-admin',
+        tenantId: tenantId
       },
       {
-        username: 'user@insurcheck.com',
-        password: hashedPassword
+        username: 'user',
+        email: 'user@insurcheck.com',
+        password: hashedPassword,
+        role: 'user',
+        tenantId: tenantId
       }
     ];
 
-    // Insert users using the correct schema
+    // Insert users using Drizzle ORM
     console.log('👥 Creating test users...');
-    for (const user of testUsers) {
-      const userQuery = `
-        INSERT INTO users (username, password)
-        VALUES ($1, $2)
-        ON CONFLICT (username) DO UPDATE SET
-          password = EXCLUDED.password
-        RETURNING id, username
-      `;
+    for (const userData of testUsers) {
+      try {
+        // Check if user exists
+        const existingUser = await db.select()
+          .from(users)
+          .where(eq(users.email, userData.email))
+          .limit(1);
 
-      const result = await pool.query(userQuery, [
-        user.username,
-        user.password
-      ]);
-
-      console.log(`✅ Created/Updated user: ${result.rows[0].username}`);
+        if (existingUser.length > 0) {
+          // Update existing user
+          const updatedUser = await db.update(users)
+            .set({ 
+              password: userData.password,
+              role: userData.role,
+              tenantId: userData.tenantId
+            })
+            .where(eq(users.email, userData.email))
+            .returning();
+          
+          console.log(`🔄 Updated user: ${updatedUser[0].email}`);
+        } else {
+          // Create new user
+          const newUser = await db.insert(users)
+            .values(userData)
+            .returning();
+          
+          console.log(`✅ Created user: ${newUser[0].email}`);
+        }
+      } catch (userError) {
+        console.error(`❌ Error with user ${userData.email}:`, userError.message);
+      }
     }
 
-    console.log('\n🎉 Test users created successfully!');
+    console.log('\n🎉 Test users and tenant created successfully!');
     console.log('\n📋 Test Credentials:');
     console.log('Super Admin: superadmin@insurcheck.com / Solulab@123');
-    console.log('Admin: admin@insurcheck.com / Solulab@123');
+    console.log('Tenant Admin: admin@insurcheck.com / Solulab@123');
     console.log('User: user@insurcheck.com / Solulab@123');
     
     process.exit(0);
@@ -64,25 +98,6 @@ const createTestUsers = async () => {
     console.error('❌ Error creating test users:', error);
     console.error('Error details:', error.message);
     process.exit(1);
-  }
-};
-
-// Function to create tables if they don't exist - using the schema from shared/schema.ts
-const createTables = async () => {
-  const createUsersTable = `
-    CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-      username TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
-    );
-  `;
-
-  try {
-    await pool.query(createUsersTable);
-    console.log('✅ Database tables created/verified');
-  } catch (err) {
-    console.error('❌ Error creating tables:', err.message);
-    throw err;
   }
 };
 

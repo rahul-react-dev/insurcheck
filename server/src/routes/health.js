@@ -1,12 +1,13 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { db } from '../../db.ts';
+import { sql } from 'drizzle-orm';
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    // Check database connection
-    await pool.query('SELECT NOW()');
+    // Check database connection using Drizzle
+    await db.execute(sql`SELECT NOW()`);
     
     res.status(200).json({
       status: 'OK',
