@@ -4,6 +4,19 @@
 @tailwind utilities;
 
 :root {
+  --color-primary-dark: #0A0A23;
+  --color-primary-base: #1E3A8A;
+  --color-primary-accent: #007BFF;
+  --color-secondary: #00C6FF;
+  --color-neutral-light: #F5F7FA;
+  --color-neutral-medium: #6B7280;
+  --color-neutral-dark: #1F2937;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
+
+:root {
   /* Primary Colors */
   --color-primary-dark: hsl(242, 67%, 9%);
   --color-primary-base: hsl(218, 70%, 30%);

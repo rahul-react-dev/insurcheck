@@ -3,29 +3,30 @@ import createSagaMiddleware from 'redux-saga';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
-import authSlice from './authSlice';
+
+import authReducer from './authSlice';
+import superAdminReducer from './super-admin/superAdminSlice';
 import rootSaga from './sagas';
 
-const sagaMiddleware = createSagaMiddleware();
-
-// Redux persist configuration
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth'], // Only persist auth state
+  whitelist: ['auth', 'superAdmin'] // Persist both auth and superAdmin slices
 };
 
 const rootReducer = combineReducers({
-  auth: authSlice,
+  auth: authReducer,
+  superAdmin: superAdminReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+const sagaMiddleware = createSagaMiddleware();
 
 const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      thunk: false,
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
