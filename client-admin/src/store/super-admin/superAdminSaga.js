@@ -1,4 +1,3 @@
-
 import { call, put, takeLatest } from 'redux-saga/effects';
 import api from '../../utils/api';
 import {
@@ -65,36 +64,59 @@ const fetchSystemMetricsApi = () => {
   });
 };
 
-const fetchErrorLogsApi = () => {
-  // Mock API call - replace with real endpoint when backend is ready
+const fetchErrorLogsApi = (filters) => {
+  // Mock API call with dummy error logs
   return Promise.resolve({
     data: [
       {
-        id: 'ERR-001',
+        id: 'ERR001',
         timestamp: '2024-01-15T10:30:00Z',
+        errorType: 'Authentication Error',
+        description: 'Failed login attempt with invalid credentials',
+        affectedTenant: 'TechCorp Inc.',
+        affectedUser: 'john.doe@techcorp.com',
+        affectedDocument: null,
+        severity: 'Medium'
+      },
+      {
+        id: 'ERR002',
+        timestamp: '2024-01-15T09:15:00Z',
+        errorType: 'Document Processing Error',
+        description: 'Failed to extract text from uploaded PDF document',
+        affectedTenant: 'HealthPlus Ltd.',
+        affectedUser: 'sarah.smith@healthplus.com',
+        affectedDocument: 'policy_document_2024.pdf',
+        severity: 'High'
+      },
+      {
+        id: 'ERR003',
+        timestamp: '2024-01-15T08:45:00Z',
+        errorType: 'Database Connection Error',
+        description: 'Temporary database connection timeout during peak hours',
+        affectedTenant: 'InsuranceMax Corp.',
+        affectedUser: 'admin@insurancemax.com',
+        affectedDocument: null,
+        severity: 'Critical'
+      },
+      {
+        id: 'ERR004',
+        timestamp: '2024-01-15T07:20:00Z',
         errorType: 'Validation Error',
-        description: 'Invalid document format uploaded',
-        affectedTenant: 'Acme Corp',
-        affectedUser: 'john.doe@acme.com',
-        affectedDocument: 'policy-doc-123.pdf'
+        description: 'Document format validation failed - unsupported file type',
+        affectedTenant: 'SecureLife Insurance',
+        affectedUser: 'manager@securelife.com',
+        affectedDocument: 'claim_form.docx',
+        severity: 'Low'
       },
       {
-        id: 'ERR-002',
-        timestamp: '2024-01-15T11:45:00Z',
-        errorType: 'Database Error',
-        description: 'Connection timeout during compliance check',
-        affectedTenant: 'Beta Insurance',
-        affectedUser: 'sarah.smith@beta.com',
-        affectedDocument: 'claim-form-456.pdf'
-      },
-      {
-        id: 'ERR-003',
-        timestamp: '2024-01-15T14:20:00Z',
-        errorType: 'API Error',
-        description: 'Third-party service unavailable',
-        affectedTenant: 'Gamma Solutions',
-        affectedUser: 'mike.johnson@gamma.com',
-        affectedDocument: 'certificate-789.pdf'
+        id: 'ERR005',
+        timestamp: '2024-01-15T06:55:00Z',
+        errorType: 'API Rate Limit',
+        description: 'Third-party compliance API rate limit exceeded',
+        affectedTenant: 'GlobalInsure Ltd.',
+        affectedUser: 'api.user@globalinsure.com',
+        affectedDocument: 'compliance_report_Q4.pdf',
+        severity: 'Medium'
       }
     ]
   });
@@ -104,16 +126,16 @@ const fetchErrorLogsApi = () => {
 function* loginSaga(action) {
   try {
     const response = yield call(loginApi, action.payload);
-    
+
     // Check if user has super-admin role
     if (response.data.user.role !== 'super-admin') {
       yield put(loginFailure('Invalid email format or insufficient privileges.'));
       return;
     }
-    
+
     // Store token in localStorage
     localStorage.setItem('superAdminToken', response.data.token);
-    
+
     yield put(loginSuccess({
       user: response.data.user,
       token: response.data.token

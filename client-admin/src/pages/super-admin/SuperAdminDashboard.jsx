@@ -94,7 +94,7 @@ const SuperAdminDashboard = () => {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {systemMetrics.map((metric) => (
+        {systemMetrics && systemMetrics.length > 0 ? systemMetrics.map((metric) => (
           <MetricCard
             key={metric.id}
             icon={metric.icon}
@@ -104,7 +104,11 @@ const SuperAdminDashboard = () => {
             trendValue={metric.trendValue}
             color={metric.color}
           />
-        ))}
+        )) : (
+          <div className="col-span-4 text-center py-8">
+            <p className="text-gray-500">Loading metrics...</p>
+          </div>
+        )}
       </div>
 
       {/* Error Logs Section */}
