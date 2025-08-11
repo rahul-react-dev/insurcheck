@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'https://4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev/api' 
+  ? 'http://0.0.0.0:5000/api' 
   : '/api';
 
 const api = axios.create({

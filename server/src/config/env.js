@@ -18,6 +18,12 @@ export const config = {
   allowedOrigins: process.env.ALLOWED_ORIGINS ? 
     process.env.ALLOWED_ORIGINS.split(',') : 
     ['http://localhost:3000', 'http://localhost:3001'],
+  
+  clientUrls: [
+    'http://localhost:3000', 
+    'http://localhost:3001',
+    'https://4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev'
+  ],
     
   // Rate limiting
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
