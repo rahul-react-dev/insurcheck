@@ -58,3 +58,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd server && npm run dev"
+
+[[workflows.workflow]]
+name = "Start Client Admin"
+author = 43217264
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd client-admin && npm run dev"
