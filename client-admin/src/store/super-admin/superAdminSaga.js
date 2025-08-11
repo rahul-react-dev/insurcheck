@@ -24,15 +24,44 @@ const loginApi = (credentials) => {
 const fetchSystemMetricsApi = () => {
   // Mock API call - replace with real endpoint when backend is ready
   return Promise.resolve({
-    data: {
-      uptime: '99.9%',
-      activeTenants: 15,
-      activeUsers: 247,
-      documentUploads: 1854,
-      complianceChecks: 432,
-      errorRate: '0.12%',
-      avgProcessingTime: '2.3s'
-    }
+    data: [
+      {
+        id: 1,
+        icon: '⏱️',
+        value: '99.9%',
+        label: 'System Uptime',
+        trend: 'up',
+        trendValue: '+0.1%',
+        color: 'green'
+      },
+      {
+        id: 2,
+        icon: '🏢',
+        value: '15',
+        label: 'Active Tenants',
+        trend: 'up',
+        trendValue: '+2',
+        color: 'blue'
+      },
+      {
+        id: 3,
+        icon: '👥',
+        value: '247',
+        label: 'Active Users',
+        trend: 'up',
+        trendValue: '+12',
+        color: 'purple'
+      },
+      {
+        id: 4,
+        icon: '📄',
+        value: '1,854',
+        label: 'Document Uploads',
+        trend: 'up',
+        trendValue: '+156',
+        color: 'orange'
+      }
+    ]
   });
 };
 

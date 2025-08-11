@@ -140,6 +140,12 @@ const superAdminSlice = createSlice({
         dateRange: null
       };
       state.filteredErrorLogs = state.errorLogs;
+    },
+    
+    clearErrors: (state) => {
+      state.error = null;
+      state.metricsError = null;
+      state.logsError = null;
     }
   }
 });
@@ -158,7 +164,8 @@ export const {
   fetchErrorLogsSuccess,
   fetchErrorLogsFailure,
   setFilters,
-  clearFilters
+  clearFilters,
+  clearErrors
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;

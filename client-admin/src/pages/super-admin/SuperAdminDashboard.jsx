@@ -19,11 +19,18 @@ const SuperAdminDashboard = () => {
   const {
     systemMetrics,
     errorLogs,
-    isLoading,
-    error,
+    isLoadingMetrics,
+    isLoadingLogs,
+    metricsError,
+    logsError,
     user
   } = useSelector(state => ({
-    ...state.superAdmin,
+    systemMetrics: state.superAdmin.systemMetrics,
+    errorLogs: state.superAdmin.errorLogs,
+    isLoadingMetrics: state.superAdmin.isLoadingMetrics,
+    isLoadingLogs: state.superAdmin.isLoadingLogs,
+    metricsError: state.superAdmin.metricsError,
+    logsError: state.superAdmin.logsError,
     user: state.auth.user
   }));
 
@@ -71,10 +78,10 @@ const SuperAdminDashboard = () => {
   return (
     <AdminLayout>
       {/* Error Alert */}
-      {error && (
+      {(metricsError || logsError) && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           <div className="flex items-center justify-between">
-            <span>{error}</span>
+            <span>{metricsError || logsError}</span>
             <button
               onClick={() => dispatch(clearErrors())}
               className="text-red-500 hover:text-red-700"
@@ -118,8 +125,8 @@ const SuperAdminDashboard = () => {
 
         <ErrorLogsTable
           logs={errorLogs}
-          isLoading={isLoading}
-          error={error}
+          isLoading={isLoadingLogs}
+          error={logsError}
           onFilterChange={handleFilterChange}
           filters={filters}
         />
