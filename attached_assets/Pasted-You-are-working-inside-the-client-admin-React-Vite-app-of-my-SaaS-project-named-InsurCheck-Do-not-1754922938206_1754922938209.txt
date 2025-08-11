@@ -1,0 +1,133 @@
+You are working inside the client-admin React + Vite app of my SaaS project named InsurCheck.
+Do not touch code in client-user or server unless explicitly required for this feature.
+
+I want you to fully implement Super Admin module (Phase 1) with the following two features from the user story:
+
+Super Admin Login (6.1)
+
+System Monitoring Dashboard (6.2)
+
+Tech stack & requirements:
+
+React + Vite + Tailwind CSS
+
+Redux + Redux Saga + Redux Persist (already configured, use existing setup)
+
+Axios for API calls (use existing base API configuration)
+
+Routing via React Router (already in place)
+
+Use responsive, rich, modern UI using Tailwind CSS with the following color palette:
+
+css
+Copy
+Edit
+:root {
+  --color-primary-dark: #0A0A23;
+  --color-primary-base: #1E3A8A;
+  --color-primary-accent: #007BFF;
+  --color-secondary: #00C6FF;
+  --color-neutral-light: #F5F7FA;
+  --color-neutral-medium: #6B7280;
+  --color-neutral-dark: #1F2937;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
+Keep the current theme and component styling consistent with the existing codebase.
+
+Feature 1 — Super Admin Login (6.1)
+
+Create a /super-admin/login route and SuperAdminLogin.jsx page with:
+
+Email field with validation for email format.
+
+Password field (hidden input).
+
+"Forgot Password?" link (route /super-admin/forgot-password).
+
+Show success/error messages below fields.
+
+API:
+
+Call backend /auth/login API.
+
+Allow only users with "role": "super-admin" in response.
+
+If role mismatch → show "Invalid email format or insufficient privileges."
+
+Lockout:
+
+Track failed login attempts in Redux state.
+
+After 5 failed attempts → show "Account locked. Try again in 15 minutes." and disable login button.
+
+On successful login → redirect to /super-admin/dashboard and store user + token in Redux Persist.
+
+Feature 2 — Super Admin System Monitoring Dashboard (6.2)
+
+/super-admin/dashboard should have two sections:
+
+Metrics Cards (top row):
+
+Uptime
+
+Active Tenants
+
+Active Users
+
+Document Uploads
+
+Compliance Checks
+
+Error Rate
+
+Avg Processing Time
+
+Each card should have icon + number + label.
+
+API endpoint: /super-admin/system-metrics (mock data for now if backend not ready).
+
+Error Logs Table:
+
+Columns: Error ID, Timestamp, Error Type, Description, Affected Tenant, Affected User, Affected Document.
+
+Filters: Tenant Name dropdown, Error Type dropdown, Date Range picker.
+
+Export CSV button at top right.
+
+API endpoint: /super-admin/error-logs (mock data for now if backend not ready).
+
+If no logs found → "No error logs found."
+
+Error handling: Show toast or alert if API fails.
+
+Make it fully responsive and use Tailwind grid/flex.
+
+Additional Notes:
+
+Follow clean folder structure:
+
+src/pages/super-admin/ → for page components (Login, Dashboard)
+
+src/components/super-admin/ → for reusable UI inside super admin module
+
+src/store/super-admin/ → Redux slice + sagas for super admin API calls
+
+Do not break existing tenant admin or user routes.
+
+For now, backend APIs can be mocked if not implemented, but structure code so we can replace mocks later.
+
+Keep all strings/messages configurable in a constants file for easy translation later.
+
+Definition of Done:
+
+Fully functional Super Admin login with role-based restriction and lockout.
+
+Super Admin dashboard showing metrics and error logs table with filters + export.
+
+Fully responsive and matches the theme.
+
+No changes to client-user code.
+
+All code committed with clear comments.
