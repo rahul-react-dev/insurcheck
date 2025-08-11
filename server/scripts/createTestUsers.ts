@@ -1,8 +1,8 @@
+
 import bcrypt from 'bcryptjs';
-import { sql } from 'drizzle-orm';
 import { db } from '../db.ts';
-import { users, tenants, insertUserSchema } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { users, tenants, insertUserSchema } from '../../shared/schema.ts';
+import { eq, sql } from 'drizzle-orm';
 
 const createTestUsers = async () => {
   try {
@@ -32,21 +32,21 @@ const createTestUsers = async () => {
         username: 'superadmin',
         email: 'superadmin@insurcheck.com',
         password: hashedPassword,
-        role: 'super-admin',
+        role: 'super-admin' as const,
         tenantId: null  // Super admin doesn't belong to a specific tenant
       },
       {
         username: 'admin',
-        email: 'admin@insurcheck.com',
+        email: 'admin@insurcheck.com', 
         password: hashedPassword,
-        role: 'tenant-admin',
+        role: 'tenant-admin' as const,
         tenantId: tenantId
       },
       {
         username: 'user',
         email: 'user@insurcheck.com',
         password: hashedPassword,
-        role: 'user',
+        role: 'user' as const,
         tenantId: tenantId
       }
     ];
@@ -64,24 +64,24 @@ const createTestUsers = async () => {
         if (existingUser.length > 0) {
           // Update existing user
           const updatedUser = await db.update(users)
-            .set({
+            .set({ 
               password: userData.password,
               role: userData.role,
               tenantId: userData.tenantId
             })
             .where(eq(users.email, userData.email))
             .returning();
-
+          
           console.log(`🔄 Updated user: ${updatedUser[0].email}`);
         } else {
           // Create new user
           const newUser = await db.insert(users)
             .values(userData)
             .returning();
-
+          
           console.log(`✅ Created user: ${newUser[0].email}`);
         }
-      } catch (userError) {
+      } catch (userError: any) {
         console.error(`❌ Error with user ${userData.email}:`, userError.message);
       }
     }
@@ -91,10 +91,10 @@ const createTestUsers = async () => {
     console.log('Super Admin: superadmin@insurcheck.com / Solulab@123');
     console.log('Tenant Admin: admin@insurcheck.com / Solulab@123');
     console.log('User: user@insurcheck.com / Solulab@123');
-
+    
     process.exit(0);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error creating test users:', error);
     console.error('Error details:', error.message);
     process.exit(1);
