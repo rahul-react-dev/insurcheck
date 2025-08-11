@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Card } from '../ui/Card';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import Card from '../ui/Card';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
 import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
 
 const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => {

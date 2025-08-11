@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Card } from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Card from '../../components/ui/Card';
 import { loginRequest, clearLoginError, checkLockout } from '../../store/super-admin/superAdminSlice';
 import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
 
