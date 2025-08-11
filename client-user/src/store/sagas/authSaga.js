@@ -5,15 +5,42 @@ import { loginApi } from '../../utils/api';
 function* loginSaga(action) {
   try {
     const response = yield call(loginApi, action.payload);
-    yield put(loginSuccess(response.data));
     
-    // Store token in localStorage
-    localStorage.setItem('token', response.data.token);
-    
-    // Redirect based on role (placeholder for now)
-    // window.location.href = '/dashboard';
+    // Check if response has data
+    if (response?.data) {
+      yield put(loginSuccess(response.data));
+      
+      // Store token in localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
+      // Redirect based on role (placeholder for now)
+      // window.location.href = '/dashboard';
+    } else {
+      yield put(loginFailure('Invalid response from server'));
+    }
   } catch (error) {
-    yield put(loginFailure(error.response?.data?.message || 'Login failed'));
+    console.error('Login error:', error);
+    
+    // Handle different error types
+    let errorMessage = 'Login failed';
+    
+    if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error?.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    } else if (error?.response?.status === 401) {
+      errorMessage = 'Invalid credentials';
+    } else if (error?.response?.status === 500) {
+      errorMessage = 'Server error. Please try again later.';
+    } else if (!navigator.onLine) {
+      errorMessage = 'No internet connection';
+    }
+    
+    yield put(loginFailure(errorMessage));
   }
 }
 
