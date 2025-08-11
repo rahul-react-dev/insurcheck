@@ -134,3 +134,5 @@ const SuperAdminDashboard = () => {
     </AdminLayout>
   );
 };
+
+export default SuperAdminDashboard;
