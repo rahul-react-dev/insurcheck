@@ -79,36 +79,46 @@ const SuperAdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">System Dashboard</h1>
-            <p className="text-gray-600 mt-1">Monitor system performance and manage platform operations</p>
-          </div>
-          <div className="flex space-x-3">
-            <Button
-              onClick={handleRefreshMetrics}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={isLoadingMetrics}
-            >
-              <i className="fas fa-sync-alt mr-2"></i>
-              Refresh Metrics
-            </Button>
+      <div className="space-y-8">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Welcome to System Dashboard</h1>
+              <p className="text-blue-100 text-lg">Monitor and manage your InsurCheck platform operations</p>
+              <div className="flex items-center mt-4 space-x-6 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>System Online</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <i className="fas fa-clock"></i>
+                  <span>Last updated: {new Date().toLocaleTimeString()}</span>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                <i className="fas fa-chart-line text-4xl text-white opacity-80"></i>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Error Alert */}
         {(metricsError || logsError) && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <i className="fas fa-exclamation-triangle mr-2"></i>
-                <span>{metricsError || logsError}</span>
+                <i className="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                <div>
+                  <h3 className="text-red-800 font-medium">System Alert</h3>
+                  <p className="text-red-700 text-sm">{metricsError || logsError}</p>
+                </div>
               </div>
               <button
                 onClick={() => dispatch(clearErrors())}
-                className="text-red-500 hover:text-red-700 text-lg"
+                className="text-red-400 hover:text-red-600 text-xl font-bold"
               >
                 ×
               </button>
@@ -116,57 +126,109 @@ const SuperAdminDashboard = () => {
           </div>
         )}
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {isLoadingMetrics ? (
-            // Loading skeleton
-            Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 animate-pulse">
-                <div className="flex items-center space-x-4">
-                  <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
-                  <div>
-                    <div className="h-6 bg-gray-200 rounded w-16 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-4">
+          <Button
+            onClick={handleRefreshMetrics}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+            disabled={isLoadingMetrics}
+          >
+            <i className="fas fa-sync-alt mr-2"></i>
+            Refresh Metrics
+          </Button>
+          <Button
+            onClick={handleRefreshLogs}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3"
+            disabled={isLoadingLogs}
+          >
+            <i className="fas fa-list mr-2"></i>
+            Refresh Logs
+          </Button>
+          <Button
+            onClick={handleExportLogs}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3"
+          >
+            <i className="fas fa-download mr-2"></i>
+            Export Data
+          </Button>
+        </div>
+
+        {/* System Metrics Grid */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">System Metrics</h2>
+            <div className="text-sm text-gray-500">
+              Real-time system performance indicators
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {isLoadingMetrics ? (
+              // Enhanced Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-12 w-12 bg-gray-200 rounded-xl"></div>
+                    <div className="flex-1">
+                      <div className="h-6 bg-gray-200 rounded w-16 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                  </div>
+                </div>
+              ))
+            ) : systemMetrics && systemMetrics.length > 0 ? (
+              systemMetrics.map((metric) => (
+                <MetricCard
+                  key={metric.id}
+                  icon={metric.icon}
+                  value={metric.value}
+                  label={metric.label}
+                  trend={metric.trend}
+                  trendValue={metric.trendValue}
+                  color={metric.color}
+                />
+              ))
+            ) : (
+              <div className="col-span-full">
+                <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
+                  <div className="max-w-md mx-auto">
+                    <i className="fas fa-chart-line text-6xl text-gray-300 mb-6"></i>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Metrics Available</h3>
+                    <p className="text-gray-500 text-base mb-6">
+                      System metrics will appear here once data collection begins
+                    </p>
+                    <Button
+                      onClick={handleRefreshMetrics}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+                    >
+                      <i className="fas fa-refresh mr-2"></i>
+                      Refresh Now
+                    </Button>
                   </div>
                 </div>
               </div>
-            ))
-          ) : systemMetrics && systemMetrics.length > 0 ? (
-            systemMetrics.map((metric) => (
-              <MetricCard
-                key={metric.id}
-                icon={metric.icon}
-                value={metric.value}
-                label={metric.label}
-                trend={metric.trend}
-                trendValue={metric.trendValue}
-                color={metric.color}
-              />
-            ))
-          ) : (
-            <div className="col-span-4 text-center py-12 bg-white rounded-lg shadow-md border border-gray-200">
-              <i className="fas fa-chart-line text-4xl text-gray-400 mb-4"></i>
-              <p className="text-gray-500 text-lg">No metrics data available</p>
-              <p className="text-gray-400 text-sm mt-1">Metrics will appear here once data is loaded</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Error Logs Section */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center">
                   <i className="fas fa-exclamation-triangle text-red-500 mr-3"></i>
-                  Error Logs
+                  System Error Logs
                 </h2>
                 <p className="text-gray-600 mt-1">Monitor and track system errors across all tenants</p>
               </div>
               <div className="flex space-x-3">
                 <Button
                   onClick={handleRefreshLogs}
-                  className="bg-gray-600 hover:bg-gray-700 text-white"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
                   disabled={isLoadingLogs}
                 >
                   <i className="fas fa-sync-alt mr-2"></i>
@@ -174,7 +236,7 @@ const SuperAdminDashboard = () => {
                 </Button>
                 <Button
                   onClick={handleExportLogs}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
                 >
                   <i className="fas fa-download mr-2"></i>
                   Export CSV
@@ -192,21 +254,31 @@ const SuperAdminDashboard = () => {
           />
         </div>
 
-        {/* System Status Footer */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+        {/* System Health Footer */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
                 <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-gray-700">System Status: Online</span>
+                <span className="font-semibold text-gray-700">System Status</span>
               </div>
-              <div className="text-sm text-gray-500">
-                Last updated: {new Date().toLocaleTimeString()}
-              </div>
+              <p className="text-green-600 font-medium">Operational</p>
             </div>
-            <div className="text-sm text-gray-500">
-              <i className="fas fa-server mr-1"></i>
-              Server uptime: 99.9%
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <i className="fas fa-server text-blue-500"></i>
+                <span className="font-semibold text-gray-700">Server Uptime</span>
+              </div>
+              <p className="text-blue-600 font-medium">99.9%</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <i className="fas fa-clock text-purple-500"></i>
+                <span className="font-semibold text-gray-700">Last Update</span>
+              </div>
+              <p className="text-purple-600 font-medium">{new Date().toLocaleTimeString()}</p>
             </div>
           </div>
         </div>

@@ -18,21 +18,9 @@ const AdminLayout = ({ children }) => {
 
   const navigationItems = [
     {
-      name: 'Dashboard',
-      path: '/super-admin/dashboard',
-      icon: 'fas fa-tachometer-alt',
-      roles: ['super-admin']
-    },
-    {
-      name: 'System Monitoring',
+      name: 'System Dashboard',
       path: '/super-admin/dashboard',
       icon: 'fas fa-chart-line',
-      roles: ['super-admin']
-    },
-    {
-      name: 'Error Logs',
-      path: '/super-admin/dashboard',
-      icon: 'fas fa-exclamation-triangle',
       roles: ['super-admin']
     }
   ];
@@ -83,25 +71,25 @@ const AdminLayout = ({ children }) => {
         {/* User Section */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <i className="fas fa-user text-gray-600 text-sm"></i>
+            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
+              <i className="fas fa-user text-white text-sm"></i>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
                 {user?.email || 'Super Admin'}
               </p>
-              <p className="text-xs text-gray-500 capitalize">
+              <p className="text-xs text-blue-600 capitalize font-medium">
                 {user?.role || 'super-admin'}
               </p>
             </div>
           </div>
-          <Button
+          <button
             onClick={handleLogout}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300 font-medium text-sm"
           >
-            <i className="fas fa-sign-out-alt mr-2"></i>
-            Logout
-          </Button>
+            <i className="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 
