@@ -13,17 +13,22 @@ const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) =
     cyan: 'text-cyan-600 bg-cyan-50 border-cyan-200'
   };
 
+  // Fallback to blue if color is not found
+  const currentColorClass = colorClasses[color] || colorClasses.blue;
+  const textColorClass = currentColorClass.split(' ')[0];
+  const iconBgClass = currentColorClass.replace('border-', 'bg-').replace('bg-', 'bg-opacity-20 ');
+
   return (
-    <Card className={`p-6 hover:shadow-lg transition-shadow duration-200 ${colorClasses[color]}`}>
+    <Card className={`p-6 hover:shadow-lg transition-shadow duration-200 ${currentColorClass}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className={`p-3 rounded-lg ${colorClasses[color].replace('border-', 'bg-').replace('bg-', 'bg-opacity-20 ')}`}>
-            <div className={`w-6 h-6 ${colorClasses[color].split(' ')[0]}`}>
+          <div className={`p-3 rounded-lg ${iconBgClass}`}>
+            <div className={`w-6 h-6 ${textColorClass}`}>
               {icon}
             </div>
           </div>
           <div>
-            <p className={`text-2xl font-bold ${colorClasses[color].split(' ')[0]}`}>
+            <p className={`text-2xl font-bold ${textColorClass}`}>
               {value || '---'}
             </p>
             <p className="text-sm text-gray-600">{label}</p>
