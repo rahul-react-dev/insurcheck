@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import Button from '../ui/Button';
 
 const InvoiceTable = ({ 
   invoices = [], 
-  isLoading, 
+  isLoading = false, 
   onViewInvoice, 
   onDownloadInvoice, 
   onMarkPaid 
@@ -108,7 +107,7 @@ const InvoiceTable = ({
                 </div>
                 {getStatusBadge(invoice.status)}
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Tenant:</span>

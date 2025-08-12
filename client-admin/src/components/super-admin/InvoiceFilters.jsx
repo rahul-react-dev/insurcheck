@@ -115,13 +115,6 @@ const InvoiceFilters = ({
               Clear Filters
             </Button>
           )}
-          <Button
-            onClick={onExportAll}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
-          >
-            <i className="fas fa-download mr-2"></i>
-            Export All
-          </Button>
         </div>
       </div>
 

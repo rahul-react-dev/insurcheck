@@ -1,4 +1,3 @@
-
 import { call, put, takeEvery, takeLatest } from 'redux-saga/effects';
 import {
   fetchInvoicesRequest,
@@ -20,7 +19,7 @@ const api = {
   fetchInvoices: async (filters) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     // Mock data - replace with actual API call
     const mockInvoices = [
       {
@@ -153,13 +152,13 @@ const api = {
 
     // Apply filters
     let filteredInvoices = mockInvoices;
-    
+
     if (filters.tenantName) {
       filteredInvoices = filteredInvoices.filter(inv => 
         inv.tenantName.toLowerCase().includes(filters.tenantName.toLowerCase())
       );
     }
-    
+
     if (filters.status) {
       filteredInvoices = filteredInvoices.filter(inv => inv.status === filters.status);
     }
@@ -183,7 +182,7 @@ const api = {
 
   fetchTenants: async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     return [
       { id: '1', name: 'Acme Insurance Co.', email: 'admin@acme-insurance.com' },
       { id: '2', name: 'SafeGuard Insurance', email: 'billing@safeguard.com' },
@@ -195,7 +194,7 @@ const api = {
 
   markInvoicePaid: async (invoiceId) => {
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     return {
       invoiceId,
       paidDate: new Date().toISOString(),
@@ -205,7 +204,7 @@ const api = {
 
   downloadInvoice: async (invoiceId) => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     // Mock PDF download
     if (invoiceId === 'all') {
       // Download all invoices
@@ -230,7 +229,7 @@ const api = {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     }
-    
+
     return { success: true };
   }
 };
@@ -258,14 +257,14 @@ function* markInvoicePaidSaga(action) {
   try {
     const response = yield call(api.markInvoicePaid, action.payload);
     yield put(markInvoicePaidSuccess(response));
-    
+
     // Show success message
     if (window.showNotification) {
       window.showNotification('Invoice marked as paid successfully', 'success');
     }
   } catch (error) {
     yield put(markInvoicePaidFailure(error.message || 'Failed to mark invoice as paid'));
-    
+
     // Show error message
     if (window.showNotification) {
       window.showNotification('Failed to update invoice status. Please try again.', 'error');
@@ -277,14 +276,14 @@ function* downloadInvoiceSaga(action) {
   try {
     yield call(api.downloadInvoice, action.payload);
     yield put(downloadInvoiceSuccess());
-    
+
     // Show success message
     if (window.showNotification) {
       window.showNotification('Invoice downloaded successfully', 'success');
     }
   } catch (error) {
     yield put(downloadInvoiceFailure(error.message || 'Failed to download invoice'));
-    
+
     // Show error message
     if (window.showNotification) {
       window.showNotification('Failed to download invoice. Please try again.', 'error');

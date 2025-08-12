@@ -48,10 +48,7 @@ const PaymentManagement = () => {
     dispatch(fetchInvoicesRequest(filters));
   }, [dispatch, filters]);
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    dispatch(fetchInvoicesRequest(newFilters));
-  };
+  
 
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
