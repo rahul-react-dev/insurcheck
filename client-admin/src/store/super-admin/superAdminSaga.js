@@ -127,21 +127,38 @@ function* loginSaga(action) {
   try {
     const response = yield call(loginApi, action.payload);
 
-    // Check if user has super-admin role
-    if (response.data.user.role !== 'super-admin') {
-      yield put(loginFailure('Invalid email format or insufficient privileges.'));
-      return;
+    if (response?.data) {
+      yield put(loginSuccess(response.data));
+
+      // Store token in localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+
+      // Navigate to dashboard after successful login
+      if (response.data.user?.role === 'super-admin') {
+        window.location.href = '/super-admin/dashboard';
+      }
+    } else {
+      yield put(loginFailure('Invalid response from server'));
+    }
+  } catch (error) {
+    console.error('Super admin login error:', error);
+
+    let errorMessage = 'Login failed';
+
+    if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error?.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    } else if (error?.response?.status === 401) {
+      errorMessage = 'Invalid credentials';
+    } else if (error?.response?.status === 500) {
+      errorMessage = 'Server error. Please try again later.';
     }
 
-    // Store token in localStorage
-    localStorage.setItem('superAdminToken', response.data.token);
-
-    yield put(loginSuccess({
-      user: response.data.user,
-      token: response.data.token
-    }));
-  } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
     yield put(loginFailure(errorMessage));
   }
 }

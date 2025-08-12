@@ -26,9 +26,16 @@ const SuperAdminLogin = () => {
     
     // Redirect if already authenticated
     if (isAuthenticated && user?.role === 'super-admin') {
-      navigate('/super-admin/dashboard');
+      navigate('/super-admin/dashboard', { replace: true });
     }
   }, [dispatch, isAuthenticated, user, navigate]);
+
+  // Additional useEffect to handle navigation after login success
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'super-admin' && !isLoading) {
+      navigate('/super-admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, user, isLoading, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

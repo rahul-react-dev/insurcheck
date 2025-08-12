@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -11,7 +10,7 @@ const initialState = {
   loginAttempts: 0,
   isLocked: false,
   lockoutTime: null,
-  
+
   // Dashboard state
   systemMetrics: [],
   errorLogs: [],
@@ -50,7 +49,7 @@ const superAdminSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
       state.loginAttempts += 1;
-      
+
       if (state.loginAttempts >= 5) {
         state.isLocked = true;
         state.lockoutTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
@@ -76,7 +75,7 @@ const superAdminSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     },
-    
+
     // Dashboard actions
     fetchSystemMetricsRequest: (state) => {
       state.isLoadingMetrics = true;
@@ -90,7 +89,7 @@ const superAdminSlice = createSlice({
       state.isLoadingMetrics = false;
       state.metricsError = action.payload;
     },
-    
+
     fetchErrorLogsRequest: (state) => {
       state.isLoadingLogs = true;
       state.logsError = null;
@@ -104,27 +103,27 @@ const superAdminSlice = createSlice({
       state.isLoadingLogs = false;
       state.logsError = action.payload;
     },
-    
+
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
       // Apply filters
       let filtered = state.errorLogs;
-      
+
       if (state.filters.tenantName) {
         filtered = filtered.filter(log => 
           log.affectedTenant?.toLowerCase().includes(state.filters.tenantName.toLowerCase())
         );
       }
-      
+
       if (state.filters.errorType) {
         filtered = filtered.filter(log => 
           log.errorType === state.filters.errorType
         );
       }
-      
+
       state.filteredErrorLogs = filtered;
     },
-    
+
     clearFilters: (state) => {
       state.filters = {
         tenantName: '',
@@ -133,21 +132,27 @@ const superAdminSlice = createSlice({
       };
       state.filteredErrorLogs = state.errorLogs;
     },
-    
+
     clearErrors: (state) => {
-      state.error = null;
       state.metricsError = null;
       state.logsError = null;
-    }
-  }
+    },
+
+    logout: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      state.isLoading = false;
+      // Clear token from localStorage on logout
+      localStorage.removeItem('token');
+    },
+  },
 });
 
 export const {
   loginRequest,
   loginSuccess,
   loginFailure,
-  clearLoginError,
-  checkLockout,
   logout,
   fetchSystemMetricsRequest,
   fetchSystemMetricsSuccess,
