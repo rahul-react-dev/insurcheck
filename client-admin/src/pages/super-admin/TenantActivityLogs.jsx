@@ -55,11 +55,13 @@ const TenantActivityLogs = () => {
   };
 
   const handlePageChange = (newPage) => {
+    console.log('Page change to:', newPage);
     dispatch(setPage(newPage));
     dispatch(fetchActivityLogsRequest({ page: newPage }));
   };
 
   const handlePageSizeChange = (newSize) => {
+    console.log('Page size change to:', newSize);
     dispatch(setPageSize(newSize));
     dispatch(fetchActivityLogsRequest({ page: 1, limit: newSize }));
   };

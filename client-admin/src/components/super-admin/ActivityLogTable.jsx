@@ -334,16 +334,20 @@ const ActivityLogTable = ({
       </div>
 
       {/* Pagination */}
-      <Pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        totalItems={pagination.total}
-        itemsPerPage={pagination.limit}
-        onPageChange={onPageChange}
-        onItemsPerPageChange={onPageSizeChange}
-        showItemsPerPage={true}
-        itemsPerPageOptions={[10, 25, 50, 100]}
-      />
+      {!isLoading && logs && logs.length > 0 && (
+        <div className="border-t border-gray-200 bg-white px-4 py-4">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={onPageChange}
+            onItemsPerPageChange={onPageSizeChange}
+            showItemsPerPage={true}
+            itemsPerPageOptions={[10, 25, 50, 100]}
+          />
+        </div>
+      )}
     </div>
   );
 };

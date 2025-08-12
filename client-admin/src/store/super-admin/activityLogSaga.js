@@ -175,17 +175,26 @@ const fetchActivityLogsApi = (params) => {
   const endIndex = startIndex + params.limit;
   const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
+  const totalPages = Math.ceil(total / params.limit);
+  
   const result = {
     data: {
       logs: paginatedLogs,
       total: total,
-      page: params.page,
-      limit: params.limit,
-      totalPages: Math.ceil(total / params.limit)
+      page: parseInt(params.page) || 1,
+      limit: parseInt(params.limit) || 10,
+      totalPages: totalPages
     }
   };
   
-  console.log('Mock API response:', result);
+  console.log('Mock API response with pagination:', result);
+  console.log('Pagination details:', {
+    total,
+    page: params.page,
+    limit: params.limit,
+    totalPages,
+    logsCount: paginatedLogs.length
+  });
   return Promise.resolve(result);
 };
 
