@@ -15,6 +15,7 @@ import SubscriptionManagement from "./pages/super-admin/SubscriptionManagement";
 import PaymentManagement from "./pages/super-admin/PaymentManagement";
 import InvoiceGeneration from "./pages/super-admin/InvoiceGeneration";
 import TenantActivityLogs from "./pages/super-admin/TenantActivityLogs";
+import TenantStateManagement from "./pages/super-admin/TenantStateManagement";
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -85,6 +86,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TenantActivityLogs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/tenant-management"
+              element={
+                <ProtectedRoute>
+                  <TenantStateManagement />
                 </ProtectedRoute>
               }
             />
