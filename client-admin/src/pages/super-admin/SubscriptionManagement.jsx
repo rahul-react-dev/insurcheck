@@ -73,7 +73,9 @@ const SubscriptionManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      {/* Global Container with max-width for ultra-wide screens */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
           {/* Header Section - Responsive */}
           <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg sm:rounded-xl lg:rounded-2xl p-4 sm:p-6 lg:p-8 text-white">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
@@ -171,25 +173,25 @@ const SubscriptionManagement = () => {
 
               {/* Plans Grid - Responsive with better breakpoints */}
               {isLoadingPlans ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
-                      <div className="h-4 sm:h-5 bg-gray-200 rounded w-20 sm:w-24 mb-3 sm:mb-4"></div>
-                      <div className="h-6 sm:h-8 bg-gray-200 rounded w-12 sm:w-16 mb-3 sm:mb-4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 xl:gap-8">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 lg:p-6 animate-pulse">
+                      <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 rounded w-20 sm:w-24 mb-3 sm:mb-4"></div>
+                      <div className="h-6 sm:h-7 lg:h-8 bg-gray-200 rounded w-12 sm:w-16 mb-3 sm:mb-4"></div>
                       <div className="space-y-2 mb-4 sm:mb-6">
                         <div className="h-3 sm:h-4 bg-gray-200 rounded"></div>
                         <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
                         <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/2"></div>
                       </div>
                       <div className="flex space-x-2">
-                        <div className="h-8 sm:h-9 bg-gray-200 rounded flex-1"></div>
-                        <div className="h-8 sm:h-9 bg-gray-200 rounded w-12 sm:w-16"></div>
+                        <div className="h-7 sm:h-8 lg:h-9 bg-gray-200 rounded flex-1"></div>
+                        <div className="h-7 sm:h-8 lg:h-9 bg-gray-200 rounded w-12 sm:w-16"></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : plans && plans.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 xl:gap-8">
                   {plans.map((plan) => (
                     <div key={plan.id} className="transform transition-all duration-200 hover:scale-[1.02]">
                       <PlanCard
@@ -248,6 +250,7 @@ const SubscriptionManagement = () => {
             />
           )}
         </div>
+      </div>
     </AdminLayout>
   );
 };
