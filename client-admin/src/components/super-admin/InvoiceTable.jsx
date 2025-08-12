@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Button from "../ui/Button";
 
 const InvoiceTable = ({
-  // invoices = [],
+  invoices = [],
   isLoading = false,
   onViewInvoice,
   onDownloadInvoice,
@@ -18,8 +18,6 @@ const InvoiceTable = ({
       currency: "USD",
     }).format(amount);
   };
-
-  
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
