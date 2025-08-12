@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "../../components/ui/Button";
@@ -10,6 +9,7 @@ import {
   fetchInvoiceLogsRequest,
   updateInvoiceConfigRequest,
   generateInvoiceRequest,
+  retryInvoiceGenerationRequest,
   clearError,
 } from "../../store/super-admin/invoiceGenerationSlice";
 
@@ -19,7 +19,7 @@ const InvoiceGeneration = () => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('configuration');
   const [selectedTenant, setSelectedTenant] = useState(null);
-  
+
   const {
     configurations,
     logs,
@@ -75,9 +75,22 @@ const InvoiceGeneration = () => {
     dispatch(fetchInvoiceLogsRequest({ ...filters, page: newPage, limit: pagination.limit }));
   };
 
-  const handlePageSizeChange = (newLimit) => {
-    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
-    dispatch(fetchInvoiceLogsRequest({ ...filters, page: 1, limit: newLimit }));
+  const handlePageSizeChange = (newSize) => {
+    setPagination(prev => ({ ...prev, limit: newSize, page: 1 }));
+    dispatch(fetchInvoiceLogsRequest({ 
+      ...filters, 
+      page: 1, 
+      limit: newSize 
+    }));
+  };
+
+  const handleRetryGeneration = (logId) => {
+    dispatch(retryInvoiceGenerationRequest(logId));
+  };
+
+  const handleViewDetails = (log) => {
+    // TODO: Implement log details modal
+    console.log('Viewing log details:', log);
   };
 
   const handleRefresh = () => {
@@ -282,6 +295,8 @@ const InvoiceGeneration = () => {
               onFilterChange={handleFilterChange}
               onPageChange={handlePageChange}
               onPageSizeChange={handlePageSizeChange}
+              onRetryGeneration={handleRetryGeneration}
+              onViewDetails={handleViewDetails}
             />
           )}
         </div>

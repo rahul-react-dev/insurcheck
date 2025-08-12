@@ -133,15 +133,20 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Saga to fetch invoice configurations
 function* fetchInvoiceConfigSaga() {
   try {
-    yield call(delay, 800); // Simulate API call
+    yield call(delay, 1200); // Simulate API call
 
+    console.log('🚀 Fetching invoice configurations...');
+    
     const response = {
       configurations: mockConfigurations,
       tenants: mockTenants
     };
 
+    console.log('✅ Invoice configurations loaded:', response);
+
     yield put(fetchInvoiceConfigSuccess(response));
   } catch (error) {
+    console.error('❌ Error fetching invoice configurations:', error);
     yield put(fetchInvoiceConfigFailure(error.message || 'Failed to fetch invoice configurations'));
   }
 }
@@ -246,7 +251,9 @@ function* generateInvoiceSaga(action) {
 // Saga to fetch invoice logs
 function* fetchInvoiceLogsSaga(action) {
   try {
-    yield call(delay, 600); // Simulate API call
+    yield call(delay, 1000); // Simulate API call
+
+    console.log('🚀 Fetching invoice logs...');
 
     const { page = 1, limit = 10, tenantName = '', status = '', dateRange } = action.payload || {};
 
@@ -297,10 +304,13 @@ function* fetchInvoiceLogsSaga(action) {
       pagination: {
         page,
         limit,
-        total
+        total,
+        totalPages: Math.ceil(total / limit)
       },
       summary
     };
+
+    console.log('✅ Invoice logs loaded:', response);
 
     yield put(fetchInvoiceLogsSuccess(response));
   } catch (error) {

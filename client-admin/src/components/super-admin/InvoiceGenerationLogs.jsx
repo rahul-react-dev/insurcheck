@@ -11,6 +11,8 @@ const InvoiceGenerationLogs = ({
   onFilterChange,
   onPageChange,
   onPageSizeChange,
+  onRetryGeneration,
+  onViewDetails,
 }) => {
   const [localFilters, setLocalFilters] = useState(filters);
 
@@ -69,7 +71,7 @@ const InvoiceGenerationLogs = ({
     }).format(amount);
   };
 
-  if (!isLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, index) => (
