@@ -30,30 +30,26 @@ const InvoiceGeneration = () => {
     totalGenerated,
     totalSent,
     totalFailed,
-    summary
+    summary,
+    filters: storeFilters,
+    pagination: storePagination
   } = useSelector((state) => state.invoiceGeneration);
 
-  const [filters, setFilters] = useState({
-    tenantName: '',
-    status: '',
-    dateRange: {
-      start: '',
-      end: ''
-    }
-  });
-
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0
-  });
+  const [filters, setFilters] = useState(storeFilters);
+  const [pagination, setPagination] = useState(storePagination);
 
   // Fetch initial data when component mounts
   useEffect(() => {
     console.log('🔄 InvoiceGeneration component mounted, fetching data...');
     dispatch(fetchInvoiceConfigRequest());
-    dispatch(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
+    dispatch(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
   }, [dispatch]);
+
+  // Sync local state with Redux store
+  useEffect(() => {
+    setFilters(storeFilters);
+    setPagination(storePagination);
+  }, [storeFilters, storePagination]);
 
   // Clear error when component unmounts
   useEffect(() => {

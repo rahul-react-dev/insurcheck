@@ -259,7 +259,7 @@ function* fetchInvoiceLogsSaga(action) {
 
     console.log('🚀 Fetching invoice logs...');
 
-    const { page = 1, limit = 10, tenantName = '', status = '', dateRange } = action.payload || {};
+    const { page = 1, limit = 5, tenantName = '', status = '', dateRange } = action.payload || {};
 
     let filteredLogs = [...mockLogs];
 

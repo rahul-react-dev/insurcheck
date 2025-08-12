@@ -310,24 +310,33 @@ const InvoiceGenerationLogs = ({
 
       {/* Pagination */}
       {logs.length > 0 && (
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <Card className="mt-6">
+          <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            {/* Items per page selector */}
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">Show</span>
+              <span className="text-sm text-gray-700">Show:</span>
               <select
                 value={pagination.limit}
                 onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
-                className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={25}>25 per page</option>
+                <option value={50}>50 per page</option>
               </select>
-              <span className="text-sm text-gray-700">entries</span>
             </div>
 
+            {/* Page navigation */}
             <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => onPageChange(1)}
+                disabled={pagination.page === 1}
+                className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
+              >
+                <i className="fas fa-angle-double-left"></i>
+              </Button>
+
               <Button
                 onClick={() => onPageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
@@ -336,23 +345,56 @@ const InvoiceGenerationLogs = ({
                 <i className="fas fa-chevron-left"></i>
               </Button>
 
-              <span className="text-sm text-gray-700">
-                Page {pagination.page} of{" "}
-                {Math.ceil(pagination.total / pagination.limit)}
-              </span>
+              <div className="flex items-center space-x-1">
+                {/* Page numbers */}
+                {Array.from({ length: Math.min(5, Math.ceil(pagination.total / pagination.limit)) }, (_, i) => {
+                  const totalPages = Math.ceil(pagination.total / pagination.limit);
+                  let pageNumber;
+
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else {
+                    const start = Math.max(1, pagination.page - 2);
+                    const end = Math.min(totalPages, start + 4);
+                    pageNumber = start + i;
+
+                    if (pageNumber > end) return null;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNumber}
+                      onClick={() => onPageChange(pageNumber)}
+                      className={`px-3 py-2 text-sm ${
+                        pagination.page === pageNumber
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+              </div>
 
               <Button
                 onClick={() => onPageChange(pagination.page + 1)}
-                disabled={
-                  pagination.page >=
-                  Math.ceil(pagination.total / pagination.limit)
-                }
+                disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
                 className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
               >
                 <i className="fas fa-chevron-right"></i>
               </Button>
+
+              <Button
+                onClick={() => onPageChange(Math.ceil(pagination.total / pagination.limit))}
+                disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
+              >
+                <i className="fas fa-angle-double-right"></i>
+              </Button>
             </div>
 
+            {/* Results info */}
             <div className="text-sm text-gray-700">
               Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
               {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
