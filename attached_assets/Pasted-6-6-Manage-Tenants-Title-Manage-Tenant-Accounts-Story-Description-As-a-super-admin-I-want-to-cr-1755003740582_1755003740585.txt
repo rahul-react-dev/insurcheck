@@ -1,0 +1,35 @@
+6.6 Manage Tenants
+Title: Manage Tenant Accounts
+Story Description: As a super admin, I want to create, edit, suspend, or delete tenant accounts so that I can oversee all organizations using the SaaS platform.
+Acceptance Criteria:
+Given I am on the Super Admin Dashboard, I see a table of tenants with columns: Tenant ID, Tenant Name, Primary Contact Email, Status (Active/Suspended/Deleted), Created Date, Subscription Plan, Actions (Edit, Suspend, Delete).
+I can create a new tenant with fields: Tenant Name, Primary Contact Email, Subscription Plan.
+I can edit tenant details (Tenant Name, Contact Email, Subscription Plan).
+I can suspend or reactivate tenant accounts, restricting access for all users in the tenant.
+I can delete tenant accounts, removing all associated data (users, documents, logs).
+All actions are logged in the super admin audit logs.
+Validations with Success/Error Messages:
+Table Data:
+Success: Table loads with correct tenant data.
+Error: "No tenants found."
+Create/Edit Tenant:
+Success: "Tenant [created/updated] successfully."
+Error: "Invalid tenant details. Please check inputs."
+Suspend/Reactivate:
+Success: "Tenant [suspended/reactivated] successfully."
+Error: "Failed to update tenant status. Please try again."
+Delete Tenant:
+Success: "Tenant deleted successfully."
+Error: "Failed to delete tenant. Please try again."
+Expected Outcome:
+The super admin can manage tenant accounts, with actions logged.
+Definition of Done:
+Tenant management table with specified columns is implemented.
+Create, edit, suspend, and delete functionalities are functional.
+Super admin audit log entries are created for all actions.
+Error handling for failed actions is implemented.
+Unit tests cover tenant management logic.
+UI/UX is tested for responsiveness.
+Feature is deployed and verified in production.
+Add the ability to have a Status (active, locked, unverified, deactivated) for tenants. Admins can view users and delete/deactivate, but there's no mention of filtering by user status (active/inactive/pending verification).
+Usage dashboards (monthly docs uploaded, compliance trends) Helps admins track team productivity or vendor performance
