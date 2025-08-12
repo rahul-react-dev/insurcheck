@@ -271,15 +271,18 @@ const TenantManagement = () => {
 
       {/* Filters and Actions */}
       <Card className="p-4 sm:p-6 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex-1">
+        <div className="space-y-6">
+          {/* Filter Section */}
+          <div>
             <TenantFilters
               filters={filters}
               onFilterChange={handleFilterChange}
               subscriptionPlans={subscriptionPlans}
             />
           </div>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          
+          {/* Actions Section */}
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <Button
               onClick={handleRefresh}
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"

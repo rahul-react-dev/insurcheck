@@ -99,10 +99,11 @@ const Pagination = ({
             <Button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
             >
               <span className="sr-only">Previous</span>
-              <i className="fas fa-chevron-left h-4 w-4" aria-hidden="true"></i>
+              <i className="fas fa-chevron-left h-4 w-4 text-gray-700" aria-hidden="true"></i>
+              <span className="ml-1 hidden sm:inline">Previous</span>
             </Button>
 
             {/* Page numbers */}
@@ -125,8 +126,8 @@ const Pagination = ({
                     onClick={() => onPageChange(1)}
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                       currentPage === 1
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "z-10 bg-blue-50 border-blue-500 text-blue-700 font-semibold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     1
@@ -135,7 +136,7 @@ const Pagination = ({
                 
                 if (startPage > 2) {
                   pages.push(
-                    <span key="ellipsis1" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    <span key="ellipsis1" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-800">
                       ...
                     </span>
                   );
@@ -152,8 +153,8 @@ const Pagination = ({
                     onClick={() => onPageChange(i)}
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                       currentPage === i
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "z-10 bg-blue-50 border-blue-500 text-blue-700 font-semibold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     {i}
@@ -165,7 +166,7 @@ const Pagination = ({
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
                   pages.push(
-                    <span key="ellipsis2" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    <span key="ellipsis2" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-800">
                       ...
                     </span>
                   );
@@ -177,8 +178,8 @@ const Pagination = ({
                     onClick={() => onPageChange(totalPages)}
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                       currentPage === totalPages
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "z-10 bg-blue-50 border-blue-500 text-blue-700 font-semibold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     {totalPages}
@@ -192,10 +193,11 @@ const Pagination = ({
             <Button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
             >
               <span className="sr-only">Next</span>
-              <i className="fas fa-chevron-right h-4 w-4" aria-hidden="true"></i>
+              <span className="mr-1 hidden sm:inline">Next</span>
+              <i className="fas fa-chevron-right h-4 w-4 text-gray-700" aria-hidden="true"></i>
             </Button>
           </nav>
         </div>

@@ -102,13 +102,19 @@ const TenantModal = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+          <div className="space-y-8">
             {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Basic Information
-              </h3>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Basic Information
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Enter the basic details for the tenant account
+                </p>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Input
@@ -135,7 +141,7 @@ const TenantModal = ({
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div>
                 <Input
                   label="Description (Optional)"
                   value={formData.description}
@@ -148,10 +154,16 @@ const TenantModal = ({
             </div>
 
             {/* Subscription & Status */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Subscription & Status
-              </h3>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Subscription & Status
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Configure the subscription plan and account status
+                </p>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -205,27 +217,51 @@ const TenantModal = ({
             </div>
 
             {/* Information Notice */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <i className="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0"></i>
-                <div>
-                  <h4 className="text-blue-800 font-medium mb-2">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+              <div className="flex items-start space-x-4">
+                <i className="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0 text-lg"></i>
+                <div className="flex-1">
+                  <h4 className="text-blue-800 font-medium mb-3">
                     {mode === "create" ? "Tenant Creation" : "Tenant Update"}
                   </h4>
-                  <ul className="text-blue-700 text-sm space-y-1">
+                  <ul className="text-blue-700 text-sm space-y-2">
                     {mode === "create" ? (
                       <>
-                        <li>• A new tenant account will be created</li>
-                        <li>• An admin user will be created for this tenant</li>
-                        <li>• A welcome email will be sent to the primary contact</li>
-                        <li>• The tenant will be assigned the selected subscription plan</li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          A new tenant account will be created
+                        </li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          An admin user will be created for this tenant
+                        </li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          A welcome email will be sent to the primary contact
+                        </li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          The tenant will be assigned the selected subscription plan
+                        </li>
                       </>
                     ) : (
                       <>
-                        <li>• Tenant information will be updated</li>
-                        <li>• Status changes may affect tenant access</li>
-                        <li>• Plan changes will be reflected in the next billing cycle</li>
-                        <li>• All changes will be logged in audit logs</li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          Tenant information will be updated
+                        </li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          Status changes may affect tenant access
+                        </li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          Plan changes will be reflected in the next billing cycle
+                        </li>
+                        <li className="flex items-start">
+                          <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          All changes will be logged in audit logs
+                        </li>
                       </>
                     )}
                   </ul>
@@ -235,18 +271,18 @@ const TenantModal = ({
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 mt-10 pt-8 border-t border-gray-200">
             <Button
               type="button"
               onClick={onClose}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 text-sm font-medium"
               disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 text-sm font-medium"
               disabled={isLoading}
             >
               {isLoading ? (
