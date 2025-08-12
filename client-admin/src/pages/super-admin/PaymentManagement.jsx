@@ -65,6 +65,10 @@ const PaymentManagement = () => {
     }
   };
 
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
   const handleRefresh = () => {
     dispatch(fetchInvoicesRequest(filters));
   };
