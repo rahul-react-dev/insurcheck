@@ -79,7 +79,7 @@ const InvoiceTable = ({
     onPageSizeChange(newLimit);
   };
 
-  if (!isLoading) { // change this when you add dynamic data
+  if (isLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">

@@ -53,7 +53,7 @@ const PaymentManagement = () => {
     dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
   }, [dispatch, filters, pagination]);
 
-  
+
 
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
@@ -76,16 +76,16 @@ const PaymentManagement = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  const handleRefresh = () => {
-    dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
-  };
-
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const handlePageSizeChange = (newLimit) => {
     setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+  };
+
+  const handleRefresh = () => {
+    dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
   };
 
   const formatCurrency = (amount) => {
