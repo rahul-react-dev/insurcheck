@@ -1,39 +1,38 @@
-
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import Button from '../components/ui/Button';
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import Button from "../components/ui/Button";
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector(state => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/super-admin/login');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/super-admin/login");
   };
 
   const navigationItems = [
     {
-      name: 'System Dashboard',
-      path: '/super-admin/dashboard',
-      icon: 'fas fa-chart-line',
-      roles: ['super-admin']
+      name: "System Dashboard",
+      path: "/super-admin/dashboard",
+      icon: "fas fa-chart-line",
+      roles: ["super-admin"],
     },
     {
-      name: 'Manage Subscriptions',
-      path: '/super-admin/subscriptions',
-      icon: 'fas fa-credit-card',
-      roles: ['super-admin']
-    }
+      name: "Manage Subscriptions",
+      path: "/super-admin/subscriptions",
+      icon: "fas fa-credit-card",
+      roles: ["super-admin"],
+    },
   ];
 
-  const filteredNavigation = navigationItems.filter(item => 
-    user?.role && item.roles.includes(user.role)
+  const filteredNavigation = navigationItems.filter(
+    (item) => user?.role && item.roles.includes(user.role),
   );
 
   const isActiveRoute = (path) => {
@@ -53,18 +52,20 @@ const AdminLayout = ({ children }) => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div
+        className={`
         fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col
         transform transition-transform duration-300 ease-in-out lg:transform-none
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}
+      >
         {/* Mobile Close Button */}
         <div className="lg:hidden flex justify-end p-4">
           <button
@@ -96,8 +97,8 @@ const AdminLayout = ({ children }) => {
               onClick={() => handleNavigation(item.path)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                 isActiveRoute(item.path)
-                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
               <i className={`${item.icon} text-lg flex-shrink-0`}></i>
@@ -114,10 +115,10 @@ const AdminLayout = ({ children }) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.email || 'Super Admin'}
+                {user?.email || "Super Admin"}
               </p>
               <p className="text-xs text-blue-600 capitalize font-medium">
-                {user?.role || 'super-admin'}
+                {user?.role || "super-admin"}
               </p>
             </div>
           </div>
@@ -144,19 +145,21 @@ const AdminLayout = ({ children }) => {
               >
                 <i className="fas fa-bars text-xl"></i>
               </button>
-              
+
               <div className="min-w-0">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {location.pathname.includes('dashboard') ? 'System Monitoring' : 
-                   location.pathname.includes('subscriptions') ? 'Subscription Management' : 
-                   'Super Admin Panel'}
+                  {location.pathname.includes("dashboard")
+                    ? "System Monitoring"
+                    : location.pathname.includes("subscriptions")
+                      ? "Subscription Management"
+                      : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
                 <i className="fas fa-clock"></i>
@@ -168,9 +171,7 @@ const AdminLayout = ({ children }) => {
 
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 bg-gray-50 overflow-auto min-h-0">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+          <div className="">{children}</div>
         </main>
       </div>
     </div>

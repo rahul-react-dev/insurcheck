@@ -19,7 +19,7 @@ function App() {
   return (
     <PersistGate loading={null} persistor={persistor}>
       <Router>
-        <div className="App max-w-7xl mx-auto">
+        <div className="App">
           <Routes>
             {/* Regular Admin/Tenant routes */}
             <Route path="/login" element={<Login />} />
