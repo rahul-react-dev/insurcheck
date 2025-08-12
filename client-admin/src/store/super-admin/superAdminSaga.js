@@ -135,10 +135,7 @@ function* loginSaga(action) {
         localStorage.setItem('token', response.data.token);
       }
 
-      // Navigate to dashboard after successful login
-      if (response.data.user?.role === 'super-admin') {
-        window.location.href = '/super-admin/dashboard';
-      }
+      // Navigation will be handled by the component's useEffect
     } else {
       yield put(loginFailure('Invalid response from server'));
     }
