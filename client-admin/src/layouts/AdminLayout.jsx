@@ -171,7 +171,7 @@ const AdminLayout = ({ children }) => {
 
         {/* Page Content */}
         <main className="flex-1 p-2 sm:p-4 lg:p-6 xl:p-8 bg-gray-50 overflow-auto min-h-0">
-          <div className="w-full min-h-full">{children}</div>
+          <div className="w-full max-w-7xl mx-auto min-h-full">{children}</div>
         </main>
       </div>
     </div>
