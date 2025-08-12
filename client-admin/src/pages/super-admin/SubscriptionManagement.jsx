@@ -9,8 +9,9 @@ import Button from '../../components/ui/Button';
 import {
   fetchPlansRequest,
   deletePlanRequest,
-  setSelectedPlan,
-  setModalOpen,
+  showCreatePlanModal,
+  showEditPlanModal,
+  hidePlanModal,
   clearErrors
 } from '../../store/super-admin/subscriptionSlice';
 
@@ -20,17 +21,17 @@ const SubscriptionManagement = () => {
 
   const {
     plans,
-    selectedPlan,
-    isModalOpen,
-    isLoading,
-    error,
+    editingPlan,
+    showPlanModal,
+    isLoadingPlans,
+    plansError,
     user
   } = useSelector(state => ({
     plans: state.subscription.plans,
-    selectedPlan: state.subscription.selectedPlan,
-    isModalOpen: state.subscription.isModalOpen,
-    isLoading: state.subscription.isLoading,
-    error: state.subscription.error,
+    editingPlan: state.subscription.editingPlan,
+    showPlanModal: state.subscription.showPlanModal,
+    isLoadingPlans: state.subscription.isLoadingPlans,
+    plansError: state.subscription.plansError,
     user: state.auth.user
   }));
 
@@ -48,13 +49,11 @@ const SubscriptionManagement = () => {
   }, [dispatch, navigate, user]);
 
   const handleCreatePlan = () => {
-    dispatch(setSelectedPlan(null));
-    dispatch(setModalOpen(true));
+    dispatch(showCreatePlanModal());
   };
 
   const handleEditPlan = (plan) => {
-    dispatch(setSelectedPlan(plan));
-    dispatch(setModalOpen(true));
+    dispatch(showEditPlanModal(plan));
   };
 
   const handleDeletePlan = (planId) => {
@@ -64,8 +63,7 @@ const SubscriptionManagement = () => {
   };
 
   const handleCloseModal = () => {
-    dispatch(setModalOpen(false));
-    dispatch(setSelectedPlan(null));
+    dispatch(hidePlanModal());
   };
 
   if (!user || user.role !== 'super-admin') {
@@ -97,14 +95,14 @@ const SubscriptionManagement = () => {
         </div>
 
         {/* Error Alert */}
-        {error && (
+        {plansError && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-start justify-between space-x-3">
               <div className="flex items-start space-x-3 flex-1 min-w-0">
                 <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
                 <div className="min-w-0">
                   <h3 className="text-red-800 font-medium">Error</h3>
-                  <p className="text-red-700 text-sm break-words">{error}</p>
+                  <p className="text-red-700 text-sm break-words">{plansError}</p>
                 </div>
               </div>
               <button
@@ -166,7 +164,7 @@ const SubscriptionManagement = () => {
             </div>
 
             {/* Plans Grid */}
-            {isLoading ? (
+            {isLoadingPlans ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
@@ -228,11 +226,11 @@ const SubscriptionManagement = () => {
         )}
 
         {/* Plan Modal */}
-        {isModalOpen && (
+        {showPlanModal && (
           <PlanModal
-            isOpen={isModalOpen}
+            isOpen={showPlanModal}
             onClose={handleCloseModal}
-            plan={selectedPlan}
+            plan={editingPlan}
           />
         )}
       </div>
