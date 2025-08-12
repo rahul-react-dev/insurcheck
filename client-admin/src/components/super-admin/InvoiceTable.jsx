@@ -12,7 +12,6 @@ const InvoiceTable = ({
   onPageChange,
   onPageSizeChange,
 }) => {
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -61,7 +60,7 @@ const InvoiceTable = ({
   const totalPages = Math.ceil(totalInvoices / pagination.limit);
   const startIndex = (pagination.page - 1) * pagination.limit + 1;
   const endIndex = Math.min(pagination.page * pagination.limit, totalInvoices);
-  
+
   const handlePrevPage = () => {
     if (pagination.page > 1) {
       onPageChange(pagination.page - 1);
@@ -79,7 +78,7 @@ const InvoiceTable = ({
     onPageSizeChange(newLimit);
   };
 
-  if (isLoading) {
+  if (!isLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -315,9 +314,8 @@ const InvoiceTable = ({
             <div className="flex items-center space-x-4">
               <p className="text-sm text-gray-700">
                 Showing <span className="font-medium">{startIndex}</span> to{" "}
-                <span className="font-medium">{endIndex}</span>{" "}
-                of <span className="font-medium">{totalInvoices}</span>{" "}
-                results
+                <span className="font-medium">{endIndex}</span> of{" "}
+                <span className="font-medium">{totalInvoices}</span> results
               </p>
               <div className="flex items-center space-x-2">
                 <label htmlFor="pageSize" className="text-sm text-gray-700">
