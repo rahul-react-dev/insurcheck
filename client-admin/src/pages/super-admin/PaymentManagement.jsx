@@ -44,7 +44,6 @@ const PaymentManagement = () => {
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    // Fetch with initial pagination params
     dispatch(fetchInvoicesRequest({
       page: pagination.page,
       limit: pagination.limit,
@@ -52,11 +51,6 @@ const PaymentManagement = () => {
     }));
     dispatch(fetchTenantsRequest());
   }, [dispatch]);
-
-  // Fetch invoices when filters or pagination change
-  useEffect(() => {
-    dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
-  }, [dispatch, filters, pagination]);
 
 
 
