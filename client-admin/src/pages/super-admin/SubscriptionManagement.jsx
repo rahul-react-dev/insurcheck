@@ -121,29 +121,33 @@ const SubscriptionManagement = () => {
         )}
 
         {/* Tabs Navigation */}
-        <div className="border-b border-gray-200 overflow-hidden">
-          <nav className="-mb-px flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto scrollbar-hide">
+        <div className="border-b border-gray-200 bg-white rounded-t-lg sm:rounded-t-xl overflow-hidden">
+          <nav className="-mb-px flex">
             <button
               onClick={() => setActiveTab('plans')}
-              className={`whitespace-nowrap py-2 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm lg:text-base transition-colors duration-200 ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-3 sm:py-4 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm lg:text-base transition-colors duration-200 ${
                 activeTab === 'plans'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-purple-500 text-purple-600 bg-purple-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <i className="fas fa-layer-group mr-1 sm:mr-2"></i>
-              <span className="hidden xs:inline">Subscription </span>Plans
+              <i className="fas fa-layer-group text-xs sm:text-sm lg:text-base flex-shrink-0"></i>
+              <span className="text-center leading-tight">
+                <span className="hidden sm:inline">Subscription </span>Plans
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('assignments')}
-              className={`whitespace-nowrap py-2 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm lg:text-base transition-colors duration-200 ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-3 sm:py-4 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm lg:text-base transition-colors duration-200 ${
                 activeTab === 'assignments'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-purple-500 text-purple-600 bg-purple-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <i className="fas fa-users mr-1 sm:mr-2"></i>
-              <span className="hidden xs:inline">Tenant </span>Assignments
+              <i className="fas fa-users text-xs sm:text-sm lg:text-base flex-shrink-0"></i>
+              <span className="text-center leading-tight">
+                <span className="hidden sm:inline">Tenant </span>Assignments
+              </span>
             </button>
           </nav>
         </div>
@@ -172,27 +176,27 @@ const SubscriptionManagement = () => {
 
             {/* Plans Grid */}
             {isLoadingPlans ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 xl:gap-6">
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 lg:p-6 animate-pulse">
-                    <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 rounded w-20 sm:w-24 mb-3 sm:mb-4"></div>
-                    <div className="h-6 sm:h-7 lg:h-8 bg-gray-200 rounded w-12 sm:w-16 mb-3 sm:mb-4"></div>
-                    <div className="space-y-2 mb-4 sm:mb-6">
+                  <div key={index} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-5 xl:p-6 animate-pulse">
+                    <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 rounded w-16 sm:w-20 lg:w-24 mb-2 sm:mb-3 lg:mb-4"></div>
+                    <div className="h-5 sm:h-6 lg:h-7 xl:h-8 bg-gray-200 rounded w-10 sm:w-12 lg:w-16 mb-2 sm:mb-3 lg:mb-4"></div>
+                    <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 lg:mb-6">
                       <div className="h-3 sm:h-4 bg-gray-200 rounded"></div>
                       <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
                       <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/2"></div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <div className="h-7 sm:h-8 lg:h-9 bg-gray-200 rounded flex-1"></div>
-                      <div className="h-7 sm:h-8 lg:h-9 bg-gray-200 rounded w-12 sm:w-16"></div>
+                      <div className="h-7 sm:h-8 lg:h-9 bg-gray-200 rounded w-full sm:w-12 lg:w-16"></div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : plans && plans.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 xl:gap-6">
                 {plans.map((plan) => (
-                  <div key={plan.id} className="transform transition-all duration-200 hover:scale-[1.02]">
+                  <div key={plan.id} className="w-full transform transition-all duration-200 hover:scale-[1.02]">
                     <PlanCard
                       plan={plan}
                       onEdit={handleEditPlan}
@@ -202,18 +206,18 @@ const SubscriptionManagement = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 sm:py-12 lg:py-16 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                <div className="max-w-sm sm:max-w-md mx-auto px-4 sm:px-6">
-                  <i className="fas fa-layer-group text-3xl sm:text-4xl lg:text-5xl text-gray-300 mb-3 sm:mb-4 lg:mb-6"></i>
-                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 break-words">
+              <div className="text-center py-6 sm:py-8 lg:py-12 xl:py-16 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
+                <div className="max-w-xs sm:max-w-sm lg:max-w-md mx-auto px-3 sm:px-4 lg:px-6">
+                  <i className="fas fa-layer-group text-2xl sm:text-3xl lg:text-4xl xl:text-5xl text-gray-300 mb-2 sm:mb-3 lg:mb-4 xl:mb-6"></i>
+                  <h3 className="text-sm sm:text-base lg:text-lg xl:text-xl font-semibold text-gray-900 mb-1 sm:mb-2 lg:mb-3 break-words">
                     No Plans Created
                   </h3>
-                  <p className="text-gray-500 text-xs sm:text-sm lg:text-base mb-4 sm:mb-6 leading-relaxed">
+                  <p className="text-gray-500 text-xs sm:text-sm lg:text-base mb-3 sm:mb-4 lg:mb-6 leading-relaxed">
                     Create your first subscription plan to get started with tenant management
                   </p>
                   <Button
                     onClick={handleCreatePlan}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base w-full sm:w-auto justify-center"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 lg:px-6 xl:px-8 py-2 sm:py-3 lg:py-4 text-xs sm:text-sm lg:text-base w-full sm:w-auto justify-center"
                   >
                     <i className="fas fa-plus mr-1 sm:mr-2"></i>
                     Create First Plan
@@ -226,17 +230,19 @@ const SubscriptionManagement = () => {
 
         {/* Assignments Tab Content */}
         {activeTab === 'assignments' && (
-          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-            <div className="mb-4 sm:mb-6 lg:mb-8">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">
+          <div className="space-y-3 sm:space-y-4 lg:space-y-6 xl:space-y-8">
+            <div className="mb-3 sm:mb-4 lg:mb-6 xl:mb-8">
+              <h2 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">
                 Tenant Plan Assignments
               </h2>
               <p className="text-xs sm:text-sm lg:text-base text-gray-600 leading-relaxed">
                 Assign subscription plans to tenants and manage their access levels
               </p>
             </div>
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <TenantPlanAssignment />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
+              <div className="w-full overflow-x-auto">
+                <TenantPlanAssignment />
+              </div>
             </div>
           </div>
         )}
