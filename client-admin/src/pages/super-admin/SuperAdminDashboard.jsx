@@ -272,7 +272,6 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

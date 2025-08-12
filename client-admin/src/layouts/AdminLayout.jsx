@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import Button from "../components/ui/Button";
+import { useSelector } from "react-redux";
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -35,18 +33,14 @@ const AdminLayout = ({ children }) => {
     (item) => user?.role && item.roles.includes(user.role),
   );
 
-  const isActiveRoute = (path) => {
-    return location.pathname === path;
-  };
+  const isActiveRoute = (path) => location.pathname === path;
 
   const handleNavigation = (path) => {
     navigate(path);
-    setIsSidebarOpen(false); // Close sidebar on mobile after navigation
-  };
-
-  const closeSidebar = () => {
     setIsSidebarOpen(false);
   };
+
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -59,12 +53,10 @@ const AdminLayout = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <div
-        className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col
-        transform transition-transform duration-300 ease-in-out lg:transform-none
-        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-      `}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out lg:transform-none ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
       >
         {/* Mobile Close Button */}
         <div className="lg:hidden flex justify-end p-4">
@@ -76,16 +68,16 @@ const AdminLayout = ({ children }) => {
           </button>
         </div>
 
-        {/* Logo Section */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-              <i className="fas fa-shield-alt text-white text-lg"></i>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">InsurCheck</h1>
-              <p className="text-xs text-gray-500">Super Admin</p>
-            </div>
+        {/* Logo */}
+        <div className="p-6 border-b border-gray-200 flex items-center space-x-3">
+          <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+            <i className="fas fa-shield-alt text-white text-lg"></i>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">InsurCheck</h1>
+            <p className="text-xs text-gray-500 capitalize">
+              {user?.role || "super-admin"}
+            </p>
           </div>
         </div>
 
@@ -107,10 +99,10 @@ const AdminLayout = ({ children }) => {
           ))}
         </nav>
 
-        {/* User Section */}
+        {/* User Info */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
               <i className="fas fa-user text-white text-sm"></i>
             </div>
             <div className="flex-1 min-w-0">
@@ -124,28 +116,27 @@ const AdminLayout = ({ children }) => {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300 font-medium text-sm"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200 hover:border-red-300 font-medium text-sm"
           >
             <i className="fas fa-sign-out-alt"></i>
             <span>Logout</span>
           </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Main Content */}
+      {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            {/* Left */}
             <div className="flex items-center space-x-4">
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
                 <i className="fas fa-bars text-xl"></i>
               </button>
-
               <div className="min-w-0">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
                   {location.pathname.includes("dashboard")
@@ -160,18 +151,17 @@ const AdminLayout = ({ children }) => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
-                <i className="fas fa-clock"></i>
-                <span>{new Date().toLocaleTimeString()}</span>
-              </div>
+            {/* Right */}
+            <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
+              <i className="fas fa-clock"></i>
+              <span>{new Date().toLocaleTimeString()}</span>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-2 sm:p-4 lg:p-6 xl:p-8 bg-gray-50 overflow-auto min-h-0">
-          <div className="w-full max-w-7xl mx-auto min-h-full">{children}</div>
+        <main className="flex-1 bg-gray-50 overflow-auto">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">{children}</div>
         </main>
       </div>
     </div>
