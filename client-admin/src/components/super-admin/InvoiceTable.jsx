@@ -7,9 +7,11 @@ const InvoiceTable = ({
   onViewInvoice,
   onDownloadInvoice,
   onMarkPaid,
+  pagination = { page: 1, limit: 10, total: 0 },
+  totalInvoices = 0,
+  onPageChange,
+  onPageSizeChange,
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
@@ -55,18 +57,26 @@ const InvoiceTable = ({
     return status.toLowerCase() !== "paid" && new Date(dueDate) < new Date();
   };
 
-  // Pagination
-  const totalPages = Math.ceil(invoices.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentInvoices = invoices.slice(startIndex, endIndex);
-
+  // Backend pagination
+  const totalPages = Math.ceil(totalInvoices / pagination.limit);
+  const startIndex = (pagination.page - 1) * pagination.limit + 1;
+  const endIndex = Math.min(pagination.page * pagination.limit, totalInvoices);
+  
   const handlePrevPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
+    if (pagination.page > 1) {
+      onPageChange(pagination.page - 1);
+    }
   };
 
   const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    if (pagination.page < totalPages) {
+      onPageChange(pagination.page + 1);
+    }
+  };
+
+  const handlePageSizeChange = (event) => {
+    const newLimit = parseInt(event.target.value);
+    onPageSizeChange(newLimit);
   };
 
   if (!isLoading) { // change this when you add dynamic data
@@ -107,7 +117,7 @@ const InvoiceTable = ({
       {/* Mobile Card View */}
       <div className="block lg:hidden">
         <div className="p-4 space-y-4">
-          {currentInvoices.map((invoice) => (
+          {invoices.map((invoice) => (
             <div
               key={invoice.id}
               className="bg-gray-50 rounded-lg p-4 space-y-3"
@@ -206,7 +216,7 @@ const InvoiceTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {currentInvoices.map((invoice) => (
+            {invoices.map((invoice) => (
               <tr
                 key={invoice.id}
                 className="hover:bg-gray-50 transition-colors"
@@ -288,29 +298,43 @@ const InvoiceTable = ({
           <div className="flex-1 flex justify-between sm:hidden">
             <Button
               onClick={handlePrevPage}
-              disabled={currentPage === 1}
+              disabled={pagination.page === 1}
               className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               Previous
             </Button>
             <Button
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={pagination.page === totalPages}
               className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               Next
             </Button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
+            <div className="flex items-center space-x-4">
               <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
-                <span className="font-medium">
-                  {Math.min(endIndex, invoices.length)}
-                </span>{" "}
-                of <span className="font-medium">{invoices.length}</span>{" "}
+                Showing <span className="font-medium">{startIndex}</span> to{" "}
+                <span className="font-medium">{endIndex}</span>{" "}
+                of <span className="font-medium">{totalInvoices}</span>{" "}
                 results
               </p>
+              <div className="flex items-center space-x-2">
+                <label htmlFor="pageSize" className="text-sm text-gray-700">
+                  Show:
+                </label>
+                <select
+                  id="pageSize"
+                  value={pagination.limit}
+                  onChange={handlePageSizeChange}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
             <div>
               <nav
@@ -319,17 +343,17 @@ const InvoiceTable = ({
               >
                 <Button
                   onClick={handlePrevPage}
-                  disabled={currentPage === 1}
+                  disabled={pagination.page === 1}
                   className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 >
                   <i className="fas fa-chevron-left"></i>
                 </Button>
                 <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                  Page {currentPage} of {totalPages}
+                  Page {pagination.page} of {totalPages}
                 </span>
                 <Button
                   onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
+                  disabled={pagination.page === totalPages}
                   className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 >
                   <i className="fas fa-chevron-right"></i>

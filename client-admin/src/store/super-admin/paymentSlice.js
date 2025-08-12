@@ -131,6 +131,11 @@ const initialState = {
       start: '',
       end: ''
     }
+  },
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 0
   }
 };
 
@@ -143,7 +148,18 @@ const paymentSlice = createSlice({
       state.isLoading = true;
       state.error = null;
       if (action.payload) {
-        state.filters = action.payload;
+        const { page, limit, total, ...filters } = action.payload;
+        if (filters) {
+          state.filters = { ...state.filters, ...filters };
+        }
+        if (page !== undefined || limit !== undefined || total !== undefined) {
+          state.pagination = {
+            ...state.pagination,
+            ...(page !== undefined && { page }),
+            ...(limit !== undefined && { limit }),
+            ...(total !== undefined && { total })
+          };
+        }
       }
     },
     fetchInvoicesSuccess: (state, action) => {
@@ -153,6 +169,9 @@ const paymentSlice = createSlice({
       state.totalPaid = action.payload.summary.totalPaid;
       state.totalPending = action.payload.summary.totalPending;
       state.totalOverdue = action.payload.summary.totalOverdue;
+      if (action.payload.pagination) {
+        state.pagination = { ...state.pagination, ...action.payload.pagination };
+      }
       state.error = null;
     },
     fetchInvoicesFailure: (state, action) => {

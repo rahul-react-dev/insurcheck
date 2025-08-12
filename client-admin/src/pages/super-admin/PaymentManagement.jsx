@@ -25,6 +25,11 @@ const PaymentManagement = () => {
       end: ''
     }
   });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0
+  });
 
   const {
     invoices,
@@ -39,14 +44,14 @@ const PaymentManagement = () => {
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    dispatch(fetchInvoicesRequest(filters));
+    dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
     dispatch(fetchTenantsRequest());
   }, [dispatch]);
 
-  // Fetch invoices when filters change
+  // Fetch invoices when filters or pagination change
   useEffect(() => {
-    dispatch(fetchInvoicesRequest(filters));
-  }, [dispatch, filters]);
+    dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
+  }, [dispatch, filters, pagination]);
 
   
 
@@ -67,10 +72,20 @@ const PaymentManagement = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+    // Reset to first page when filters change
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleRefresh = () => {
-    dispatch(fetchInvoicesRequest(filters));
+    dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handlePageSizeChange = (newLimit) => {
+    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
   };
 
   const formatCurrency = (amount) => {
@@ -223,6 +238,10 @@ const PaymentManagement = () => {
           onViewInvoice={handleViewInvoice}
           onDownloadInvoice={handleDownloadInvoice}
           onMarkPaid={handleMarkPaid}
+          pagination={pagination}
+          totalInvoices={totalInvoices}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </Card>
 

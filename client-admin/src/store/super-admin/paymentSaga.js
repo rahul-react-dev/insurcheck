@@ -16,9 +16,11 @@ import {
 
 // Mock API functions - replace with actual API calls
 const api = {
-  fetchInvoices: async (filters) => {
+  fetchInvoices: async (params = {}) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const { page = 1, limit = 10, ...filters } = params;
 
     // Mock data - replace with actual API call
     const mockInvoices = [
@@ -163,7 +165,7 @@ const api = {
       filteredInvoices = filteredInvoices.filter(inv => inv.status === filters.status);
     }
 
-    // Calculate summary
+    // Calculate summary for all filtered invoices (before pagination)
     const summary = {
       totalInvoices: filteredInvoices.length,
       totalPaid: filteredInvoices
@@ -177,7 +179,24 @@ const api = {
         .reduce((sum, inv) => sum + inv.amount, 0)
     };
 
-    return { invoices: filteredInvoices, summary };
+    // Apply pagination (simulate backend pagination)
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
+
+    // Pagination info
+    const pagination = {
+      page,
+      limit,
+      total: filteredInvoices.length,
+      totalPages: Math.ceil(filteredInvoices.length / limit)
+    };
+
+    return { 
+      invoices: paginatedInvoices, 
+      summary, 
+      pagination 
+    };
   },
 
   fetchTenants: async () => {
