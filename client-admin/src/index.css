@@ -83,4 +83,26 @@
   .gradient-secondary {
     background: linear-gradient(135deg, var(--color-primary-base) 0%, var(--color-primary-accent) 100%);
   }
+
+  /* Responsive container utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Hide scrollbar for horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Custom responsive breakpoints */
+  @screen xs {
+    /* 475px and up */
+  }
 }
