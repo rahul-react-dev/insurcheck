@@ -29,8 +29,8 @@ const Input = forwardRef(({
     ${baseInputClasses}
     ${errorClasses}
     ${widthClasses}
-    ${leftIcon ? 'pl-10' : ''}
-    ${rightIcon ? 'pr-10' : ''}
+    ${leftIcon ? 'pl-10 sm:pl-12' : ''}
+    ${rightIcon ? 'pr-10 sm:pr-12' : ''}
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
@@ -45,8 +45,8 @@ const Input = forwardRef(({
       
       <div className="relative">
         {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <div className="text-gray-400 text-sm sm:text-base">
+          <div className="absolute inset-y-0 left-0 flex items-center justify-center w-10 sm:w-12 pointer-events-none z-10">
+            <div className="text-gray-400 text-sm sm:text-base flex items-center justify-center">
               {leftIcon}
             </div>
           </div>
@@ -59,12 +59,13 @@ const Input = forwardRef(({
         />
         
         {rightIcon && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <div className="text-gray-400 text-sm sm:text-base">
+          <div className="absolute inset-y-0 right-0 flex items-center justify-center w-10 sm:w-12 z-10">
+            <div className="text-gray-400 text-sm sm:text-base flex items-center justify-center cursor-pointer">
               {rightIcon}
             </div>
           </div>
-        )}
+        )}</div>
+      </div>
       </div>
       
       {error && (
