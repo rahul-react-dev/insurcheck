@@ -13,11 +13,9 @@ import {
   clearError,
 } from "../../store/super-admin/invoiceGenerationSlice";
 
-import AdminLayout from "../../layouts/AdminLayout";
-
 const InvoiceGeneration = () => {
   const dispatch = useDispatch();
-  const [activeTab, setActiveTab] = useState('configuration');
+  const [activeTab, setActiveTab] = useState("configuration");
   const [selectedTenant, setSelectedTenant] = useState(null);
 
   const {
@@ -32,7 +30,7 @@ const InvoiceGeneration = () => {
     totalFailed,
     summary,
     filters: storeFilters,
-    pagination: storePagination
+    pagination: storePagination,
   } = useSelector((state) => state.invoiceGeneration);
 
   const [filters, setFilters] = useState(storeFilters);
@@ -40,7 +38,7 @@ const InvoiceGeneration = () => {
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    console.log('🔄 InvoiceGeneration component mounted, fetching data...');
+    console.log("🔄 InvoiceGeneration component mounted, fetching data...");
     dispatch(fetchInvoiceConfigRequest());
     dispatch(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
   }, [dispatch]);
@@ -61,48 +59,66 @@ const InvoiceGeneration = () => {
   }, [dispatch, error]);
 
   const handleConfigUpdate = (tenantId, config) => {
-    console.log('🔄 Updating config for tenant:', tenantId, config);
+    console.log("🔄 Updating config for tenant:", tenantId, config);
     dispatch(updateInvoiceConfigRequest({ tenantId, config }));
   };
 
   const handleManualGenerate = (tenantId) => {
-    if (window.confirm("Are you sure you want to generate invoice manually for this tenant?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to generate invoice manually for this tenant?",
+      )
+    ) {
       dispatch(generateInvoiceRequest(tenantId));
     }
   };
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    setPagination(prev => ({ ...prev, page: 1 }));
-    dispatch(fetchInvoiceLogsRequest({ ...newFilters, page: 1, limit: pagination.limit }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    dispatch(
+      fetchInvoiceLogsRequest({
+        ...newFilters,
+        page: 1,
+        limit: pagination.limit,
+      }),
+    );
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-    dispatch(fetchInvoiceLogsRequest({ ...filters, page: newPage, limit: pagination.limit }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
+    dispatch(
+      fetchInvoiceLogsRequest({
+        ...filters,
+        page: newPage,
+        limit: pagination.limit,
+      }),
+    );
   };
 
   const handlePageSizeChange = (newSize) => {
-    setPagination(prev => ({ ...prev, limit: newSize, page: 1 }));
-    dispatch(fetchInvoiceLogsRequest({
-      ...filters,
-      page: 1,
-      limit: newSize
-    }));
+    setPagination((prev) => ({ ...prev, limit: newSize, page: 1 }));
+    dispatch(
+      fetchInvoiceLogsRequest({
+        ...filters,
+        page: 1,
+        limit: newSize,
+      }),
+    );
   };
 
   const handleRetryGeneration = (logId) => {
-    console.log('🔄 Retrying generation for log:', logId);
+    console.log("🔄 Retrying generation for log:", logId);
     dispatch(retryInvoiceGenerationRequest(logId));
   };
 
   const handleViewDetails = (log) => {
     // TODO: Implement log details modal
-    console.log('Viewing log details:', log);
+    console.log("Viewing log details:", log);
   };
 
   const handleRefresh = () => {
-    if (activeTab === 'configuration') {
+    if (activeTab === "configuration") {
       dispatch(fetchInvoiceConfigRequest());
     } else {
       dispatch(fetchInvoiceLogsRequest({ ...filters, ...pagination }));
@@ -117,13 +133,12 @@ const InvoiceGeneration = () => {
   };
 
   const tabs = [
-    { id: 'configuration', name: 'Invoice Configuration', icon: 'fas fa-cog' },
-    { id: 'logs', name: 'Generation Logs', icon: 'fas fa-list-ul' }
+    { id: "configuration", name: "Invoice Configuration", icon: "fas fa-cog" },
+    { id: "logs", name: "Generation Logs", icon: "fas fa-list-ul" },
   ];
 
   return (
-    <AdminLayout>
-      <div className="min-h-full">
+    <div className="min-h-full">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl p-4 sm:p-6 lg:p-8 text-white mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -132,7 +147,8 @@ const InvoiceGeneration = () => {
               Auto-Generate Invoices
             </h1>
             <p className="text-purple-100 text-sm sm:text-base lg:text-lg">
-              Configure automatic invoice generation and monitor billing processes
+              Configure automatic invoice generation and monitor billing
+              processes
             </p>
             <div className="flex items-center mt-3 sm:mt-4 text-xs sm:text-sm">
               <div className="flex items-center space-x-2">
@@ -156,7 +172,9 @@ const InvoiceGeneration = () => {
             <div className="flex items-start space-x-3 flex-1 min-w-0">
               <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
               <div className="min-w-0">
-                <h3 className="text-red-800 font-medium text-sm sm:text-base">Error</h3>
+                <h3 className="text-red-800 font-medium text-sm sm:text-base">
+                  Error
+                </h3>
                 <p className="text-red-700 text-sm break-words">{error}</p>
               </div>
             </div>
@@ -180,8 +198,12 @@ const InvoiceGeneration = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Total Generated</p>
-              <p className="text-2xl font-bold text-gray-900">{summary?.totalGenerated || 0}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Total Generated
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {summary?.totalGenerated || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -194,8 +216,12 @@ const InvoiceGeneration = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Successfully Sent</p>
-              <p className="text-2xl font-bold text-green-600">{summary?.totalSent || 0}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Successfully Sent
+              </p>
+              <p className="text-2xl font-bold text-green-600">
+                {summary?.totalSent || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -208,8 +234,12 @@ const InvoiceGeneration = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Failed</p>
-              <p className="text-2xl font-bold text-red-600">{summary?.totalFailed || 0}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Failed
+              </p>
+              <p className="text-2xl font-bold text-red-600">
+                {summary?.totalFailed || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -222,7 +252,9 @@ const InvoiceGeneration = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Total Amount</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Total Amount
+              </p>
               <p className="text-2xl font-bold text-purple-600">
                 {formatCurrency(summary?.totalAmount || 0)}
               </p>
@@ -241,8 +273,8 @@ const InvoiceGeneration = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`${
                   activeTab === tab.id
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? "border-purple-500 text-purple-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm sm:text-base flex items-center space-x-2`}
               >
                 <i className={tab.icon}></i>
@@ -256,10 +288,9 @@ const InvoiceGeneration = () => {
         <div className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="text-sm text-gray-600">
-              {activeTab === 'configuration'
-                ? 'Configure automatic invoice generation settings for each tenant'
-                : 'Monitor invoice generation logs and track delivery status'
-              }
+              {activeTab === "configuration"
+                ? "Configure automatic invoice generation settings for each tenant"
+                : "Monitor invoice generation logs and track delivery status"}
             </div>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
               <Button
@@ -270,9 +301,9 @@ const InvoiceGeneration = () => {
                 <i className="fas fa-sync-alt mr-2"></i>
                 Refresh
               </Button>
-              {activeTab === 'configuration' && (
+              {activeTab === "configuration" && (
                 <Button
-                  onClick={() => dispatch(generateInvoiceRequest('all'))}
+                  onClick={() => dispatch(generateInvoiceRequest("all"))}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm"
                   disabled={isLoading}
                 >
@@ -286,7 +317,7 @@ const InvoiceGeneration = () => {
 
         {/* Tab Content */}
         <div className="p-4 sm:p-6">
-          {activeTab === 'configuration' ? (
+          {activeTab === "configuration" ? (
             <InvoiceGenerationConfig
               configurations={configurations}
               tenants={tenants}
@@ -310,7 +341,6 @@ const InvoiceGeneration = () => {
         </div>
       </div>
     </div>
-    </AdminLayout>
   );
 };
 
