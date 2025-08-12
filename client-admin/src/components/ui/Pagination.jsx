@@ -1,3 +1,4 @@
+
 import React from "react";
 import Button from "./Button";
 
@@ -48,14 +49,14 @@ const Pagination = ({
         <Button
           onClick={handlePrevPage}
           disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 border border-gray-400 text-sm text-gray-900 font-semibold rounded-md bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-300 disabled:hover:bg-white disabled:hover:text-gray-400 disabled:hover:border-gray-300"
+          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm text-gray-700 font-semibold rounded-md bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
         >
           Previous
         </Button>
         <Button
           onClick={handleNextPage}
           disabled={currentPage === totalPages}
-          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-400 text-sm font-semibold rounded-md text-gray-900 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-300 disabled:hover:bg-white disabled:hover:text-gray-400 disabled:hover:border-gray-300"
+          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
         >
           Next
         </Button>
@@ -64,7 +65,7 @@ const Pagination = ({
       {/* Desktop pagination */}
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center space-x-4">
-          <p className="text-sm text-gray-800">
+          <p className="text-sm text-gray-700">
             Showing <span className="font-semibold text-gray-900">{startIndex}</span> to{" "}
             <span className="font-semibold text-gray-900">{endIndex}</span> of{" "}
             <span className="font-semibold text-gray-900">{totalItems}</span> results
@@ -72,14 +73,14 @@ const Pagination = ({
 
           {showItemsPerPage && onItemsPerPageChange && (
             <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-sm text-gray-800 font-medium">
+              <label htmlFor="pageSize" className="text-sm text-gray-700 font-medium">
                 Show:
               </label>
               <select
                 id="pageSize"
                 value={itemsPerPage}
                 onChange={handlePageSizeChange}
-                className="border border-gray-400 rounded px-2 py-1 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {itemsPerPageOptions.map((option) => (
                   <option key={option} value={option}>
@@ -87,7 +88,7 @@ const Pagination = ({
                   </option>
                 ))}
               </select>
-              <span className="text-sm text-gray-800 font-medium">per page</span>
+              <span className="text-sm text-gray-700 font-medium">per page</span>
             </div>
           )}
         </div>
@@ -100,7 +101,7 @@ const Pagination = ({
             <Button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-400 bg-white text-sm font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-300 disabled:hover:bg-white disabled:hover:text-gray-400 disabled:hover:border-gray-300"
+              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
             >
               <span className="sr-only">Previous</span>
               <i className="fas fa-chevron-left h-4 w-4" aria-hidden="true"></i>
@@ -133,7 +134,7 @@ const Pagination = ({
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === 1
                         ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
-                        : "bg-white border-gray-400 text-gray-900 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 font-semibold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-semibold"
                     }`}
                   >
                     1
@@ -144,7 +145,7 @@ const Pagination = ({
                   pages.push(
                     <span
                       key="ellipsis1"
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-400 bg-white text-sm font-medium text-gray-800"
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
                     >
                       <span className="font-bold">...</span>
                     </span>,
@@ -163,7 +164,7 @@ const Pagination = ({
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === i
                         ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
-                        : "bg-white border-gray-400 text-gray-900 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 font-semibold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-semibold"
                     }`}
                   >
                     {i}
@@ -177,7 +178,7 @@ const Pagination = ({
                   pages.push(
                     <span
                       key="ellipsis2"
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-400 bg-white text-sm font-medium text-gray-800"
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
                     >
                       <span className="font-bold">...</span>
                     </span>,
@@ -191,7 +192,7 @@ const Pagination = ({
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === totalPages
                         ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
-                        : "bg-white border-gray-400 text-gray-900 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 font-semibold"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-semibold"
                     }`}
                   >
                     {totalPages}
@@ -205,7 +206,7 @@ const Pagination = ({
             <Button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-400 bg-white text-sm font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-300 disabled:hover:bg-white disabled:hover:text-gray-400 disabled:hover:border-gray-300"
+              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
             >
               <span className="sr-only">Next</span>
               <span className="mr-1 hidden sm:inline font-semibold">Next</span>
