@@ -1,10 +1,9 @@
-
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import Button from '../../components/ui/Button';
-import ActivityLogFilters from '../../components/super-admin/ActivityLogFilters';
-import ActivityLogTable from '../../components/super-admin/ActivityLogTable';
-import ActivityLogDetailModal from '../../components/super-admin/ActivityLogDetailModal';
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Button from "../../components/ui/Button";
+import ActivityLogFilters from "../../components/super-admin/ActivityLogFilters";
+import ActivityLogTable from "../../components/super-admin/ActivityLogTable";
+import ActivityLogDetailModal from "../../components/super-admin/ActivityLogDetailModal";
 import {
   fetchActivityLogsRequest,
   setFilters,
@@ -15,8 +14,8 @@ import {
   setSelectedLog,
   closeDetailModal,
   exportActivityLogsRequest,
-  clearErrors
-} from '../../store/super-admin/activityLogSlice';
+  clearErrors,
+} from "../../store/super-admin/activityLogSlice";
 
 const TenantActivityLogs = () => {
   const dispatch = useDispatch();
@@ -31,7 +30,7 @@ const TenantActivityLogs = () => {
     selectedLog,
     isDetailModalOpen,
     isExporting,
-    exportError
+    exportError,
   } = useSelector((state) => state.activityLog);
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -74,7 +73,7 @@ const TenantActivityLogs = () => {
   };
 
   const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
     dispatch(clearErrors());
   };
 
@@ -95,7 +94,7 @@ const TenantActivityLogs = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
               <div className="flex-1 min-w-0">
@@ -104,9 +103,10 @@ const TenantActivityLogs = () => {
                   <span className="truncate">Tenant Activity Logs</span>
                 </h1>
                 <p className="mt-2 text-gray-600 text-sm sm:text-base">
-                  Monitor and track all tenant admin and user activities across the platform
+                  Monitor and track all tenant admin and user activities across
+                  the platform
                 </p>
-                
+
                 {/* Stats */}
                 <div className="mt-3 flex flex-wrap items-center space-x-4 text-sm text-gray-500">
                   <span className="flex items-center">
@@ -116,7 +116,8 @@ const TenantActivityLogs = () => {
                   {getFilterCount() > 0 && (
                     <span className="flex items-center text-blue-600">
                       <i className="fas fa-filter mr-1"></i>
-                      {getFilterCount()} filter{getFilterCount() !== 1 ? 's' : ''} active
+                      {getFilterCount()} filter
+                      {getFilterCount() !== 1 ? "s" : ""} active
                     </span>
                   )}
                   <span className="flex items-center">
@@ -125,14 +126,16 @@ const TenantActivityLogs = () => {
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <Button
                   onClick={handleRefresh}
                   disabled={isLoading}
                   className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
                 >
-                  <i className={`fas fa-sync-alt mr-2 ${isLoading ? 'animate-spin' : ''}`}></i>
+                  <i
+                    className={`fas fa-sync-alt mr-2 ${isLoading ? "animate-spin" : ""}`}
+                  ></i>
                   Refresh
                 </Button>
                 <Button
@@ -140,7 +143,9 @@ const TenantActivityLogs = () => {
                   disabled={isExporting || isLoading}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
                 >
-                  <i className={`fas fa-download mr-2 ${isExporting ? 'animate-spin' : ''}`}></i>
+                  <i
+                    className={`fas fa-download mr-2 ${isExporting ? "animate-spin" : ""}`}
+                  ></i>
                   Export CSV
                 </Button>
               </div>
@@ -170,7 +175,7 @@ const TenantActivityLogs = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Filters */}
           <ActivityLogFilters
@@ -179,7 +184,7 @@ const TenantActivityLogs = () => {
             onClearFilters={handleClearFilters}
             isLoading={isLoading}
           />
-          
+
           {/* Table */}
           <ActivityLogTable
             logs={activityLogs}

@@ -13,21 +13,21 @@ import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SubscriptionManagement from "./pages/super-admin/SubscriptionManagement";
 import PaymentManagement from "./pages/super-admin/PaymentManagement";
-import InvoiceGeneration from './pages/super-admin/InvoiceGeneration';
-import TenantActivityLogs from './pages/super-admin/TenantActivityLogs';
+import InvoiceGeneration from "./pages/super-admin/InvoiceGeneration";
+import TenantActivityLogs from "./pages/super-admin/TenantActivityLogs";
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
-import store from './store';
+import store from "./store";
 import TenantManagement from "./pages/super-admin/TenantManagement"; // Import the new TenantManagement component
 
 function App() {
   // Debug store configuration
   React.useEffect(() => {
     const state = store.getState();
-    console.log('🏪 App: Store state keys:', Object.keys(state));
-    console.log('💳 App: Payment state exists:', !!state.payment);
-    console.log('🔍 App: Initial payment state:', state.payment);
+    console.log("🏪 App: Store state keys:", Object.keys(state));
+    console.log("💳 App: Payment state exists:", !!state.payment);
+    console.log("🔍 App: Initial payment state:", state.payment);
   }, []);
 
   return (
@@ -44,7 +44,7 @@ function App() {
               path="/super-admin/dashboard"
               element={
                 <ProtectedRoute>
-                    <SuperAdminDashboard />
+                  <SuperAdminDashboard />
                 </ProtectedRoute>
               }
             />
@@ -52,7 +52,7 @@ function App() {
               path="/super-admin/tenants"
               element={
                 <ProtectedRoute>
-                    <TenantManagement />
+                  <TenantManagement />
                 </ProtectedRoute>
               }
             />
@@ -60,7 +60,7 @@ function App() {
               path="/super-admin/subscriptions"
               element={
                 <ProtectedRoute>
-                    <SubscriptionManagement />
+                  <SubscriptionManagement />
                 </ProtectedRoute>
               }
             />
@@ -68,7 +68,7 @@ function App() {
               path="/super-admin/payments"
               element={
                 <ProtectedRoute>
-                    <PaymentManagement />
+                  <PaymentManagement />
                 </ProtectedRoute>
               }
             />
@@ -76,13 +76,17 @@ function App() {
               path="/super-admin/invoice-generation"
               element={
                 <ProtectedRoute>
-                    <InvoiceGeneration />
+                  <InvoiceGeneration />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/super-admin/activity-logs"
-              element={<TenantActivityLogs />}
+              element={
+                <ProtectedRoute>
+                  <TenantActivityLogs />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/super-admin/forgot-password"
