@@ -6,49 +6,51 @@ const ActivityLogTable = ({
   logs = [],
   isLoading = false,
   pagination = { page: 1, limit: 10, total: 0, totalPages: 0 },
-  sortBy = 'timestamp',
-  sortOrder = 'desc',
+  sortBy = "timestamp",
+  sortOrder = "desc",
   onPageChange,
   onPageSizeChange,
   onSort,
   onLogDetails,
-  className = ''
+  className = "",
 }) => {
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
     });
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
       success: {
-        color: 'bg-green-100 text-green-800',
-        icon: 'fas fa-check-circle'
+        color: "bg-green-100 text-green-800",
+        icon: "fas fa-check-circle",
       },
       failed: {
-        color: 'bg-red-100 text-red-800',
-        icon: 'fas fa-exclamation-circle'
+        color: "bg-red-100 text-red-800",
+        icon: "fas fa-exclamation-circle",
       },
       warning: {
-        color: 'bg-yellow-100 text-yellow-800',
-        icon: 'fas fa-exclamation-triangle'
+        color: "bg-yellow-100 text-yellow-800",
+        icon: "fas fa-exclamation-triangle",
       },
       pending: {
-        color: 'bg-blue-100 text-blue-800',
-        icon: 'fas fa-clock'
-      }
+        color: "bg-blue-100 text-blue-800",
+        icon: "fas fa-clock",
+      },
     };
 
     const config = statusConfig[status.toLowerCase()] || statusConfig.pending;
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}
+      >
         <i className={`${config.icon} mr-1`}></i>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
@@ -57,39 +59,44 @@ const ActivityLogTable = ({
 
   const getSeverityBadge = (severity) => {
     const severityConfig = {
-      low: 'bg-gray-100 text-gray-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      high: 'bg-red-100 text-red-800',
-      critical: 'bg-red-200 text-red-900'
+      low: "bg-gray-100 text-gray-800",
+      medium: "bg-yellow-100 text-yellow-800",
+      high: "bg-red-100 text-red-800",
+      critical: "bg-red-200 text-red-900",
     };
 
     const color = severityConfig[severity?.toLowerCase()] || severityConfig.low;
 
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${color}`}>
-        {severity || 'Low'}
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${color}`}
+      >
+        {severity || "Low"}
       </span>
     );
   };
 
   const getUserTypeBadge = (userType) => {
     const typeConfig = {
-      admin: 'bg-purple-100 text-purple-800',
-      user: 'bg-blue-100 text-blue-800',
-      system: 'bg-gray-100 text-gray-800'
+      admin: "bg-purple-100 text-purple-800",
+      user: "bg-blue-100 text-blue-800",
+      system: "bg-gray-100 text-gray-800",
     };
 
     const color = typeConfig[userType?.toLowerCase()] || typeConfig.user;
 
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${color}`}>
-        {userType || 'User'}
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${color}`}
+      >
+        {userType || "User"}
       </span>
     );
   };
 
   const handleSort = (field) => {
-    const newSortOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc';
+    const newSortOrder =
+      sortBy === field && sortOrder === "asc" ? "desc" : "asc";
     onSort(field, newSortOrder);
   };
 
@@ -97,9 +104,11 @@ const ActivityLogTable = ({
     if (sortBy !== field) {
       return <i className="fas fa-sort text-gray-400 ml-1"></i>;
     }
-    return sortOrder === 'asc' 
-      ? <i className="fas fa-sort-up text-blue-500 ml-1"></i>
-      : <i className="fas fa-sort-down text-blue-500 ml-1"></i>;
+    return sortOrder === "asc" ? (
+      <i className="fas fa-sort-up text-blue-500 ml-1"></i>
+    ) : (
+      <i className="fas fa-sort-down text-blue-500 ml-1"></i>
+    );
   };
 
   // Show loading skeleton
@@ -110,7 +119,10 @@ const ActivityLogTable = ({
         <div className="block xl:hidden">
           <div className="p-4 space-y-4">
             {Array.from({ length: pagination?.limit || 10 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 animate-pulse">
+              <div
+                key={index}
+                className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 animate-pulse"
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="h-4 bg-gray-200 rounded w-32"></div>
                   <div className="h-6 bg-gray-200 rounded-full w-20"></div>
@@ -134,26 +146,56 @@ const ActivityLogTable = ({
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['Log ID', 'Tenant Name', 'Admin/User Email', 'Action Performed', 'Timestamp', 'IP Address', 'Status', 'Actions'].map((header) => (
-                  <th key={header} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {[
+                  "Log ID",
+                  "Tenant Name",
+                  "Admin/User Email",
+                  "Action Performed",
+                  "Timestamp",
+                  "IP Address",
+                  "Status",
+                  "Actions",
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     {header}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {Array.from({ length: pagination?.limit || 10 }).map((_, index) => (
-                <tr key={index} className="animate-pulse">
-                  <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
-                  <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-32"></div></td>
-                  <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-48"></div></td>
-                  <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-32"></div></td>
-                  <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-32"></div></td>
-                  <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-24"></div></td>
-                  <td className="px-6 py-4"><div className="h-6 bg-gray-200 rounded-full w-20"></div></td>
-                  <td className="px-6 py-4"><div className="h-8 bg-gray-200 rounded w-16"></div></td>
-                </tr>
-              ))}
+              {Array.from({ length: pagination?.limit || 10 }).map(
+                (_, index) => (
+                  <tr key={index} className="animate-pulse">
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-48"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    </td>
+                  </tr>
+                ),
+              )}
             </tbody>
           </table>
         </div>
@@ -170,7 +212,8 @@ const ActivityLogTable = ({
             No Activity Logs Found
           </h3>
           <p className="text-gray-500 text-sm sm:text-base">
-            No tenant activity logs match your current filters. Try adjusting your search criteria.
+            No tenant activity logs match your current filters. Try adjusting
+            your search criteria.
           </p>
         </div>
       </div>
@@ -183,7 +226,10 @@ const ActivityLogTable = ({
       <div className="block xl:hidden">
         <div className="p-4 space-y-4">
           {logs.map((log) => (
-            <div key={log.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 space-y-3">
+            <div
+              key={log.id}
+              className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 space-y-3"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-mono font-medium text-blue-600">
@@ -197,19 +243,27 @@ const ActivityLogTable = ({
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Tenant:</span>
-                  <span className="text-sm font-medium text-gray-900">{log.tenantName}</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {log.tenantName}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">User:</span>
-                  <span className="text-sm text-gray-900 truncate max-w-48">{log.userEmail}</span>
+                  <span className="text-sm text-gray-900 truncate max-w-48">
+                    {log.userEmail}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Action:</span>
-                  <span className="text-sm font-medium text-gray-900">{log.actionPerformed}</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {log.actionPerformed}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Time:</span>
-                  <span className="text-sm text-gray-900">{formatDate(log.timestamp)}</span>
+                  <span className="text-sm text-gray-900">
+                    {formatDate(log.timestamp)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">IP:</span>
@@ -240,22 +294,22 @@ const ActivityLogTable = ({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th 
+              <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('logId')}
+                onClick={() => handleSort("logId")}
               >
                 <div className="flex items-center">
                   Log ID
-                  {getSortIcon('logId')}
+                  {getSortIcon("logId")}
                 </div>
               </th>
-              <th 
+              <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('tenantName')}
+                onClick={() => handleSort("tenantName")}
               >
                 <div className="flex items-center">
                   Tenant Name
-                  {getSortIcon('tenantName')}
+                  {getSortIcon("tenantName")}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -264,13 +318,13 @@ const ActivityLogTable = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Action Performed
               </th>
-              <th 
+              <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('timestamp')}
+                onClick={() => handleSort("timestamp")}
               >
                 <div className="flex items-center">
                   Timestamp
-                  {getSortIcon('timestamp')}
+                  {getSortIcon("timestamp")}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -293,7 +347,9 @@ const ActivityLogTable = ({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 font-medium">{log.tenantName}</div>
+                  <div className="text-sm text-gray-900 font-medium">
+                    {log.tenantName}
+                  </div>
                   <div className="text-xs text-gray-500">{log.tenantId}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -303,14 +359,20 @@ const ActivityLogTable = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{log.actionPerformed}</div>
-                  <div className="text-xs text-gray-500 max-w-xs truncate">{log.actionDetails}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {log.actionPerformed}
+                  </div>
+                  <div className="text-xs text-gray-500 max-w-xs truncate">
+                    {log.actionDetails}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(log.timestamp)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-mono text-gray-900">{log.ipAddress}</span>
+                  <span className="text-sm font-mono text-gray-900">
+                    {log.ipAddress}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex flex-col space-y-1">
@@ -335,15 +397,15 @@ const ActivityLogTable = ({
 
       {/* Pagination */}
       {(() => {
-        console.log('ActivityLogTable - Pagination render check:', {
+        console.log("ActivityLogTable - Pagination render check:", {
           isLoading,
           logsLength: logs?.length,
           pagination,
-          shouldRender: !isLoading && pagination && pagination.total > 0
+          shouldRender: !isLoading && pagination && pagination.total > 0,
         });
         return null;
       })()}
-      
+
       {!isLoading && pagination && pagination.total > 0 && (
         <div className="border-t border-gray-200 bg-white px-4 py-4">
           <Pagination
@@ -354,7 +416,7 @@ const ActivityLogTable = ({
             onPageChange={onPageChange}
             onItemsPerPageChange={onPageSizeChange}
             showItemsPerPage={true}
-            itemsPerPageOptions={[10, 25, 50, 100]}
+            itemsPerPageOptions={[5, 10, 25, 50, 100]}
           />
         </div>
       )}
