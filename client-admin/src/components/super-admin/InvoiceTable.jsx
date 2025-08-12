@@ -69,7 +69,7 @@ const InvoiceTable = ({
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
-  if (isLoading) {
+  if (!isLoading) { // change this when you add dynamic data
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
