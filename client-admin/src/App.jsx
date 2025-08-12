@@ -21,6 +21,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
 import store from "./store";
 import TenantManagement from "./pages/super-admin/TenantManagement"; // Import the new TenantManagement component
+import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsManagement';
 
 function App() {
   // Debug store configuration
@@ -100,6 +101,14 @@ function App() {
             <Route
               path="/super-admin/forgot-password"
               element={<ForgotPassword />}
+            />
+            <Route
+              path="/super-admin/deleted-documents"
+              element={
+                <ProtectedRoute>
+                  <DeletedDocumentsManagement />
+                </ProtectedRoute>
+              }
             />
 
             {/* Default redirect */}

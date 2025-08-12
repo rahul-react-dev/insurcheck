@@ -7,6 +7,7 @@ import invoiceGenerationSaga from '../super-admin/invoiceGenerationSaga';
 import tenantSaga from '../super-admin/tenantSaga';
 import activityLogSaga from '../super-admin/activityLogSaga';
 import tenantStateSaga from '../super-admin/tenantStateSaga';
+import deletedDocumentsSaga from '../super-admin/deletedDocumentsSaga';
 
 export default function* rootSaga() {
   console.log('🔄 Root saga initialized');
@@ -20,6 +21,7 @@ export default function* rootSaga() {
     fork(tenantSaga),
     fork(activityLogSaga),
     fork(tenantStateSaga),
+    fork(deletedDocumentsSaga),
   ]);
   console.log('✅ All sagas forked successfully');
 }
