@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../components/ui/Button';
@@ -38,10 +37,16 @@ const PaymentManagement = () => {
     totalOverdue
   } = useSelector(state => state.payment);
 
+  // Fetch initial data when component mounts
   useEffect(() => {
     dispatch(fetchInvoicesRequest(filters));
     dispatch(fetchTenantsRequest());
   }, [dispatch]);
+
+  // Fetch invoices when filters change
+  useEffect(() => {
+    dispatch(fetchInvoicesRequest(filters));
+  }, [dispatch, filters]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);

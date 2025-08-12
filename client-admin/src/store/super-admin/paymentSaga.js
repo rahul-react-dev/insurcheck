@@ -54,6 +54,7 @@ const api = {
         tenantEmail: 'billing@safeguard.com',
         tenantCompany: 'SafeGuard Insurance Ltd.',
         tenantPhone: '+1 (555) 987-6543',
+        tenantAddress: '456 Oak Avenue, Chicago, IL 60601',
         amount: 99.99,
         planName: 'Professional Plan',
         billingPeriod: 'Monthly',
@@ -72,6 +73,8 @@ const api = {
         tenantName: 'Quick Insurance',
         tenantEmail: 'finance@quickinsurance.com',
         tenantCompany: 'Quick Insurance Inc.',
+        tenantPhone: '+1 (555) 456-7890',
+        tenantAddress: '789 Pine Street, Los Angeles, CA 90210',
         amount: 29.99,
         planName: 'Basic Plan',
         billingPeriod: 'Monthly',
@@ -82,6 +85,69 @@ const api = {
           { description: 'Basic Plan - Monthly', amount: 29.99 }
         ],
         notes: 'Payment overdue. Follow-up required.'
+      },
+      {
+        id: '4',
+        invoiceId: 'INV-2024-004',
+        tenantName: 'Premium Insurance Group',
+        tenantEmail: 'accounts@premium.com',
+        tenantCompany: 'Premium Insurance Group LLC',
+        tenantPhone: '+1 (555) 321-0987',
+        tenantAddress: '321 Elm Drive, Miami, FL 33101',
+        amount: 499.99,
+        planName: 'Enterprise Pro Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-01-15',
+        dueDate: '2024-02-15',
+        status: 'pending',
+        breakdown: [
+          { description: 'Enterprise Pro Plan - Monthly', amount: 499.99 },
+          { description: 'Tax', amount: 0 }
+        ],
+        notes: 'New premium plan subscription.'
+      },
+      {
+        id: '5',
+        invoiceId: 'INV-2024-005',
+        tenantName: 'Reliable Insurance',
+        tenantEmail: 'billing@reliable.com',
+        tenantCompany: 'Reliable Insurance Corp.',
+        tenantPhone: '+1 (555) 654-3210',
+        tenantAddress: '654 Maple Lane, Seattle, WA 98101',
+        amount: 149.99,
+        planName: 'Professional Plus Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-01-10',
+        dueDate: '2024-02-10',
+        status: 'paid',
+        paidDate: '2024-01-20',
+        breakdown: [
+          { description: 'Professional Plus Plan - Monthly', amount: 149.99 },
+          { description: 'Tax', amount: 0 }
+        ],
+        paymentHistory: [
+          { type: 'Bank Transfer', date: '2024-01-20', amount: 149.99 }
+        ],
+        notes: 'Payment received via bank transfer.'
+      },
+      {
+        id: '6',
+        invoiceId: 'INV-2024-006',
+        tenantName: 'SecureLife Insurance',
+        tenantEmail: 'finance@securelife.com',
+        tenantCompany: 'SecureLife Insurance Inc.',
+        tenantPhone: '+1 (555) 789-0123',
+        tenantAddress: '987 Cedar Court, Boston, MA 02101',
+        amount: 199.99,
+        planName: 'Professional Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2023-11-15',
+        dueDate: '2023-12-15',
+        status: 'overdue',
+        breakdown: [
+          { description: 'Professional Plan - Monthly', amount: 199.99 }
+        ],
+        notes: 'Multiple payment reminders sent. Urgent follow-up required.'
       }
     ];
 
