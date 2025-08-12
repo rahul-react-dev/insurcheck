@@ -18,9 +18,10 @@ import {
 const api = {
   fetchInvoices: async (params = {}) => {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const { page = 1, limit = 5, ...filters } = params;
+    console.log('🔍 Mock API called with params:', { page, limit, ...filters });
 
     // Mock data - replace with actual API call
     const mockInvoices = [
@@ -472,11 +473,17 @@ const api = {
 
     // Pagination info
     const pagination = {
-      page,
-      limit,
+      page: parseInt(page),
+      limit: parseInt(limit),
       total: filteredInvoices.length,
       totalPages: Math.ceil(filteredInvoices.length / limit)
     };
+
+    console.log('📊 Mock API returning:', {
+      invoices: paginatedInvoices.length,
+      pagination,
+      summary
+    });
 
     return {
       invoices: paginatedInvoices,
@@ -549,11 +556,11 @@ const api = {
 // Saga functions
 function* fetchInvoicesSaga(action) {
   try {
-    const params = action.payload || {};
-    console.log('📡 Fetching invoices with params:', params);
+    const params = action.payload || { page: 1, limit: 5 };
+    console.log('📡 fetchInvoicesSaga triggered with params:', params);
     
     const response = yield call(api.fetchInvoices, params);
-    console.log('✅ Invoices fetched successfully:', response);
+    console.log('✅ API response received:', response);
     
     // Ensure response has required structure
     const validatedResponse = {
@@ -567,9 +574,10 @@ function* fetchInvoicesSaga(action) {
       pagination: response.pagination || { page: 1, limit: 5, total: 0, totalPages: 0 }
     };
     
+    console.log('📤 Dispatching success with:', validatedResponse);
     yield put(fetchInvoicesSuccess(validatedResponse));
   } catch (error) {
-    console.error('❌ Error fetching invoices:', error);
+    console.error('❌ Error in fetchInvoicesSaga:', error);
     yield put(fetchInvoicesFailure(error.message || 'Failed to fetch invoices'));
   }
 }

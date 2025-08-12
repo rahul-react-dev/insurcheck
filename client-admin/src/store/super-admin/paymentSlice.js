@@ -33,19 +33,20 @@ const paymentSlice = createSlice({
   reducers: {
     // Fetch invoices
     fetchInvoicesRequest: (state, action) => {
+      console.log('📦 fetchInvoicesRequest reducer called with:', action.payload);
       state.isLoading = true;
       state.error = null;
       
-      // Clear invoices only on initial load or filter change
-      if (!state.hasInitialLoad || (action.payload && Object.keys(action.payload).some(key => ['tenantName', 'status', 'dateRange'].includes(key)))) {
-        state.invoices = [];
-      }
-      
+      // Update pagination and filters from action payload
       if (action.payload) {
         const { page, limit, total, ...filters } = action.payload;
+        
+        // Update filters if provided
         if (filters && Object.keys(filters).length > 0) {
           state.filters = { ...state.filters, ...filters };
         }
+        
+        // Update pagination if provided
         if (page !== undefined || limit !== undefined || total !== undefined) {
           state.pagination = {
             ...state.pagination,
@@ -57,6 +58,7 @@ const paymentSlice = createSlice({
       }
     },
     fetchInvoicesSuccess: (state, action) => {
+      console.log('✅ fetchInvoicesSuccess reducer called with:', action.payload);
       state.isLoading = false;
       state.hasInitialLoad = true;
       state.invoices = action.payload.invoices || [];
@@ -64,9 +66,12 @@ const paymentSlice = createSlice({
       state.totalPaid = action.payload.summary?.totalPaid || 0;
       state.totalPending = action.payload.summary?.totalPending || 0;
       state.totalOverdue = action.payload.summary?.totalOverdue || 0;
+      
+      // Update pagination with response data
       if (action.payload.pagination) {
         state.pagination = { ...state.pagination, ...action.payload.pagination };
       }
+      
       state.error = null;
     },
     fetchInvoicesFailure: (state, action) => {

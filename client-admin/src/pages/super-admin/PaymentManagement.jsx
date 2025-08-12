@@ -55,10 +55,11 @@ const PaymentManagement = () => {
 
   // Fetch initial data when component mounts
   useEffect(() => {
+    console.log('🚀 Initial fetch triggered with pagination:', pagination);
     dispatch(
       fetchInvoicesRequest({
-        page: pagination.page,
-        limit: pagination.limit,
+        page: 1,
+        limit: 5,
         ...filters,
       }),
     );
