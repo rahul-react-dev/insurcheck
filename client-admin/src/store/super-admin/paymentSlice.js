@@ -23,7 +23,8 @@ const initialState = {
     total: 0,
     totalPages: 0
   },
-  isLoadingTenants: false
+  isLoadingTenants: false,
+  hasInitialLoad: false
 };
 
 const paymentSlice = createSlice({
@@ -34,9 +35,15 @@ const paymentSlice = createSlice({
     fetchInvoicesRequest: (state, action) => {
       state.isLoading = true;
       state.error = null;
+      
+      // Clear invoices only on initial load or filter change
+      if (!state.hasInitialLoad || (action.payload && Object.keys(action.payload).some(key => ['tenantName', 'status', 'dateRange'].includes(key)))) {
+        state.invoices = [];
+      }
+      
       if (action.payload) {
         const { page, limit, total, ...filters } = action.payload;
-        if (filters) {
+        if (filters && Object.keys(filters).length > 0) {
           state.filters = { ...state.filters, ...filters };
         }
         if (page !== undefined || limit !== undefined || total !== undefined) {
@@ -51,11 +58,12 @@ const paymentSlice = createSlice({
     },
     fetchInvoicesSuccess: (state, action) => {
       state.isLoading = false;
-      state.invoices = action.payload.invoices;
-      state.totalInvoices = action.payload.summary.totalInvoices;
-      state.totalPaid = action.payload.summary.totalPaid;
-      state.totalPending = action.payload.summary.totalPending;
-      state.totalOverdue = action.payload.summary.totalOverdue;
+      state.hasInitialLoad = true;
+      state.invoices = action.payload.invoices || [];
+      state.totalInvoices = action.payload.summary?.totalInvoices || 0;
+      state.totalPaid = action.payload.summary?.totalPaid || 0;
+      state.totalPending = action.payload.summary?.totalPending || 0;
+      state.totalOverdue = action.payload.summary?.totalOverdue || 0;
       if (action.payload.pagination) {
         state.pagination = { ...state.pagination, ...action.payload.pagination };
       }

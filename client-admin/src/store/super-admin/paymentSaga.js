@@ -550,9 +550,26 @@ const api = {
 function* fetchInvoicesSaga(action) {
   try {
     const params = action.payload || {};
+    console.log('📡 Fetching invoices with params:', params);
+    
     const response = yield call(api.fetchInvoices, params);
-    yield put(fetchInvoicesSuccess(response));
+    console.log('✅ Invoices fetched successfully:', response);
+    
+    // Ensure response has required structure
+    const validatedResponse = {
+      invoices: response.invoices || [],
+      summary: {
+        totalInvoices: response.summary?.totalInvoices || 0,
+        totalPaid: response.summary?.totalPaid || 0,
+        totalPending: response.summary?.totalPending || 0,
+        totalOverdue: response.summary?.totalOverdue || 0,
+      },
+      pagination: response.pagination || { page: 1, limit: 5, total: 0, totalPages: 0 }
+    };
+    
+    yield put(fetchInvoicesSuccess(validatedResponse));
   } catch (error) {
+    console.error('❌ Error fetching invoices:', error);
     yield put(fetchInvoicesFailure(error.message || 'Failed to fetch invoices'));
   }
 }

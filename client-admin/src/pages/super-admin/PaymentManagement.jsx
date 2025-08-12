@@ -40,7 +40,18 @@ const PaymentManagement = () => {
     totalPaid,
     totalPending,
     totalOverdue,
+    pagination: storePagination,
   } = useSelector((state) => state.payment);
+
+  // Sync pagination with store
+  useEffect(() => {
+    if (storePagination) {
+      setPagination(prev => ({
+        ...prev,
+        ...storePagination
+      }));
+    }
+  }, [storePagination]);
 
   // Fetch initial data when component mounts
   useEffect(() => {
