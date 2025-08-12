@@ -1,15 +1,18 @@
+import React, { useState } from "react";
+import Input from "../ui/Input";
+import Button from "../ui/Button";
 
-import React, { useState } from 'react';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
-
-export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) => {
-  const [searchTerm, setSearchTerm] = useState(filters.searchTerm || '');
+export const DeletedDocumentsFilters = ({
+  filters,
+  onSearch,
+  onFilterChange,
+}) => {
+  const [searchTerm, setSearchTerm] = useState(filters.searchTerm || "");
   const [localFilters, setLocalFilters] = useState({
-    deletedBy: filters.deletedBy || '',
-    originalOwner: filters.originalOwner || '',
-    dateRange: filters.dateRange || '',
-    documentType: filters.documentType || ''
+    deletedBy: filters.deletedBy || "",
+    originalOwner: filters.originalOwner || "",
+    dateRange: filters.dateRange || "",
+    documentType: filters.documentType || "",
   });
 
   const handleSearchSubmit = (e) => {
@@ -24,28 +27,32 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
   };
 
   const handleClearFilters = () => {
-    setSearchTerm('');
+    setSearchTerm("");
     setLocalFilters({
-      deletedBy: '',
-      originalOwner: '',
-      dateRange: '',
-      documentType: ''
+      deletedBy: "",
+      originalOwner: "",
+      dateRange: "",
+      documentType: "",
     });
-    onSearch('');
+    onSearch("");
     onFilterChange({
-      deletedBy: '',
-      originalOwner: '',
-      dateRange: '',
-      documentType: ''
+      deletedBy: "",
+      originalOwner: "",
+      dateRange: "",
+      documentType: "",
     });
   };
 
-  const hasActiveFilters = searchTerm || Object.values(localFilters).some(filter => filter);
+  const hasActiveFilters =
+    searchTerm || Object.values(localFilters).some((filter) => filter);
 
   return (
     <div className="space-y-4">
       {/* Search */}
-      <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4">
+      <form
+        onSubmit={handleSearchSubmit}
+        className="flex flex-col sm:flex-row gap-4"
+      >
         <div className="flex-1">
           <Input
             placeholder="Search by document name or original owner..."
@@ -81,7 +88,7 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
           </label>
           <select
             value={localFilters.deletedBy}
-            onChange={(e) => handleFilterChange('deletedBy', e.target.value)}
+            onChange={(e) => handleFilterChange("deletedBy", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           >
             <option value="">All Admins</option>
@@ -97,7 +104,9 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
           </label>
           <select
             value={localFilters.originalOwner}
-            onChange={(e) => handleFilterChange('originalOwner', e.target.value)}
+            onChange={(e) =>
+              handleFilterChange("originalOwner", e.target.value)
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           >
             <option value="">All Users</option>
@@ -113,7 +122,7 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
           </label>
           <select
             value={localFilters.dateRange}
-            onChange={(e) => handleFilterChange('dateRange', e.target.value)}
+            onChange={(e) => handleFilterChange("dateRange", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           >
             <option value="">All Time</option>
@@ -131,7 +140,7 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
           </label>
           <select
             value={localFilters.documentType}
-            onChange={(e) => handleFilterChange('documentType', e.target.value)}
+            onChange={(e) => handleFilterChange("documentType", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           >
             <option value="">All Types</option>
@@ -154,8 +163,8 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
               Search: "{searchTerm}"
               <button
                 onClick={() => {
-                  setSearchTerm('');
-                  onSearch('');
+                  setSearchTerm("");
+                  onSearch("");
                 }}
                 className="ml-1 text-blue-600 hover:text-blue-800"
               >
@@ -163,18 +172,21 @@ export const DeletedDocumentsFilters = ({ filters, onSearch, onFilterChange }) =
               </button>
             </span>
           )}
-          {Object.entries(localFilters).map(([key, value]) => 
+          {Object.entries(localFilters).map(([key, value]) =>
             value ? (
-              <span key={key} className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs">
-                {key.replace(/([A-Z])/g, ' $1').toLowerCase()}: {value}
+              <span
+                key={key}
+                className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs"
+              >
+                {key.replace(/([A-Z])/g, " $1").toLowerCase()}: {value}
                 <button
-                  onClick={() => handleFilterChange(key, '')}
+                  onClick={() => handleFilterChange(key, "")}
                   className="ml-1 text-gray-600 hover:text-gray-800"
                 >
                   <i className="fas fa-times text-xs"></i>
                 </button>
               </span>
-            ) : null
+            ) : null,
           )}
         </div>
       )}

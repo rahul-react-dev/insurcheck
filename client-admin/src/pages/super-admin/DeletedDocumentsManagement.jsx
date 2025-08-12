@@ -1,12 +1,11 @@
-
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { DeletedDocumentsTable } from '../../components/super-admin/DeletedDocumentsTable';
-import { DeletedDocumentsFilters } from '../../components/super-admin/DeletedDocumentsFilters';
-import { DeletedDocumentModal } from '../../components/super-admin/DeletedDocumentModal';
-import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import { DeletedDocumentsTable } from "../../components/super-admin/DeletedDocumentsTable";
+import { DeletedDocumentsFilters } from "../../components/super-admin/DeletedDocumentsFilters";
+import { DeletedDocumentModal } from "../../components/super-admin/DeletedDocumentModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import {
   fetchDeletedDocuments,
   exportDeletedDocuments,
@@ -14,8 +13,8 @@ import {
   permanentlyDeleteDocument,
   clearError,
   setFilters,
-  setPagination
-} from '../../store/super-admin/deletedDocumentsSlice';
+  setPagination,
+} from "../../store/super-admin/deletedDocumentsSlice";
 
 const DeletedDocumentsManagement = () => {
   const dispatch = useDispatch();
@@ -26,7 +25,7 @@ const DeletedDocumentsManagement = () => {
     filters,
     pagination,
     totalCount,
-    exportLoading
+    exportLoading,
   } = useSelector((state) => state.deletedDocuments);
 
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -71,7 +70,7 @@ const DeletedDocumentsManagement = () => {
 
   const handleDownloadDocument = (document) => {
     // Create download link
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = document.downloadUrl;
     link.download = document.name;
     link.click();
@@ -80,15 +79,15 @@ const DeletedDocumentsManagement = () => {
   const handleRecoverDocument = (document) => {
     setSelectedDocument(document);
     setConfirmAction({
-      type: 'recover',
-      title: 'Recover Document',
+      type: "recover",
+      title: "Recover Document",
       message: `Are you sure you want to recover "${document.name}"? This will restore it to the original owner's admin panel.`,
-      confirmText: 'Recover',
+      confirmText: "Recover",
       onConfirm: () => {
         dispatch(recoverDocument(document.id));
         setIsConfirmModalOpen(false);
         setSelectedDocument(null);
-      }
+      },
     });
     setIsConfirmModalOpen(true);
   };
@@ -96,16 +95,16 @@ const DeletedDocumentsManagement = () => {
   const handlePermanentDelete = (document) => {
     setSelectedDocument(document);
     setConfirmAction({
-      type: 'delete',
-      title: 'Permanently Delete Document',
+      type: "delete",
+      title: "Permanently Delete Document",
       message: `Are you sure you want to permanently delete "${document.name}"? This action cannot be undone.`,
-      confirmText: 'Delete Permanently',
+      confirmText: "Delete Permanently",
       onConfirm: () => {
         dispatch(permanentlyDeleteDocument(document.id));
         setIsConfirmModalOpen(false);
         setSelectedDocument(null);
       },
-      danger: true
+      danger: true,
     });
     setIsConfirmModalOpen(true);
   };
@@ -138,7 +137,7 @@ const DeletedDocumentsManagement = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Export Dropdown */}
           <div className="flex-shrink-0 relative">
             <Button
@@ -154,26 +153,26 @@ const DeletedDocumentsManagement = () => {
               Export
               <i className="fas fa-chevron-down ml-2"></i>
             </Button>
-            
+
             {exportDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                 <div className="py-1">
                   <button
-                    onClick={() => handleExport('pdf')}
+                    onClick={() => handleExport("pdf")}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                   >
                     <i className="fas fa-file-pdf text-red-500 mr-3"></i>
                     Export as PDF
                   </button>
                   <button
-                    onClick={() => handleExport('csv')}
+                    onClick={() => handleExport("csv")}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                   >
                     <i className="fas fa-file-csv text-green-500 mr-3"></i>
                     Export as CSV
                   </button>
                   <button
-                    onClick={() => handleExport('excel')}
+                    onClick={() => handleExport("excel")}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                   >
                     <i className="fas fa-file-excel text-emerald-500 mr-3"></i>
