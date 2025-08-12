@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "../../components/ui/Button";
@@ -92,7 +91,7 @@ const TenantActivityLogs = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="bg-white shadow-sm border border-gray-200 rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -102,8 +101,8 @@ const TenantActivityLogs = () => {
               <span className="truncate">Tenant Activity Logs</span>
             </h1>
             <p className="mt-2 text-gray-600 text-sm sm:text-base">
-              Monitor and track all tenant admin and user activities across
-              the platform
+              Monitor and track all tenant admin and user activities across the
+              platform
             </p>
 
             {/* Stats */}

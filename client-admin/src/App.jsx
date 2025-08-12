@@ -73,7 +73,7 @@ function App() {
               }
             />
             <Route
-              path="/super-admin/invoice-generation"
+              path="/super-admin/invoices"
               element={
                 <ProtectedRoute>
                   <InvoiceGeneration />
