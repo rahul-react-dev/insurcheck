@@ -79,14 +79,14 @@ const SuperAdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Welcome to System Dashboard</h1>
-              <p className="text-blue-100 text-lg">Monitor and manage your InsurCheck platform operations</p>
-              <div className="flex items-center mt-4 space-x-6 text-sm">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 sm:p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome to System Dashboard</h1>
+              <p className="text-blue-100 text-sm sm:text-lg">Monitor and manage your InsurCheck platform operations</p>
+              <div className="flex flex-col sm:flex-row sm:items-center mt-4 space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm">
                 <div className="flex items-center space-x-2">
                   <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span>System Online</span>
@@ -97,7 +97,7 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden lg:block flex-shrink-0">
               <div className="bg-white bg-opacity-10 rounded-lg p-4">
                 <i className="fas fa-chart-line text-4xl text-white opacity-80"></i>
               </div>
@@ -108,17 +108,17 @@ const SuperAdminDashboard = () => {
         {/* Error Alert */}
         {(metricsError || logsError) && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <i className="fas fa-exclamation-triangle text-red-400 mr-3"></i>
-                <div>
+            <div className="flex items-start justify-between space-x-3">
+              <div className="flex items-start space-x-3 flex-1 min-w-0">
+                <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
+                <div className="min-w-0">
                   <h3 className="text-red-800 font-medium">System Alert</h3>
-                  <p className="text-red-700 text-sm">{metricsError || logsError}</p>
+                  <p className="text-red-700 text-sm break-words">{metricsError || logsError}</p>
                 </div>
               </div>
               <button
                 onClick={() => dispatch(clearErrors())}
-                className="text-red-400 hover:text-red-600 text-xl font-bold"
+                className="text-red-400 hover:text-red-600 text-xl font-bold flex-shrink-0"
               >
                 ×
               </button>
@@ -127,10 +127,10 @@ const SuperAdminDashboard = () => {
         )}
 
         {/* Quick Actions */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Button
             onClick={handleRefreshMetrics}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
             disabled={isLoadingMetrics}
           >
             <i className="fas fa-sync-alt mr-2"></i>
@@ -138,7 +138,7 @@ const SuperAdminDashboard = () => {
           </Button>
           <Button
             onClick={handleRefreshLogs}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
             disabled={isLoadingLogs}
           >
             <i className="fas fa-list mr-2"></i>
@@ -146,7 +146,7 @@ const SuperAdminDashboard = () => {
           </Button>
           <Button
             onClick={handleExportLogs}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
           >
             <i className="fas fa-download mr-2"></i>
             Export Data
@@ -155,23 +155,23 @@ const SuperAdminDashboard = () => {
 
         {/* System Metrics Grid */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">System Metrics</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">System Metrics</h2>
             <div className="text-sm text-gray-500">
               Real-time system performance indicators
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {isLoadingMetrics ? (
               // Enhanced Loading skeleton
               Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
                   <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-gray-200 rounded-xl"></div>
-                    <div className="flex-1">
-                      <div className="h-6 bg-gray-200 rounded w-16 mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-5 sm:h-6 bg-gray-200 rounded w-16 mb-2"></div>
+                      <div className="h-3 sm:h-4 bg-gray-200 rounded w-20 sm:w-24"></div>
                     </div>
                   </div>
                   <div className="mt-4">
@@ -193,16 +193,16 @@ const SuperAdminDashboard = () => {
               ))
             ) : (
               <div className="col-span-full">
-                <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
-                  <div className="max-w-md mx-auto">
-                    <i className="fas fa-chart-line text-6xl text-gray-300 mb-6"></i>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Metrics Available</h3>
-                    <p className="text-gray-500 text-base mb-6">
+                <div className="text-center py-12 sm:py-16 bg-white rounded-xl shadow-sm border border-gray-200">
+                  <div className="max-w-md mx-auto px-4">
+                    <i className="fas fa-chart-line text-4xl sm:text-6xl text-gray-300 mb-4 sm:mb-6"></i>
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Metrics Available</h3>
+                    <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
                       System metrics will appear here once data collection begins
                     </p>
                     <Button
                       onClick={handleRefreshMetrics}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
                     >
                       <i className="fas fa-refresh mr-2"></i>
                       Refresh Now
@@ -216,19 +216,19 @@ const SuperAdminDashboard = () => {
 
         {/* Error Logs Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <i className="fas fa-exclamation-triangle text-red-500 mr-3"></i>
-                  System Error Logs
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <div className="flex-1">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                  <i className="fas fa-exclamation-triangle text-red-500 mr-3 flex-shrink-0"></i>
+                  <span className="truncate">System Error Logs</span>
                 </h2>
-                <p className="text-gray-600 mt-1">Monitor and track system errors across all tenants</p>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">Monitor and track system errors across all tenants</p>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <Button
                   onClick={handleRefreshLogs}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 text-sm"
                   disabled={isLoadingLogs}
                 >
                   <i className="fas fa-sync-alt mr-2"></i>
@@ -236,7 +236,7 @@ const SuperAdminDashboard = () => {
                 </Button>
                 <Button
                   onClick={handleExportLogs}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 text-sm"
                 >
                   <i className="fas fa-download mr-2"></i>
                   Export CSV
@@ -255,30 +255,30 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* System Health Footer */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="font-semibold text-gray-700">System Status</span>
+                <span className="font-semibold text-gray-700 text-sm sm:text-base">System Status</span>
               </div>
-              <p className="text-green-600 font-medium">Operational</p>
+              <p className="text-green-600 font-medium text-sm sm:text-base">Operational</p>
             </div>
             
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <i className="fas fa-server text-blue-500"></i>
-                <span className="font-semibold text-gray-700">Server Uptime</span>
+                <span className="font-semibold text-gray-700 text-sm sm:text-base">Server Uptime</span>
               </div>
-              <p className="text-blue-600 font-medium">99.9%</p>
+              <p className="text-blue-600 font-medium text-sm sm:text-base">99.9%</p>
             </div>
             
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <i className="fas fa-clock text-purple-500"></i>
-                <span className="font-semibold text-gray-700">Last Update</span>
+                <span className="font-semibold text-gray-700 text-sm sm:text-base">Last Update</span>
               </div>
-              <p className="text-purple-600 font-medium">{new Date().toLocaleTimeString()}</p>
+              <p className="text-purple-600 font-medium text-sm sm:text-base">{new Date().toLocaleTimeString()}</p>
             </div>
           </div>
         </div>

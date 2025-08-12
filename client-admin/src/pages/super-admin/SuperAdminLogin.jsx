@@ -4,191 +4,163 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import Card from '../../components/ui/Card';
-import { loginRequest, clearLoginError, checkLockout } from '../../store/super-admin/superAdminSlice';
+import { loginRequest, clearErrors } from '../../store/super-admin/superAdminSlice';
 import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
 
 const SuperAdminLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const {
-    isLoading,
-    error,
-    isAuthenticated,
-    loginAttempts,
-    isLocked,
-    lockoutTime
-  } = useSelector(state => state.superAdmin);
+  
+  const { isLoading, error, isAuthenticated, user } = useSelector(state => state.superAdmin);
+  
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated
-    if (isAuthenticated) {
+    // Clear any existing errors when component mounts
+    dispatch(clearErrors());
+    
+    // Redirect if already authenticated
+    if (isAuthenticated && user?.role === 'super-admin') {
       navigate('/super-admin/dashboard');
     }
+  }, [dispatch, isAuthenticated, user, navigate]);
 
-    // Check lockout status on component mount and every minute
-    dispatch(checkLockout());
-    const lockoutInterval = setInterval(() => {
-      dispatch(checkLockout());
-    }, 60000);
-
-    return () => clearInterval(lockoutInterval);
-  }, [isAuthenticated, navigate, dispatch]);
-
-  useEffect(() => {
-    // Clear error when component mounts
-    return () => {
-      dispatch(clearLoginError());
-    };
-  }, [dispatch]);
-
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setEmail(value);
-    
-    if (value && !validateEmail(value)) {
-      setEmailError('Please enter a valid email address');
-    } else {
-      setEmailError('');
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (isLocked) return;
-
-    // Validate email
-    if (!email || !validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
-      return;
+    if (formData.email && formData.password) {
+      dispatch(loginRequest(formData));
     }
-
-    if (!password) {
-      return;
-    }
-
-    dispatch(loginRequest({ email, password }));
-  };
-
-  const getRemainingLockoutTime = () => {
-    if (!isLocked || !lockoutTime) return '';
-    
-    const now = new Date();
-    const lockoutEnd = new Date(lockoutTime);
-    const diff = lockoutEnd - now;
-    
-    if (diff <= 0) return '';
-    
-    const minutes = Math.ceil(diff / 60000);
-    return `Try again in ${minutes} minutes.`;
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">InsurCheck</h1>
-          <p className="text-blue-200">Super Admin Portal</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Logo Section */}
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+            <i className="fas fa-shield-alt text-white text-2xl sm:text-3xl"></i>
+          </div>
+          <h2 className="mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
+            {SUPER_ADMIN_MESSAGES.LOGIN.TITLE}
+          </h2>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">
+            Access your super admin dashboard
+          </p>
         </div>
 
-        <Card className="p-8 shadow-2xl">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {SUPER_ADMIN_MESSAGES.LOGIN.TITLE}
-            </h2>
-            <p className="text-gray-600">
-              Sign in to access the system monitoring dashboard
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                {SUPER_ADMIN_MESSAGES.LOGIN.EMAIL_LABEL}
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={handleEmailChange}
-                disabled={isLoading || isLocked}
-                className={`w-full ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                placeholder="admin@insurcheck.com"
-              />
-              {emailError && (
-                <p className="mt-1 text-sm text-red-600">{emailError}</p>
-              )}
+        {/* Login Form */}
+        <div className="bg-white py-8 px-6 sm:px-8 shadow-xl rounded-xl border border-gray-200">
+          {error && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <i className="fas fa-exclamation-triangle text-red-400"></i>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700 break-words">{error}</p>
+                </div>
+                <div className="ml-auto pl-3">
+                  <button
+                    onClick={() => dispatch(clearErrors())}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                {SUPER_ADMIN_MESSAGES.LOGIN.PASSWORD_LABEL}
-              </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading || isLocked}
-                className="w-full"
-                placeholder="Enter your password"
-              />
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <Input
+              label={SUPER_ADMIN_MESSAGES.LOGIN.EMAIL_LABEL}
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              leftIcon={<i className="fas fa-envelope"></i>}
+              placeholder="Enter your email address"
+              disabled={isLoading}
+            />
+
+            <Input
+              label={SUPER_ADMIN_MESSAGES.LOGIN.PASSWORD_LABEL}
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              leftIcon={<i className="fas fa-lock"></i>}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                </button>
+              }
+              placeholder="Enter your password"
+              disabled={isLoading}
+            />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate('/super-admin/forgot-password')}
+                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                >
+                  {SUPER_ADMIN_MESSAGES.LOGIN.FORGOT_PASSWORD}
+                </button>
+              </div>
             </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            {isLocked && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm text-yellow-700">
-                  {SUPER_ADMIN_MESSAGES.LOGIN.ACCOUNT_LOCKED}
-                </p>
-                <p className="text-xs text-yellow-600 mt-1">
-                  {getRemainingLockoutTime()}
-                </p>
-              </div>
-            )}
-
-            {loginAttempts > 0 && loginAttempts < 5 && !isLocked && (
-              <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
-                <p className="text-sm text-orange-700">
-                  {5 - loginAttempts} attempts remaining before account lockout.
-                </p>
-              </div>
-            )}
 
             <Button
               type="submit"
-              disabled={isLoading || isLocked || !email || !password || emailError}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md transition duration-200"
+              disabled={isLoading || !formData.email || !formData.password}
+              loading={isLoading}
+              fullWidth
+              size="large"
+              className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
             >
-              {isLoading ? 'Signing In...' : SUPER_ADMIN_MESSAGES.LOGIN.LOGIN_BUTTON}
+              {SUPER_ADMIN_MESSAGES.LOGIN.LOGIN_BUTTON}
             </Button>
           </form>
+        </div>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => navigate('/super-admin/forgot-password')}
-              className="text-sm text-blue-600 hover:text-blue-700 transition duration-200"
-            >
-              {SUPER_ADMIN_MESSAGES.LOGIN.FORGOT_PASSWORD}
-            </button>
-          </div>
-        </Card>
+        {/* Footer */}
+        <div className="text-center">
+          <p className="text-xs sm:text-sm text-gray-500">
+            © 2024 InsurCheck. All rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,41 +1,88 @@
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 
-const Input = ({ 
-  type = 'text',
-  placeholder = '',
-  value = '',
-  onChange,
+const Input = forwardRef(({ 
+  label,
+  error,
+  helperText,
+  leftIcon,
+  rightIcon,
+  fullWidth = true,
   className = '',
-  disabled = false,
-  required = false,
   ...props 
-}) => {
-  const baseStyles = `
-    w-full px-3 py-2 border border-gray-300 rounded-lg 
-    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-    disabled:bg-gray-100 disabled:cursor-not-allowed
-    text-gray-900 placeholder-gray-500
+}, ref) => {
+  const baseInputClasses = `
+    block px-3 py-2 sm:px-4 sm:py-2.5 border border-gray-300 rounded-lg
+    placeholder-gray-400 text-gray-900 text-sm sm:text-base
+    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+    disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
     transition-colors duration-200
-  `;
-  
-  const combinedClassName = [
-    baseStyles,
-    className
-  ].filter(Boolean).join(' ');
+  `.trim().replace(/\s+/g, ' ');
+
+  const errorClasses = error 
+    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+    : '';
+
+  const widthClasses = fullWidth ? 'w-full' : '';
+
+  const inputClasses = `
+    ${baseInputClasses}
+    ${errorClasses}
+    ${widthClasses}
+    ${leftIcon ? 'pl-10' : ''}
+    ${rightIcon ? 'pr-10' : ''}
+    ${className}
+  `.trim().replace(/\s+/g, ' ');
 
   return (
-    <input
-      type={type}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className={combinedClassName}
-      disabled={disabled}
-      required={required}
-      {...props}
-    />
+    <div className={fullWidth ? 'w-full' : ''}>
+      {label && (
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {label}
+          {props.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      
+      <div className="relative">
+        {leftIcon && (
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="text-gray-400 text-sm sm:text-base">
+              {leftIcon}
+            </div>
+          </div>
+        )}
+        
+        <input
+          ref={ref}
+          className={inputClasses}
+          {...props}
+        />
+        
+        {rightIcon && (
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <div className="text-gray-400 text-sm sm:text-base">
+              {rightIcon}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {error && (
+        <p className="mt-2 text-sm text-red-600 flex items-center">
+          <i className="fas fa-exclamation-circle mr-1 flex-shrink-0"></i>
+          <span>{error}</span>
+        </p>
+      )}
+      
+      {helperText && !error && (
+        <p className="mt-2 text-sm text-gray-500">
+          {helperText}
+        </p>
+      )}
+    </div>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 export default Input;

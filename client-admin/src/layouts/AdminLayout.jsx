@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import Button from '../components/ui/Button';
@@ -9,6 +9,7 @@ const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -39,10 +40,41 @@ const AdminLayout = ({ children }) => {
     return location.pathname === path;
   };
 
+  const handleNavigation = (path) => {
+    navigate(path);
+    setIsSidebarOpen(false); // Close sidebar on mobile after navigation
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-neutral-light flex">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+      <div className={`
+        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col
+        transform transition-transform duration-300 ease-in-out lg:transform-none
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Mobile Close Button */}
+        <div className="lg:hidden flex justify-end p-4">
+          <button
+            onClick={closeSidebar}
+            className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+          >
+            <i className="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
         {/* Logo Section */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -61,15 +93,15 @@ const AdminLayout = ({ children }) => {
           {filteredNavigation.map((item) => (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                 isActiveRoute(item.path)
                   ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <i className={`${item.icon} text-lg`}></i>
-              <span className="font-medium">{item.name}</span>
+              <i className={`${item.icon} text-lg flex-shrink-0`}></i>
+              <span className="font-medium truncate">{item.name}</span>
             </button>
           ))}
         </nav>
@@ -77,7 +109,7 @@ const AdminLayout = ({ children }) => {
         {/* User Section */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
+            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
               <i className="fas fa-user text-white text-sm"></i>
             </div>
             <div className="flex-1 min-w-0">
@@ -100,20 +132,33 @@ const AdminLayout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                {location.pathname.includes('dashboard') ? 'System Monitoring Dashboard' : 'Super Admin Panel'}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Monitor system performance and manage platform operations
-              </p>
-            </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              >
+                <i className="fas fa-bars text-xl"></i>
+              </button>
+              
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+                  {location.pathname.includes('dashboard') ? 'System Monitoring' : 
+                   location.pathname.includes('subscriptions') ? 'Subscription Management' : 
+                   'Super Admin Panel'}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1 hidden sm:block">
+                  Monitor system performance and manage platform operations
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
                 <i className="fas fa-clock"></i>
                 <span>{new Date().toLocaleTimeString()}</span>
               </div>
@@ -122,7 +167,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 bg-gray-50 overflow-auto min-h-0">
+        <main className="flex-1 p-4 sm:p-6 bg-gray-50 overflow-auto min-h-0">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
