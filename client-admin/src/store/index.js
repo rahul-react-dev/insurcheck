@@ -8,6 +8,7 @@ import authReducer from './authSlice';
 import superAdminReducer from './super-admin/superAdminSlice';
 import subscriptionReducer from './super-admin/subscriptionSlice';
 import paymentReducer from './super-admin/paymentSlice';
+import invoiceGenerationReducer from './super-admin/invoiceGenerationSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   superAdmin: superAdminReducer,
   subscription: subscriptionReducer,
   payment: paymentReducer,
+  invoiceGeneration: invoiceGenerationReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

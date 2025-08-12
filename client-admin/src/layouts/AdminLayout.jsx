@@ -40,6 +40,12 @@ const AdminLayout = ({ children }) => {
       icon: "fas fa-file-invoice-dollar",
       roles: ["super-admin"],
     },
+    {
+      name: "Invoice Generation",
+      path: "/super-admin/invoice-generation",
+      icon: "fas fa-magic",
+      roles: ["super-admin"],
+    },
   ];
 
   const filteredNavigation = navigationItems.filter(
@@ -158,7 +164,9 @@ const AdminLayout = ({ children }) => {
                       ? "Subscription Management"
                       : location.pathname.includes("payments")
                         ? "Payments & Invoices"
-                        : "Super Admin Panel"}
+                        : location.pathname.includes("invoice-generation")
+                          ? "Invoice Generation"
+                          : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations

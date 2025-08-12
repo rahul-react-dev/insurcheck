@@ -13,6 +13,7 @@ import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SubscriptionManagement from "./pages/super-admin/SubscriptionManagement";
 import PaymentManagement from "./pages/super-admin/PaymentManagement";
+import InvoiceGeneration from './pages/super-admin/InvoiceGeneration';
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -51,6 +52,10 @@ function App() {
                   <PaymentManagement />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/super-admin/invoice-generation"
+              element={<InvoiceGeneration />}
             />
             <Route
               path="/super-admin/forgot-password"
