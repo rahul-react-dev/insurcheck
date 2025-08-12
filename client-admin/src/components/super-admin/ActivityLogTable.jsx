@@ -1,12 +1,11 @@
-
-import React from 'react';
-import Button from '../ui/Button';
-import Pagination from '../ui/Pagination';
+import React from "react";
+import Button from "../ui/Button";
+import Pagination from "../ui/Pagination";
 
 const ActivityLogTable = ({
   logs = [],
   isLoading = false,
-  pagination = { page: 1, limit: 10, total: 0 },
+  pagination = { page: 1, limit: 10, total: 0, totalPages: 0 },
   sortBy = 'timestamp',
   sortOrder = 'desc',
   onPageChange,
@@ -337,7 +336,7 @@ const ActivityLogTable = ({
       {/* Pagination */}
       <Pagination
         currentPage={pagination.page}
-        totalPages={Math.ceil(pagination.total / pagination.limit)}
+        totalPages={pagination.totalPages}
         totalItems={pagination.total}
         itemsPerPage={pagination.limit}
         onPageChange={onPageChange}

@@ -12,6 +12,8 @@ import {
 
 // Mock API call for activity logs
 const fetchActivityLogsApi = (params) => {
+  console.log('Fetching activity logs with params:', params);
+  
   // Mock data - replace with real API endpoint when backend is ready
   const mockLogs = [
     {
@@ -173,7 +175,7 @@ const fetchActivityLogsApi = (params) => {
   const endIndex = startIndex + params.limit;
   const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
-  return Promise.resolve({
+  const result = {
     data: {
       logs: paginatedLogs,
       total: total,
@@ -181,7 +183,10 @@ const fetchActivityLogsApi = (params) => {
       limit: params.limit,
       totalPages: Math.ceil(total / params.limit)
     }
-  });
+  };
+  
+  console.log('Mock API response:', result);
+  return Promise.resolve(result);
 };
 
 const exportActivityLogsApi = (params) => {
@@ -200,13 +205,14 @@ function* fetchActivityLogsSaga(action) {
     const state = yield select();
     const { filters, pagination, sortBy, sortOrder } = state.activityLog;
     
+    // Merge current state with any new params from action payload
     const params = {
       ...filters,
       page: pagination.page,
       limit: pagination.limit,
       sortBy,
       sortOrder,
-      ...action.payload
+      ...(action.payload || {})
     };
 
     const response = yield call(fetchActivityLogsApi, params);

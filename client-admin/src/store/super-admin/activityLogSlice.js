@@ -54,9 +54,10 @@ const activityLogSlice = createSlice({
       state.activityLogs = action.payload.logs;
       state.filteredActivityLogs = action.payload.logs;
       state.pagination = {
-        ...state.pagination,
+        page: action.payload.page || state.pagination.page,
+        limit: action.payload.limit || state.pagination.limit,
         total: action.payload.total,
-        totalPages: Math.ceil(action.payload.total / state.pagination.limit)
+        totalPages: action.payload.totalPages || Math.ceil(action.payload.total / (action.payload.limit || state.pagination.limit))
       };
     },
     fetchActivityLogsFailure: (state, action) => {
