@@ -13,6 +13,7 @@ import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SubscriptionManagement from "./pages/super-admin/SubscriptionManagement";
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
 
 function App() {
@@ -28,11 +29,19 @@ function App() {
             <Route path="/super-admin/login" element={<SuperAdminLogin />} />
             <Route
               path="/super-admin/dashboard"
-              element={<SuperAdminDashboard />}
+              element={
+                <ProtectedRoute>
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/super-admin/subscriptions"
-              element={<SubscriptionManagement />}
+              element={
+                <ProtectedRoute>
+                  <SubscriptionManagement />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/super-admin/forgot-password"

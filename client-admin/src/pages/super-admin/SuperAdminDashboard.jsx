@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import AdminLayout from '../../layouts/AdminLayout';
+
 import MetricCard from '../../components/super-admin/MetricCard';
 import ErrorLogsTable from '../../components/super-admin/ErrorLogsTable';
 import Button from '../../components/ui/Button';
@@ -44,16 +44,10 @@ const SuperAdminDashboard = () => {
   });
 
   useEffect(() => {
-    // Check if user is authenticated and has super-admin role
-    if (!user || user.role !== 'super-admin') {
-      navigate('/super-admin/login');
-      return;
-    }
-
     // Fetch initial data
     dispatch(fetchSystemMetricsRequest());
     dispatch(fetchErrorLogsRequest(filters));
-  }, [dispatch, navigate, user]);
+  }, [dispatch]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -73,13 +67,8 @@ const SuperAdminDashboard = () => {
     dispatch(fetchErrorLogsRequest(filters));
   };
 
-  if (!user || user.role !== 'super-admin') {
-    return null;
-  }
-
   return (
-    <AdminLayout>
-      <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 sm:p-6 text-white">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -283,7 +272,7 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 
