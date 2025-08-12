@@ -41,15 +41,6 @@ const PaymentManagement = () => {
     totalPending,
     totalOverdue,
   } = useSelector((state) => state.payment);
-  console.log(
-    isLoading,
-    error,
-    invoices,
-    tenants,
-    totalInvoices,
-    totalPaid,
-    totalPending,
-  );
 
   // Fetch initial data when component mounts
   useEffect(() => {
