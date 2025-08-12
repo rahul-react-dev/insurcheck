@@ -64,8 +64,7 @@ const Input = forwardRef(({
               {rightIcon}
             </div>
           </div>
-        )}</div>
-      </div>
+        )}
       </div>
       
       {error && (
