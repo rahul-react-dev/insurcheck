@@ -33,7 +33,9 @@ const paymentSlice = createSlice({
   reducers: {
     // Fetch invoices
     fetchInvoicesRequest: (state, action) => {
-      console.log('📦 fetchInvoicesRequest reducer called with:', action.payload);
+      console.log('📦 REDUCER: fetchInvoicesRequest called');
+      console.log('📦 Action payload:', action.payload);
+      console.log('📦 Action type:', action.type);
       state.isLoading = true;
       state.error = null;
       
@@ -58,7 +60,8 @@ const paymentSlice = createSlice({
       }
     },
     fetchInvoicesSuccess: (state, action) => {
-      console.log('✅ fetchInvoicesSuccess reducer called with:', action.payload);
+      console.log('✅ REDUCER: fetchInvoicesSuccess called');
+      console.log('✅ Success payload:', action.payload);
       state.isLoading = false;
       state.hasInitialLoad = true;
       state.invoices = action.payload.invoices || [];

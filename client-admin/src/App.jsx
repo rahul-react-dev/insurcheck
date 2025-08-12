@@ -17,8 +17,17 @@ import InvoiceGeneration from './pages/super-admin/InvoiceGeneration';
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
+import store from './store';
 
 function App() {
+  // Debug store configuration
+  React.useEffect(() => {
+    const state = store.getState();
+    console.log('🏪 App: Store state keys:', Object.keys(state));
+    console.log('💳 App: Payment state exists:', !!state.payment);
+    console.log('🔍 App: Initial payment state:', state.payment);
+  }, []);
+
   return (
     <PersistGate loading={null} persistor={persistor}>
       <Router>

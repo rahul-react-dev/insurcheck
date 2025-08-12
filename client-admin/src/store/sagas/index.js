@@ -7,6 +7,7 @@ import invoiceGenerationSaga from '../super-admin/invoiceGenerationSaga';
 
 export default function* rootSaga() {
   console.log('🔄 Root saga initialized');
+  console.log('🔧 Forking all sagas...');
   yield all([
     fork(authSaga),
     fork(superAdminSaga),
@@ -14,4 +15,5 @@ export default function* rootSaga() {
     fork(subscriptionSaga),
     fork(invoiceGenerationSaga)
   ]);
+  console.log('✅ All sagas forked successfully');
 }

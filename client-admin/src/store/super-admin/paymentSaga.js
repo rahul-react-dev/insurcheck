@@ -1,4 +1,4 @@
-import { call, put, takeEvery, takeLatest } from 'redux-saga/effects';
+import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
 import {
   fetchInvoicesRequest,
   fetchInvoicesSuccess,
@@ -630,28 +630,34 @@ function* downloadInvoiceSaga(action) {
 }
 
 // Watcher sagas
-export function* watchFetchInvoices() {
+function* watchFetchInvoices() {
+  console.log('🔧 watchFetchInvoices started');
   yield takeLatest(fetchInvoicesRequest.type, fetchInvoicesSaga);
 }
 
-export function* watchFetchTenants() {
+function* watchFetchTenants() {
+  console.log('🔧 watchFetchTenants started');
   yield takeLatest(fetchTenantsRequest.type, fetchTenantsSaga);
 }
 
-export function* watchMarkInvoicePaid() {
+function* watchMarkInvoicePaid() {
+  console.log('🔧 watchMarkInvoicePaid started');
   yield takeEvery(markInvoicePaidRequest.type, markInvoicePaidSaga);
 }
 
-export function* watchDownloadInvoice() {
+function* watchDownloadInvoice() {
+  console.log('🔧 watchDownloadInvoice started');
   yield takeEvery(downloadInvoiceRequest.type, downloadInvoiceSaga);
 }
 
 // Root payment saga
 export default function* paymentSaga() {
-  yield [
-    watchFetchInvoices(),
-    watchFetchTenants(),
-    watchMarkInvoicePaid(),
-    watchDownloadInvoice()
-  ];
+  console.log('🔧 Payment saga initialized');
+  yield all([
+    fork(watchFetchInvoices),
+    fork(watchFetchTenants),
+    fork(watchMarkInvoicePaid),
+    fork(watchDownloadInvoice)
+  ]);
+  console.log('✅ Payment saga watchers started');
 }

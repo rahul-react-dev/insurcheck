@@ -55,14 +55,19 @@ const PaymentManagement = () => {
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    console.log('🚀 Initial fetch triggered with pagination:', pagination);
-    dispatch(
-      fetchInvoicesRequest({
-        page: 1,
-        limit: 5,
-        ...filters,
-      }),
-    );
+    console.log('🚀 PaymentManagement: Component mounted, dispatching fetchInvoicesRequest');
+    console.log('🔍 Initial fetch params:', { page: 1, limit: 5, ...filters });
+    
+    const fetchParams = {
+      page: 1,
+      limit: 5,
+      ...filters,
+    };
+    
+    console.log('📤 Dispatching fetchInvoicesRequest with:', fetchParams);
+    dispatch(fetchInvoicesRequest(fetchParams));
+    
+    console.log('📤 Dispatching fetchTenantsRequest');
     dispatch(fetchTenantsRequest());
   }, [dispatch]);
 
