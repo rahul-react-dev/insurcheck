@@ -13,7 +13,6 @@ import {
   clearError,
 } from "../../store/super-admin/invoiceGenerationSlice";
 
-import AdminLayout from "../../layouts/AdminLayout";
 
 const InvoiceGeneration = () => {
   const dispatch = useDispatch();
@@ -122,7 +121,6 @@ const InvoiceGeneration = () => {
   ];
 
   return (
-    <AdminLayout>
       <div className="min-h-full">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl p-4 sm:p-6 lg:p-8 text-white mb-6">
@@ -310,7 +308,6 @@ const InvoiceGeneration = () => {
         </div>
       </div>
     </div>
-    </AdminLayout>
   );
 };
 

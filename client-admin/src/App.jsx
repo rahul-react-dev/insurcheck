@@ -18,7 +18,6 @@ import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
 import store from './store';
-import AdminLayout from "./components/AdminLayout"; // Assuming AdminLayout is a common layout component
 import TenantManagement from "./pages/super-admin/TenantManagement"; // Import the new TenantManagement component
 
 function App() {
@@ -44,9 +43,7 @@ function App() {
               path="/super-admin/dashboard"
               element={
                 <ProtectedRoute>
-                  <AdminLayout>
                     <SuperAdminDashboard />
-                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -54,9 +51,7 @@ function App() {
               path="/super-admin/tenants"
               element={
                 <ProtectedRoute>
-                  <AdminLayout>
                     <TenantManagement />
-                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -64,9 +59,7 @@ function App() {
               path="/super-admin/subscriptions"
               element={
                 <ProtectedRoute>
-                  <AdminLayout>
                     <SubscriptionManagement />
-                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -74,9 +67,7 @@ function App() {
               path="/super-admin/payments"
               element={
                 <ProtectedRoute>
-                  <AdminLayout>
                     <PaymentManagement />
-                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -84,9 +75,7 @@ function App() {
               path="/super-admin/invoice-generation"
               element={
                 <ProtectedRoute>
-                  <AdminLayout>
                     <InvoiceGeneration />
-                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
