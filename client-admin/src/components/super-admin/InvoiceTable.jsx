@@ -58,7 +58,7 @@ const InvoiceTable = ({
 
   // Backend pagination
   const totalPages = Math.ceil(totalInvoices / pagination.limit);
-  const startIndex = (pagination.page - 1) * pagination.limit + 1;
+  const startIndex = totalInvoices > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0;
   const endIndex = Math.min(pagination.page * pagination.limit, totalInvoices);
 
   const handlePrevPage = () => {

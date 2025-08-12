@@ -20,7 +20,7 @@ const api = {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const { page = 1, limit = 10, ...filters } = params;
+    const { page = 1, limit = 5, ...filters } = params;
 
     // Mock data - replace with actual API call
     const mockInvoices = [
@@ -271,6 +271,170 @@ const api = {
           { description: 'Professional Plan - Monthly', amount: 179.99 }
         ],
         notes: 'Professional tier subscription.'
+      },
+      {
+        id: '13',
+        invoiceId: 'INV-2024-013',
+        tenantName: 'Summit Insurance',
+        tenantEmail: 'accounts@summit.com',
+        tenantCompany: 'Summit Insurance LLC',
+        tenantPhone: '+1 (555) 234-5678',
+        tenantAddress: '234 Ridge Road, Atlanta, GA 30301',
+        amount: 129.99,
+        planName: 'Professional Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-02-15',
+        dueDate: '2024-03-15',
+        status: 'pending',
+        breakdown: [
+          { description: 'Professional Plan - Monthly', amount: 129.99 }
+        ],
+        notes: 'New professional subscription.'
+      },
+      {
+        id: '14',
+        invoiceId: 'INV-2024-014',
+        tenantName: 'Apex Insurance Group',
+        tenantEmail: 'billing@apex.com',
+        tenantCompany: 'Apex Insurance Group Inc.',
+        tenantPhone: '+1 (555) 345-6789',
+        tenantAddress: '345 Valley Street, Dallas, TX 75201',
+        amount: 89.99,
+        planName: 'Basic Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-02-20',
+        dueDate: '2024-03-20',
+        status: 'paid',
+        paidDate: '2024-02-22',
+        breakdown: [
+          { description: 'Basic Plan - Monthly', amount: 89.99 }
+        ],
+        paymentHistory: [
+          { type: 'Credit Card Payment', date: '2024-02-22', amount: 89.99 }
+        ],
+        notes: 'Quick payment via credit card.'
+      },
+      {
+        id: '15',
+        invoiceId: 'INV-2024-015',
+        tenantName: 'Elite Insurance Co.',
+        tenantEmail: 'finance@elite.com',
+        tenantCompany: 'Elite Insurance Co.',
+        tenantPhone: '+1 (555) 456-7890',
+        tenantAddress: '456 Crown Avenue, Las Vegas, NV 89101',
+        amount: 449.99,
+        planName: 'Enterprise Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-02-25',
+        dueDate: '2024-03-25',
+        status: 'overdue',
+        breakdown: [
+          { description: 'Enterprise Plan - Monthly', amount: 449.99 }
+        ],
+        notes: 'Payment overdue - follow up required.'
+      },
+      {
+        id: '16',
+        invoiceId: 'INV-2024-016',
+        tenantName: 'Prime Insurance Ltd.',
+        tenantEmail: 'accounts@prime.com',
+        tenantCompany: 'Prime Insurance Ltd.',
+        tenantPhone: '+1 (555) 567-8901',
+        tenantAddress: '567 Park Lane, San Francisco, CA 94101',
+        amount: 199.99,
+        planName: 'Professional Plus Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-03-01',
+        dueDate: '2024-03-31',
+        status: 'pending',
+        breakdown: [
+          { description: 'Professional Plus Plan - Monthly', amount: 199.99 }
+        ],
+        notes: 'Professional plus tier subscription.'
+      },
+      {
+        id: '17',
+        invoiceId: 'INV-2024-017',
+        tenantName: 'Nova Insurance',
+        tenantEmail: 'billing@nova.com',
+        tenantCompany: 'Nova Insurance Corp.',
+        tenantPhone: '+1 (555) 678-9012',
+        tenantAddress: '678 Star Drive, Orlando, FL 32801',
+        amount: 69.99,
+        planName: 'Basic Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-03-05',
+        dueDate: '2024-04-05',
+        status: 'paid',
+        paidDate: '2024-03-08',
+        breakdown: [
+          { description: 'Basic Plan - Monthly', amount: 69.99 }
+        ],
+        paymentHistory: [
+          { type: 'Bank Transfer', date: '2024-03-08', amount: 69.99 }
+        ],
+        notes: 'Payment via bank transfer.'
+      },
+      {
+        id: '18',
+        invoiceId: 'INV-2024-018',
+        tenantName: 'Zenith Insurance',
+        tenantEmail: 'finance@zenith.com',
+        tenantCompany: 'Zenith Insurance Group',
+        tenantPhone: '+1 (555) 789-0123',
+        tenantAddress: '789 Summit Court, Philadelphia, PA 19101',
+        amount: 349.99,
+        planName: 'Enterprise Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-03-10',
+        dueDate: '2024-04-10',
+        status: 'pending',
+        breakdown: [
+          { description: 'Enterprise Plan - Monthly', amount: 349.99 }
+        ],
+        notes: 'Enterprise tier subscription.'
+      },
+      {
+        id: '19',
+        invoiceId: 'INV-2024-019',
+        tenantName: 'Stellar Insurance',
+        tenantEmail: 'accounts@stellar.com',
+        tenantCompany: 'Stellar Insurance Inc.',
+        tenantPhone: '+1 (555) 890-1234',
+        tenantAddress: '890 Galaxy Boulevard, Houston, TX 77001',
+        amount: 159.99,
+        planName: 'Professional Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-03-15',
+        dueDate: '2024-04-15',
+        status: 'paid',
+        paidDate: '2024-03-18',
+        breakdown: [
+          { description: 'Professional Plan - Monthly', amount: 159.99 }
+        ],
+        paymentHistory: [
+          { type: 'Credit Card Payment', date: '2024-03-18', amount: 159.99 }
+        ],
+        notes: 'Timely payment processing.'
+      },
+      {
+        id: '20',
+        invoiceId: 'INV-2024-020',
+        tenantName: 'Quantum Insurance',
+        tenantEmail: 'billing@quantum.com',
+        tenantCompany: 'Quantum Insurance LLC',
+        tenantPhone: '+1 (555) 901-2345',
+        tenantAddress: '901 Future Street, San Jose, CA 95101',
+        amount: 279.99,
+        planName: 'Professional Plus Plan',
+        billingPeriod: 'Monthly',
+        issueDate: '2024-03-20',
+        dueDate: '2024-04-20',
+        status: 'pending',
+        breakdown: [
+          { description: 'Professional Plus Plan - Monthly', amount: 279.99 }
+        ],
+        notes: 'Professional plus subscription.'
       }
     ];
 
@@ -328,8 +492,15 @@ const api = {
       { id: '1', name: 'Acme Insurance Co.', email: 'admin@acme-insurance.com' },
       { id: '2', name: 'SafeGuard Insurance', email: 'billing@safeguard.com' },
       { id: '3', name: 'Quick Insurance', email: 'finance@quickinsurance.com' },
-      { id: '4', name: 'Premium Insurance', email: 'accounts@premium.com' },
-      { id: '5', name: 'Reliable Insurance', email: 'billing@reliable.com' }
+      { id: '4', name: 'Premium Insurance Group', email: 'accounts@premium.com' },
+      { id: '5', name: 'Reliable Insurance', email: 'billing@reliable.com' },
+      { id: '6', name: 'SecureLife Insurance', email: 'finance@securelife.com' },
+      { id: '7', name: 'TrustGuard Insurance', email: 'billing@trustguard.com' },
+      { id: '8', name: 'Shield Insurance Co.', email: 'accounts@shield.com' },
+      { id: '9', name: 'Fortress Insurance', email: 'finance@fortress.com' },
+      { id: '10', name: 'Guardian Insurance', email: 'billing@guardian.com' },
+      { id: '11', name: 'Pinnacle Insurance', email: 'accounts@pinnacle.com' },
+      { id: '12', name: 'Valor Insurance', email: 'finance@valor.com' }
     ];
   },
 

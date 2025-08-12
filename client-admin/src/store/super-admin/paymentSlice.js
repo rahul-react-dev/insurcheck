@@ -2,20 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   invoices: [],
-  tenants: [
-    { id: '1', name: 'Acme Insurance Co.', email: 'admin@acme-insurance.com' },
-    { id: '2', name: 'SafeGuard Insurance', email: 'billing@safeguard.com' },
-    { id: '3', name: 'Quick Insurance', email: 'finance@quickinsurance.com' },
-    { id: '4', name: 'Premium Insurance', email: 'accounts@premium.com' },
-    { id: '5', name: 'Reliable Insurance', email: 'billing@reliable.com' },
-    { id: '6', name: 'SecureLife Insurance', email: 'finance@securelife.com' },
-    { id: '7', name: 'TrustGuard Insurance', email: 'billing@trustguard.com' },
-    { id: '8', name: 'Shield Insurance Co.', email: 'accounts@shield.com' },
-    { id: '9', name: 'Fortress Insurance', email: 'finance@fortress.com' },
-    { id: '10', name: 'Guardian Insurance', email: 'billing@guardian.com' },
-    { id: '11', name: 'Pinnacle Insurance', email: 'accounts@pinnacle.com' },
-    { id: '12', name: 'Valor Insurance', email: 'finance@valor.com' }
-  ],
+  tenants: [],
   isLoading: false,
   error: null,
   totalInvoices: 0,
@@ -32,8 +19,9 @@ const initialState = {
   },
   pagination: {
     page: 1,
-    limit: 10,
-    total: 0
+    limit: 5,
+    total: 0,
+    totalPages: 0
   },
   isLoadingTenants: false
 };

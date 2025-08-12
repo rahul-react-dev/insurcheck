@@ -1,34 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import InvoiceTable from '../../components/super-admin/InvoiceTable';
-import InvoiceModal from '../../components/super-admin/InvoiceModal';
-import InvoiceFilters from '../../components/super-admin/InvoiceFilters';
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import InvoiceTable from "../../components/super-admin/InvoiceTable";
+import InvoiceModal from "../../components/super-admin/InvoiceModal";
+import InvoiceFilters from "../../components/super-admin/InvoiceFilters";
 import {
   fetchInvoicesRequest,
   fetchTenantsRequest,
   markInvoicePaidRequest,
   downloadInvoiceRequest,
-  clearError
-} from '../../store/super-admin/paymentSlice';
+  clearError,
+} from "../../store/super-admin/paymentSlice";
 
 const PaymentManagement = () => {
   const dispatch = useDispatch();
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState({
-    tenantName: '',
-    status: '',
+    tenantName: "",
+    status: "",
     dateRange: {
-      start: '',
-      end: ''
-    }
+      start: "",
+      end: "",
+    },
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
-    total: 0
+    limit: 5,
+    total: 0,
   });
 
   const {
@@ -39,20 +39,29 @@ const PaymentManagement = () => {
     totalInvoices,
     totalPaid,
     totalPending,
-    totalOverdue
-  } = useSelector(state => state.payment);
+    totalOverdue,
+  } = useSelector((state) => state.payment);
+  console.log(
+    isLoading,
+    error,
+    invoices,
+    tenants,
+    totalInvoices,
+    totalPaid,
+    totalPending,
+  );
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    dispatch(fetchInvoicesRequest({
-      page: pagination.page,
-      limit: pagination.limit,
-      ...filters
-    }));
+    dispatch(
+      fetchInvoicesRequest({
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters,
+      }),
+    );
     dispatch(fetchTenantsRequest());
   }, [dispatch]);
-
-
 
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
@@ -64,7 +73,7 @@ const PaymentManagement = () => {
   };
 
   const handleMarkPaid = (invoiceId) => {
-    if (window.confirm('Are you sure you want to mark this invoice as paid?')) {
+    if (window.confirm("Are you sure you want to mark this invoice as paid?")) {
       dispatch(markInvoicePaidRequest(invoiceId));
     }
   };
@@ -72,19 +81,27 @@ const PaymentManagement = () => {
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     // Reset to first page when filters change
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
     // Trigger immediate fetch with new filters
-    dispatch(fetchInvoicesRequest({ ...newFilters, page: 1, limit: pagination.limit }));
+    dispatch(
+      fetchInvoicesRequest({ ...newFilters, page: 1, limit: pagination.limit }),
+    );
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
     // Trigger immediate fetch with new page
-    dispatch(fetchInvoicesRequest({ ...filters, page: newPage, limit: pagination.limit }));
+    dispatch(
+      fetchInvoicesRequest({
+        ...filters,
+        page: newPage,
+        limit: pagination.limit,
+      }),
+    );
   };
 
   const handlePageSizeChange = (newLimit) => {
-    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
     // Trigger immediate fetch with new page size
     dispatch(fetchInvoicesRequest({ ...filters, page: 1, limit: newLimit }));
   };
@@ -94,9 +111,9 @@ const PaymentManagement = () => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -106,7 +123,9 @@ const PaymentManagement = () => {
       <div className="bg-gradient-to-r from-green-600 to-emerald-700 rounded-xl p-4 sm:p-6 lg:p-8 text-white mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Payments & Invoices</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
+              Payments & Invoices
+            </h1>
             <p className="text-green-100 text-sm sm:text-base lg:text-lg">
               Manage tenant payments, invoices, and financial compliance
             </p>
@@ -132,7 +151,9 @@ const PaymentManagement = () => {
             <div className="flex items-start space-x-3 flex-1 min-w-0">
               <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
               <div className="min-w-0">
-                <h3 className="text-red-800 font-medium text-sm sm:text-base">Error</h3>
+                <h3 className="text-red-800 font-medium text-sm sm:text-base">
+                  Error
+                </h3>
                 <p className="text-red-700 text-sm break-words">{error}</p>
               </div>
             </div>
@@ -156,8 +177,12 @@ const PaymentManagement = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Total Invoices</p>
-              <p className="text-2xl font-bold text-gray-900">{totalInvoices || 0}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Total Invoices
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {totalInvoices || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -171,7 +196,9 @@ const PaymentManagement = () => {
             </div>
             <div className="ml-4 flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-500 truncate">Paid</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid || 0)}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(totalPaid || 0)}
+              </p>
             </div>
           </div>
         </Card>
@@ -184,8 +211,12 @@ const PaymentManagement = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPending || 0)}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Pending
+              </p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {formatCurrency(totalPending || 0)}
+              </p>
             </div>
           </div>
         </Card>
@@ -198,8 +229,12 @@ const PaymentManagement = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Overdue</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalOverdue || 0)}</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Overdue
+              </p>
+              <p className="text-2xl font-bold text-red-600">
+                {formatCurrency(totalOverdue || 0)}
+              </p>
             </div>
           </div>
         </Card>
@@ -225,7 +260,7 @@ const PaymentManagement = () => {
               Refresh
             </Button>
             <Button
-              onClick={() => dispatch(downloadInvoiceRequest('all'))}
+              onClick={() => dispatch(downloadInvoiceRequest("all"))}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
             >
               <i className="fas fa-download mr-2"></i>
