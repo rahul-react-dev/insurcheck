@@ -39,6 +39,13 @@ const TenantActivityLogs = () => {
     dispatch(fetchActivityLogsRequest());
   }, [dispatch, refreshKey]);
 
+  // Debug pagination data
+  useEffect(() => {
+    console.log('TenantActivityLogs - Pagination data:', pagination);
+    console.log('TenantActivityLogs - Activity logs:', activityLogs);
+    console.log('TenantActivityLogs - Is loading:', isLoading);
+  }, [pagination, activityLogs, isLoading]);
+
   const handleFilterChange = (newFilters) => {
     dispatch(setFilters(newFilters));
     dispatch(fetchActivityLogsRequest(newFilters));

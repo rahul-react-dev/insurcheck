@@ -334,7 +334,17 @@ const ActivityLogTable = ({
       </div>
 
       {/* Pagination */}
-      {!isLoading && logs && logs.length > 0 && (
+      {(() => {
+        console.log('ActivityLogTable - Pagination render check:', {
+          isLoading,
+          logsLength: logs?.length,
+          pagination,
+          shouldRender: !isLoading && pagination && pagination.total > 0
+        });
+        return null;
+      })()}
+      
+      {!isLoading && pagination && pagination.total > 0 && (
         <div className="border-t border-gray-200 bg-white px-4 py-4">
           <Pagination
             currentPage={pagination.page}

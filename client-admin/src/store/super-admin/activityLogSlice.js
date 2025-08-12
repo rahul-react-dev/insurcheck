@@ -50,15 +50,17 @@ const activityLogSlice = createSlice({
       state.error = null;
     },
     fetchActivityLogsSuccess: (state, action) => {
+      console.log('ActivityLog slice - Payload received:', action.payload);
       state.isLoading = false;
-      state.activityLogs = action.payload.logs;
-      state.filteredActivityLogs = action.payload.logs;
+      state.activityLogs = action.payload.logs || [];
+      state.filteredActivityLogs = action.payload.logs || [];
       state.pagination = {
-        page: action.payload.page || state.pagination.page,
-        limit: action.payload.limit || state.pagination.limit,
-        total: action.payload.total,
-        totalPages: action.payload.totalPages || Math.ceil(action.payload.total / (action.payload.limit || state.pagination.limit))
+        page: parseInt(action.payload.page) || 1,
+        limit: parseInt(action.payload.limit) || 10,
+        total: parseInt(action.payload.total) || 0,
+        totalPages: parseInt(action.payload.totalPages) || Math.ceil((action.payload.total || 0) / (action.payload.limit || 10))
       };
+      console.log('ActivityLog slice - Updated pagination:', state.pagination);
     },
     fetchActivityLogsFailure: (state, action) => {
       state.isLoading = false;
