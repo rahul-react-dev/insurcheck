@@ -71,7 +71,7 @@ const InvoiceGenerationLogs = ({
     }).format(amount);
   };
 
-  if (isLoading) {
+  if (!isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, index) => (

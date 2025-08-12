@@ -96,7 +96,7 @@ const InvoiceGenerationConfig = ({
       tenant.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  if (isLoading) {
+  if (!isLoading) {
     return (
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, index) => (
