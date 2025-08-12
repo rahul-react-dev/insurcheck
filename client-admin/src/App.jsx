@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SubscriptionManagement from "./pages/super-admin/SubscriptionManagement";
+import PaymentManagement from "./pages/super-admin/PaymentManagement";
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -40,6 +41,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SubscriptionManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/payments"
+              element={
+                <ProtectedRoute>
+                  <PaymentManagement />
                 </ProtectedRoute>
               }
             />

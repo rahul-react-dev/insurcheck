@@ -27,6 +27,12 @@ const AdminLayout = ({ children }) => {
       icon: "fas fa-credit-card",
       roles: ["super-admin"],
     },
+    {
+      name: "Payments & Invoices",
+      path: "/super-admin/payments",
+      icon: "fas fa-file-invoice-dollar",
+      roles: ["super-admin"],
+    },
   ];
 
   const filteredNavigation = navigationItems.filter(
@@ -143,7 +149,9 @@ const AdminLayout = ({ children }) => {
                     ? "System Monitoring"
                     : location.pathname.includes("subscriptions")
                       ? "Subscription Management"
-                      : "Super Admin Panel"}
+                      : location.pathname.includes("payments")
+                        ? "Payments & Invoices"
+                        : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations

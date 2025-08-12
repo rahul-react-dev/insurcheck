@@ -1,12 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
-import createSagaMiddleware from 'redux-saga';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import { combineReducers } from '@reduxjs/toolkit';
+import createSagaMiddleware from 'redux-saga';
 
 import authReducer from './authSlice';
 import superAdminReducer from './super-admin/superAdminSlice';
 import subscriptionReducer from './super-admin/subscriptionSlice';
+import paymentReducer from './super-admin/paymentSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -26,7 +26,12 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 const sagaMiddleware = createSagaMiddleware();
 
 const store = configureStore({
-  reducer: persistedReducer,
+  reducer: {
+    auth: persistedAuthReducer,
+    superAdmin: superAdminReducer,
+    subscription: subscriptionReducer,
+    payment: paymentReducer,
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
