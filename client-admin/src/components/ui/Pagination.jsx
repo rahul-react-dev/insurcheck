@@ -1,4 +1,3 @@
-
 import React from "react";
 import Button from "./Button";
 
@@ -49,14 +48,14 @@ const Pagination = ({
         <Button
           onClick={handlePrevPage}
           disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm text-gray-700 font-semibold rounded-md bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
+          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm text-gray-700 font-semibold rounded-md bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400 text-black"
         >
           Previous
         </Button>
         <Button
           onClick={handleNextPage}
           disabled={currentPage === totalPages}
-          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
+          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400 text-black"
         >
           Next
         </Button>
@@ -66,14 +65,19 @@ const Pagination = ({
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center space-x-4">
           <p className="text-sm text-gray-700">
-            Showing <span className="font-semibold text-gray-900">{startIndex}</span> to{" "}
+            Showing{" "}
+            <span className="font-semibold text-gray-900">{startIndex}</span> to{" "}
             <span className="font-semibold text-gray-900">{endIndex}</span> of{" "}
-            <span className="font-semibold text-gray-900">{totalItems}</span> results
+            <span className="font-semibold text-gray-900">{totalItems}</span>{" "}
+            results
           </p>
 
           {showItemsPerPage && onItemsPerPageChange && (
             <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-sm text-gray-700 font-medium">
+              <label
+                htmlFor="pageSize"
+                className="text-sm text-gray-700 font-medium"
+              >
                 Show:
               </label>
               <select
@@ -88,7 +92,9 @@ const Pagination = ({
                   </option>
                 ))}
               </select>
-              <span className="text-sm text-gray-700 font-medium">per page</span>
+              <span className="text-sm text-gray-700 font-medium">
+                per page
+              </span>
             </div>
           )}
         </div>
@@ -101,7 +107,7 @@ const Pagination = ({
             <Button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
+              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400 text-black"
             >
               <span className="sr-only">Previous</span>
               <i className="fas fa-chevron-left h-4 w-4" aria-hidden="true"></i>
@@ -133,7 +139,7 @@ const Pagination = ({
                     onClick={() => onPageChange(1)}
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === 1
-                        ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
+                        ? "z-10 bg-blue-600 border-blue-600  font-bold shadow-md"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-semibold"
                     }`}
                   >
@@ -161,9 +167,9 @@ const Pagination = ({
                   <Button
                     key={i}
                     onClick={() => onPageChange(i)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
+                    className={`relative text-black inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === i
-                        ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
+                        ? "z-10 bg-blue-600 border-blue-600  font-bold shadow-md"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-semibold"
                     }`}
                   >
@@ -178,7 +184,7 @@ const Pagination = ({
                   pages.push(
                     <span
                       key="ellipsis2"
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                      className=" text-black relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
                     >
                       <span className="font-bold">...</span>
                     </span>,
@@ -189,9 +195,9 @@ const Pagination = ({
                   <Button
                     key={totalPages}
                     onClick={() => onPageChange(totalPages)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
+                    className={`relative  inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === totalPages
-                        ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
+                        ? "z-10 bg-blue-600 border-blue-600  font-bold shadow-md"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-semibold"
                     }`}
                   >
@@ -206,12 +212,14 @@ const Pagination = ({
             <Button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400"
+              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400 text-black"
             >
               <span className="sr-only">Next</span>
-              <span className="mr-1 hidden sm:inline font-semibold">Next</span>
+              <span className="mr-1 hidden text-black sm:inline font-semibold">
+                Next
+              </span>
               <i
-                className="fas fa-chevron-right h-4 w-4"
+                className="fas fa-chevron-right h-4 w-4 text-black"
                 aria-hidden="true"
               ></i>
             </Button>
