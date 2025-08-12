@@ -1,149 +1,136 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import Button from "../../components/ui/Button";
+import { toast } from "react-hot-toast";
+
 import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import TenantFilters from "../../components/super-admin/TenantFilters";
 import TenantTable from "../../components/super-admin/TenantTable";
 import TenantModal from "../../components/super-admin/TenantModal";
-import TenantFilters from "../../components/super-admin/TenantFilters";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+
 import {
   fetchTenantsRequest,
-  fetchSubscriptionPlansRequest,
   createTenantRequest,
   updateTenantRequest,
-  suspendTenantRequest,
   deleteTenantRequest,
-  clearError,
+  clearErrors,
 } from "../../store/super-admin/tenantSlice";
 
 const TenantManagement = () => {
   const dispatch = useDispatch();
-  const [selectedTenant, setSelectedTenant] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tenantToDelete, setTenantToDelete] = useState(null);
-  const [modalMode, setModalMode] = useState("create"); // create, edit
-  const [filters, setFilters] = useState({
-    tenantName: "",
-    status: "",
-    subscriptionPlan: "",
-    dateRange: {
-      start: "",
-      end: "",
-    },
-  });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
 
   const {
     tenants,
-    subscriptionPlans,
-    isLoading,
-    error,
     totalTenants,
     statusCounts,
-    pagination: storePagination,
+    isLoading,
+    error,
+    filters,
+    pagination,
+    hasInitialLoad,
   } = useSelector((state) => state.tenant);
 
-  // Sync pagination with store
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    isOpen: false,
+    tenantId: null,
+    tenantName: "",
+  });
+
+  // Mock subscription plans
+  const subscriptionPlans = [
+    { id: 1, name: "Basic" },
+    { id: 2, name: "Standard" },
+    { id: 3, name: "Premium" },
+    { id: 4, name: "Enterprise" },
+  ];
+
   useEffect(() => {
-    if (storePagination) {
-      setPagination(prev => ({
-        ...prev,
-        ...storePagination
+    if (!hasInitialLoad) {
+      dispatch(fetchTenantsRequest({ 
+        ...filters, 
+        page: pagination.page, 
+        limit: pagination.limit 
       }));
     }
-  }, [storePagination]);
+  }, [dispatch, hasInitialLoad]);
 
-  // Fetch initial data when component mounts
   useEffect(() => {
-    console.log('🚀 TenantManagement: Component mounted, dispatching fetchTenantsRequest');
-    
-    const fetchParams = {
-      page: 1,
-      limit: 10,
-      ...filters,
-    };
-    
-    dispatch(fetchTenantsRequest(fetchParams));
-    dispatch(fetchSubscriptionPlansRequest());
-  }, [dispatch]);
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  const handleFilterChange = (newFilters) => {
+    dispatch(fetchTenantsRequest({ 
+      ...newFilters, 
+      page: 1, 
+      limit: pagination.limit 
+    }));
+  };
+
+  const handlePageChange = (newPage) => {
+    dispatch(fetchTenantsRequest({ 
+      ...filters, 
+      page: newPage, 
+      limit: pagination.limit 
+    }));
+  };
+
+  const handlePageSizeChange = (newLimit) => {
+    dispatch(fetchTenantsRequest({ 
+      ...filters, 
+      page: 1, 
+      limit: newLimit 
+    }));
+  };
+
+  const handleRefresh = () => {
+    dispatch(fetchTenantsRequest({ 
+      ...filters, 
+      page: pagination.page, 
+      limit: pagination.limit 
+    }));
+  };
 
   const handleCreateTenant = () => {
-    setModalMode("create");
     setSelectedTenant(null);
     setIsModalOpen(true);
   };
 
   const handleEditTenant = (tenant) => {
-    setModalMode("edit");
     setSelectedTenant(tenant);
     setIsModalOpen(true);
   };
 
-  const handleSuspendTenant = (tenantId, currentStatus) => {
-    const action = currentStatus === "active" ? "suspend" : "reactivate";
-    if (window.confirm(`Are you sure you want to ${action} this tenant?`)) {
-      dispatch(suspendTenantRequest({ tenantId, suspend: currentStatus === "active" }));
-    }
-  };
-
   const handleDeleteTenant = (tenant) => {
-    setTenantToDelete(tenant);
-    setIsDeleteModalOpen(true);
+    setDeleteConfirm({
+      isOpen: true,
+      tenantId: tenant.id,
+      tenantName: tenant.tenantName,
+    });
   };
 
-  const confirmDeleteTenant = () => {
-    if (tenantToDelete) {
-      dispatch(deleteTenantRequest(tenantToDelete.id));
-      setIsDeleteModalOpen(false);
-      setTenantToDelete(null);
+  const confirmDelete = () => {
+    if (deleteConfirm.tenantId) {
+      dispatch(deleteTenantRequest(deleteConfirm.tenantId));
     }
+    setDeleteConfirm({ isOpen: false, tenantId: null, tenantName: "" });
   };
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    // Reset to first page when filters change
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    // Trigger immediate fetch with new filters
-    dispatch(
-      fetchTenantsRequest({ ...newFilters, page: 1, limit: pagination.limit }),
-    );
-  };
-
-  const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-    // Trigger immediate fetch with new page
-    dispatch(
-      fetchTenantsRequest({
-        ...filters,
-        page: newPage,
-        limit: pagination.limit,
-      }),
-    );
-  };
-
-  const handlePageSizeChange = (newLimit) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
-    // Trigger immediate fetch with new page size
-    dispatch(fetchTenantsRequest({ ...filters, page: 1, limit: newLimit }));
-  };
-
-  const handleRefresh = () => {
-    dispatch(fetchTenantsRequest({ ...filters, ...pagination }));
-    dispatch(fetchSubscriptionPlansRequest());
-  };
-
-  const handleModalSubmit = (tenantData) => {
-    if (modalMode === "create") {
-      dispatch(createTenantRequest(tenantData));
-    } else {
+  const handleSubmit = (tenantData) => {
+    if (selectedTenant) {
       dispatch(updateTenantRequest({ id: selectedTenant.id, ...tenantData }));
+    } else {
+      dispatch(createTenantRequest(tenantData));
     }
+    setIsModalOpen(false);
+  };
+
+  const handleClearErrors = () => {
+    dispatch(clearErrors());
   };
 
   return (
@@ -173,22 +160,83 @@ const TenantManagement = () => {
         </div>
       </div>
 
-      {/* Error Alert */}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+        {/* Total Tenants */}
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <i className="fas fa-building text-xl text-blue-600"></i>
+            </div>
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {totalTenants || 0}
+              </p>
+              <p className="text-sm text-gray-600">Total Tenants</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Active */}
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <i className="fas fa-check-circle text-xl text-green-600"></i>
+            </div>
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {statusCounts.active || 0}
+              </p>
+              <p className="text-sm text-gray-600">Active</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Suspended */}
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-red-100 rounded-lg">
+              <i className="fas fa-pause-circle text-xl text-red-600"></i>
+            </div>
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {statusCounts.suspended || 0}
+              </p>
+              <p className="text-sm text-gray-600">Suspended</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Unverified */}
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <i className="fas fa-exclamation-triangle text-xl text-yellow-600"></i>
+            </div>
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {statusCounts.unverified || 0}
+              </p>
+              <p className="text-sm text-gray-600">Unverified</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-6">
-          <div className="flex items-start justify-between space-x-3">
-            <div className="flex items-start space-x-3 flex-1 min-w-0">
-              <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
-              <div className="min-w-0">
-                <h3 className="text-red-800 font-medium text-sm sm:text-base">
-                  Error
-                </h3>
-                <p className="text-red-700 text-sm break-words">{error}</p>
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <i className="fas fa-exclamation-triangle text-red-400 mt-0.5"></i>
+              <div>
+                <h3 className="text-red-800 font-medium">Error</h3>
+                <p className="text-red-700 text-sm">{error}</p>
               </div>
             </div>
             <button
-              onClick={() => dispatch(clearError())}
-              className="text-red-400 hover:text-red-600 text-xl font-bold flex-shrink-0"
+              onClick={handleClearErrors}
+              className="text-red-400 hover:text-red-600 text-xl font-bold"
             >
               ×
             </button>
@@ -196,82 +244,10 @@ const TenantManagement = () => {
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-building text-blue-600 text-xl"></i>
-              </div>
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">
-                Total Tenants
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {totalTenants || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-check-circle text-green-600 text-xl"></i>
-              </div>
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Active</p>
-              <p className="text-2xl font-bold text-green-600">
-                {statusCounts?.active || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-pause-circle text-red-600 text-xl"></i>
-              </div>
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">
-                Suspended
-              </p>
-              <p className="text-2xl font-bold text-red-600">
-                {statusCounts?.suspended || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
-              </div>
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">
-                Unverified
-              </p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {statusCounts?.unverified || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       {/* Filters and Actions */}
       <Card className="p-4 sm:p-6 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div className="space-y-4">
+          {/* Filters */}
           <div className="flex-1">
             <TenantFilters
               filters={filters}
@@ -279,7 +255,9 @@ const TenantManagement = () => {
               subscriptionPlans={subscriptionPlans}
             />
           </div>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <Button
               onClick={handleRefresh}
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
@@ -299,71 +277,44 @@ const TenantManagement = () => {
         </div>
       </Card>
 
-      {/* Tenant Table */}
+      {/* Tenants Table */}
       <Card className="overflow-hidden">
         <TenantTable
           tenants={tenants}
-          isLoading={isLoading}
-          onEditTenant={handleEditTenant}
-          onSuspendTenant={handleSuspendTenant}
-          onDeleteTenant={handleDeleteTenant}
-          pagination={pagination}
           totalTenants={totalTenants}
+          isLoading={isLoading}
+          pagination={pagination}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          onEdit={handleEditTenant}
+          onDelete={handleDeleteTenant}
         />
       </Card>
 
-      {/* Tenant Modal */}
+      {/* Create/Edit Tenant Modal */}
       {isModalOpen && (
         <TenantModal
           isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedTenant(null);
-          }}
-          onSubmit={handleModalSubmit}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleSubmit}
           tenant={selectedTenant}
-          mode={modalMode}
           subscriptionPlans={subscriptionPlans}
-          isLoading={isLoading}
         />
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && tenantToDelete && (
+      {deleteConfirm.isOpen && (
         <ConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setTenantToDelete(null);
-          }}
-          onConfirm={confirmDeleteTenant}
-          title="Delete Tenant"
-          message={
-            <div>
-              <p className="mb-4">
-                Are you sure you want to delete <strong>{tenantToDelete.tenantName}</strong>?
-              </p>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <i className="fas fa-exclamation-triangle text-red-500 mt-0.5 flex-shrink-0"></i>
-                  <div>
-                    <h4 className="text-red-800 font-medium mb-2">Warning: This action cannot be undone</h4>
-                    <ul className="text-red-700 text-sm space-y-1">
-                      <li>• All tenant users will be permanently deleted</li>
-                      <li>• All tenant documents will be removed</li>
-                      <li>• All tenant logs will be deleted</li>
-                      <li>• Billing and subscription data will be archived</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+          isOpen={deleteConfirm.isOpen}
+          onClose={() =>
+            setDeleteConfirm({ isOpen: false, tenantId: null, tenantName: "" })
           }
-          confirmText="Delete Tenant"
-          confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-          isLoading={isLoading}
+          onConfirm={confirmDelete}
+          title="Delete Tenant"
+          message={`Are you sure you want to delete tenant "${deleteConfirm.tenantName}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
         />
       )}
     </div>

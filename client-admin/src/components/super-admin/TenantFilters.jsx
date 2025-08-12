@@ -42,7 +42,7 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+            className="text-sm text-purple-600 hover:text-purple-700 font-medium self-start sm:self-auto"
           >
             <i className="fas fa-times mr-1"></i>
             Clear Filters
@@ -50,62 +50,63 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
         )}
       </div>
 
-      {/* First row - Main filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
-        {/* Tenant Name Filter */}
-        <div className="md:col-span-1">
-          <Input
-            label="Tenant Name"
-            value={filters.tenantName || ""}
-            onChange={(e) => handleInputChange("tenantName", e.target.value)}
-            placeholder="Search by tenant name"
-            icon="fas fa-search"
-          />
+      {/* Filters Grid */}
+      <div className="space-y-4">
+        {/* Row 1: Main filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Tenant Name Filter */}
+          <div>
+            <Input
+              label="Tenant Name"
+              value={filters.tenantName || ""}
+              onChange={(e) => handleInputChange("tenantName", e.target.value)}
+              placeholder="Search by tenant name"
+              icon="fas fa-search"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              value={filters.status || ""}
+              onChange={(e) => handleInputChange("status", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="unverified">Unverified</option>
+              <option value="locked">Locked</option>
+              <option value="deactivated">Deactivated</option>
+            </select>
+          </div>
+
+          {/* Subscription Plan Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Subscription Plan
+            </label>
+            <select
+              value={filters.subscriptionPlan || ""}
+              onChange={(e) => handleInputChange("subscriptionPlan", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">All Plans</option>
+              {subscriptionPlans.map((plan) => (
+                <option key={plan.id} value={plan.name}>
+                  {plan.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Status Filter */}
-        <div className="md:col-span-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            value={filters.status || ""}
-            onChange={(e) => handleInputChange("status", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
-            <option value="unverified">Unverified</option>
-            <option value="locked">Locked</option>
-            <option value="deactivated">Deactivated</option>
-          </select>
-        </div>
-
-        {/* Subscription Plan Filter */}
-        <div className="md:col-span-2 xl:col-span-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Subscription Plan
-          </label>
-          <select
-            value={filters.subscriptionPlan || ""}
-            onChange={(e) => handleInputChange("subscriptionPlan", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="">All Plans</option>
-            {subscriptionPlans.map((plan) => (
-              <option key={plan.id} value={plan.name}>
-                {plan.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Second row - Date Range Filter */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="lg:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        {/* Row 2: Date Range Filter */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700">
             Created Date Range
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -50,13 +50,13 @@ const Pagination = ({
             disabled={currentPage === 1}
             className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <i className="fas fa-chevron-left mr-1"></i>
-            Prev
+            <i className="fas fa-chevron-left mr-1 text-gray-700"></i>
+            <span className="text-gray-700">Prev</span>
           </Button>
           <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg">
-            <span className="text-sm text-gray-500">Page</span>
+            <span className="text-sm text-gray-600">Page</span>
             <span className="text-sm font-medium text-gray-900">{currentPage}</span>
-            <span className="text-sm text-gray-500">of</span>
+            <span className="text-sm text-gray-600">of</span>
             <span className="text-sm font-medium text-gray-900">{totalPages}</span>
           </div>
           <Button
@@ -64,8 +64,8 @@ const Pagination = ({
             disabled={currentPage === totalPages}
             className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next
-            <i className="fas fa-chevron-right ml-1"></i>
+            <span className="text-gray-700">Next</span>
+            <i className="fas fa-chevron-right ml-1 text-gray-700"></i>
           </Button>
         </div>
       </div>
@@ -91,7 +91,7 @@ const Pagination = ({
                 id="pageSize"
                 value={itemsPerPage}
                 onChange={handlePageSizeChange}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 {itemsPerPageOptions.map(option => (
                   <option key={option} value={option}>
@@ -112,11 +112,11 @@ const Pagination = ({
             <Button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-3 py-2 rounded-l-lg border-0 bg-transparent text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="relative inline-flex items-center px-3 py-2 rounded-l-lg border-0 bg-transparent text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">Previous</span>
-              <i className="fas fa-chevron-left text-xs mr-1" aria-hidden="true"></i>
-              <span className="hidden sm:inline">Previous</span>
+              <i className="fas fa-chevron-left text-xs mr-1 text-gray-600" aria-hidden="true"></i>
+              <span className="hidden sm:inline text-gray-600">Previous</span>
             </Button>
 
             {/* Page numbers */}
@@ -149,7 +149,7 @@ const Pagination = ({
                 
                 if (startPage > 2) {
                   pages.push(
-                    <span key="ellipsis1" className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400">
+                    <span key="ellipsis1" className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500">
                       ...
                     </span>
                   );
@@ -179,7 +179,7 @@ const Pagination = ({
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
                   pages.push(
-                    <span key="ellipsis2" className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400">
+                    <span key="ellipsis2" className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500">
                       ...
                     </span>
                   );
@@ -206,11 +206,11 @@ const Pagination = ({
             <Button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-3 py-2 rounded-r-lg border-0 bg-transparent text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="relative inline-flex items-center px-3 py-2 rounded-r-lg border-0 bg-transparent text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">Next</span>
-              <span className="hidden sm:inline">Next</span>
-              <i className="fas fa-chevron-right text-xs ml-1" aria-hidden="true"></i>
+              <span className="hidden sm:inline text-gray-600">Next</span>
+              <i className="fas fa-chevron-right text-xs ml-1 text-gray-600" aria-hidden="true"></i>
             </Button>
           </nav>
         </div>
