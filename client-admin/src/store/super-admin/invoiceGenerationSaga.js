@@ -1,4 +1,4 @@
-import { call, put, takeLatest, takeEvery } from 'redux-saga/effects';
+import { call, put, takeLatest, takeEvery, all } from 'redux-saga/effects';
 import {
   fetchInvoiceConfigRequest,
   fetchInvoiceConfigSuccess,
@@ -131,9 +131,11 @@ const mockLogs = generateMockLogs(25);
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Saga to fetch invoice configurations
-function* fetchInvoiceConfigSaga() {
+function* fetchInvoiceConfigSaga(action) {
   try {
-    yield call(delay, 1200); // Simulate API call
+    console.log('🚀 fetchInvoiceConfigSaga triggered with action:', action);
+    
+    yield call(delay, 800); // Simulate API call
 
     console.log('🚀 Fetching invoice configurations...');
     
@@ -251,7 +253,9 @@ function* generateInvoiceSaga(action) {
 // Saga to fetch invoice logs
 function* fetchInvoiceLogsSaga(action) {
   try {
-    yield call(delay, 1000); // Simulate API call
+    console.log('🚀 fetchInvoiceLogsSaga triggered with action:', action);
+    
+    yield call(delay, 600); // Simulate API call
 
     console.log('🚀 Fetching invoice logs...');
 
@@ -403,32 +407,38 @@ function calculateNextGenerationDate(startDate, frequency) {
 
 // Watcher sagas
 export function* watchFetchInvoiceConfig() {
+  console.log('🔧 watchFetchInvoiceConfig initialized');
   yield takeLatest(fetchInvoiceConfigRequest.type, fetchInvoiceConfigSaga);
 }
 
 export function* watchUpdateInvoiceConfig() {
+  console.log('🔧 watchUpdateInvoiceConfig initialized');
   yield takeEvery(updateInvoiceConfigRequest.type, updateInvoiceConfigSaga);
 }
 
 export function* watchGenerateInvoice() {
+  console.log('🔧 watchGenerateInvoice initialized');
   yield takeEvery(generateInvoiceRequest.type, generateInvoiceSaga);
 }
 
 export function* watchFetchInvoiceLogs() {
+  console.log('🔧 watchFetchInvoiceLogs initialized');
   yield takeLatest(fetchInvoiceLogsRequest.type, fetchInvoiceLogsSaga);
 }
 
 export function* watchRetryInvoiceGeneration() {
+  console.log('🔧 watchRetryInvoiceGeneration initialized');
   yield takeEvery(retryInvoiceGenerationRequest.type, retryInvoiceGenerationSaga);
 }
 
 // Root invoice generation saga
 export default function* invoiceGenerationSaga() {
-  yield [
+  console.log('🔧 Invoice generation saga initialized');
+  yield all([
     watchFetchInvoiceConfig(),
     watchUpdateInvoiceConfig(),
     watchGenerateInvoice(),
     watchFetchInvoiceLogs(),
     watchRetryInvoiceGeneration()
-  ];
+  ]);
 }

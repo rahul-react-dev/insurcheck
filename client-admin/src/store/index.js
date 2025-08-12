@@ -39,7 +39,9 @@ const store = configureStore({
     }).concat(sagaMiddleware),
 });
 
+console.log('🏪 Store configured with reducers:', Object.keys(store.getState()));
 sagaMiddleware.run(rootSaga);
+console.log('🚀 Root saga started');
 
 export const persistor = persistStore(store);
 export default store;

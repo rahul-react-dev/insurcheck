@@ -37,16 +37,19 @@ const invoiceGenerationSlice = createSlice({
   reducers: {
     // Fetch invoice configurations
     fetchInvoiceConfigRequest: (state) => {
+      console.log('📊 fetchInvoiceConfigRequest dispatched');
       state.isLoading = true;
       state.error = null;
     },
     fetchInvoiceConfigSuccess: (state, action) => {
+      console.log('📊 fetchInvoiceConfigSuccess dispatched with payload:', action.payload);
       state.isLoading = false;
       state.configurations = action.payload.configurations || [];
       state.tenants = action.payload.tenants || [];
       state.error = null;
     },
     fetchInvoiceConfigFailure: (state, action) => {
+      console.log('📊 fetchInvoiceConfigFailure dispatched with error:', action.payload);
       state.isLoading = false;
       state.error = action.payload;
     },
@@ -97,6 +100,7 @@ const invoiceGenerationSlice = createSlice({
 
     // Fetch invoice logs
     fetchInvoiceLogsRequest: (state, action) => {
+      console.log('📊 fetchInvoiceLogsRequest dispatched with payload:', action.payload);
       state.isLoadingLogs = true;
       state.error = null;
 
@@ -116,6 +120,7 @@ const invoiceGenerationSlice = createSlice({
       }
     },
     fetchInvoiceLogsSuccess: (state, action) => {
+      console.log('📊 fetchInvoiceLogsSuccess dispatched with payload:', action.payload);
       state.isLoadingLogs = false;
       state.hasInitialLoad = true;
       state.logs = action.payload.logs || [];
@@ -126,6 +131,7 @@ const invoiceGenerationSlice = createSlice({
       state.error = null;
     },
     fetchInvoiceLogsFailure: (state, action) => {
+      console.log('📊 fetchInvoiceLogsFailure dispatched with error:', action.payload);
       state.isLoadingLogs = false;
       state.error = action.payload;
     },

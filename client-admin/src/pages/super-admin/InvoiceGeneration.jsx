@@ -50,11 +50,22 @@ const InvoiceGeneration = () => {
 
   // Fetch initial data when component mounts
   useEffect(() => {
+    console.log('🔄 InvoiceGeneration component mounted, fetching data...');
     dispatch(fetchInvoiceConfigRequest());
-    dispatch(fetchInvoiceLogsRequest({ ...filters, ...pagination }));
+    dispatch(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
   }, [dispatch]);
 
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => {
+      if (error) {
+        dispatch(clearError());
+      }
+    };
+  }, [dispatch, error]);
+
   const handleConfigUpdate = (tenantId, config) => {
+    console.log('🔄 Updating config for tenant:', tenantId, config);
     dispatch(updateInvoiceConfigRequest({ tenantId, config }));
   };
 
@@ -77,14 +88,15 @@ const InvoiceGeneration = () => {
 
   const handlePageSizeChange = (newSize) => {
     setPagination(prev => ({ ...prev, limit: newSize, page: 1 }));
-    dispatch(fetchInvoiceLogsRequest({ 
-      ...filters, 
-      page: 1, 
-      limit: newSize 
+    dispatch(fetchInvoiceLogsRequest({
+      ...filters,
+      page: 1,
+      limit: newSize
     }));
   };
 
   const handleRetryGeneration = (logId) => {
+    console.log('🔄 Retrying generation for log:', logId);
     dispatch(retryInvoiceGenerationRequest(logId));
   };
 
@@ -248,7 +260,7 @@ const InvoiceGeneration = () => {
         <div className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="text-sm text-gray-600">
-              {activeTab === 'configuration' 
+              {activeTab === 'configuration'
                 ? 'Configure automatic invoice generation settings for each tenant'
                 : 'Monitor invoice generation logs and track delivery status'
               }
