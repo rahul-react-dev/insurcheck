@@ -1,24 +1,16 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../store/authSlice";
+import { useSelector } from "react-redux";
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
-    // Clear localStorage
     localStorage.clear();
-    
-    // Dispatch logout action to clear Redux state
-    dispatch(logout());
-    
-    // Navigate to login page
-    navigate("/super-admin/login", { replace: true });
+    navigate("/super-admin/login");
   };
 
   const navigationItems = [
