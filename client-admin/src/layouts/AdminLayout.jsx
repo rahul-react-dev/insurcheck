@@ -13,10 +13,10 @@ const AdminLayout = ({ children }) => {
   const handleLogout = () => {
     // Clear localStorage
     localStorage.clear();
-    
+
     // Dispatch logout action to clear Redux state
     dispatch(logout());
-    
+
     // Navigate to login page
     navigate("/super-admin/login", { replace: true });
   };
@@ -48,10 +48,16 @@ const AdminLayout = ({ children }) => {
     },
     {
       name: "Invoice Generation",
-      path: "/super-admin/invoice-generation",
-      icon: "fas fa-magic",
+      path: "/super-admin/invoices",
+      icon: "fas fa-file-invoice-dollar",
       roles: ["super-admin"],
     },
+    {
+        name: 'Activity Logs',
+        path: '/super-admin/activity-logs',
+        icon: 'fas fa-clipboard-list',
+        roles: ['super-admin']
+    }
   ];
 
   const filteredNavigation = navigationItems.filter(
@@ -174,7 +180,9 @@ const AdminLayout = ({ children }) => {
                           ? "Payments & Invoices"
                           : location.pathname.includes("invoice-generation")
                             ? "Invoice Generation"
-                            : "Super Admin Panel"}
+                            : location.pathname.includes("activity-logs")
+                              ? "Tenant Activity Logs"
+                              : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations

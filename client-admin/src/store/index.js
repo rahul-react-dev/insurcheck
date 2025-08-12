@@ -10,6 +10,7 @@ import subscriptionReducer from './super-admin/subscriptionSlice';
 import paymentReducer from './super-admin/paymentSlice';
 import invoiceGenerationReducer from './super-admin/invoiceGenerationSlice';
 import tenantReducer from './super-admin/tenantSlice';
+import activityLogReducer from './super-admin/activityLogSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   payment: paymentReducer,
   invoiceGeneration: invoiceGenerationReducer,
   tenant: tenantReducer,
+  activityLog: activityLogReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
