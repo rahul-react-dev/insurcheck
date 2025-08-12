@@ -50,9 +50,10 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* First row - Main filters */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
         {/* Tenant Name Filter */}
-        <div>
+        <div className="md:col-span-1">
           <Input
             label="Tenant Name"
             value={filters.tenantName || ""}
@@ -63,7 +64,7 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
         </div>
 
         {/* Status Filter */}
-        <div>
+        <div className="md:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Status
           </label>
@@ -82,7 +83,7 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
         </div>
 
         {/* Subscription Plan Filter */}
-        <div>
+        <div className="md:col-span-2 xl:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Subscription Plan
           </label>
@@ -99,27 +100,35 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
             ))}
           </select>
         </div>
+      </div>
 
-        {/* Date Range Filter */}
-        <div>
+      {/* Second row - Date Range Filter */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="lg:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Created Date Range
           </label>
-          <div className="flex space-x-2">
-            <input
-              type="date"
-              value={filters.dateRange?.start || ""}
-              onChange={(e) => handleInputChange("dateRange.start", e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-              placeholder="Start date"
-            />
-            <input
-              type="date"
-              value={filters.dateRange?.end || ""}
-              onChange={(e) => handleInputChange("dateRange.end", e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-              placeholder="End date"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">From</label>
+              <input
+                type="date"
+                value={filters.dateRange?.start || ""}
+                onChange={(e) => handleInputChange("dateRange.start", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                placeholder="Start date"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">To</label>
+              <input
+                type="date"
+                value={filters.dateRange?.end || ""}
+                onChange={(e) => handleInputChange("dateRange.end", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                placeholder="End date"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -41,44 +41,57 @@ const Pagination = ({
   }
 
   return (
-    <div className={`bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 ${className}`}>
+    <div className={`bg-white border-t border-gray-200 ${className}`}>
       {/* Mobile pagination */}
-      <div className="flex-1 flex justify-between sm:hidden">
-        <Button
-          onClick={handlePrevPage}
-          disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Previous
-        </Button>
-        <Button
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </Button>
+      <div className="flex items-center justify-between px-4 py-3 sm:hidden">
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <i className="fas fa-chevron-left mr-1"></i>
+            Prev
+          </Button>
+          <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg">
+            <span className="text-sm text-gray-500">Page</span>
+            <span className="text-sm font-medium text-gray-900">{currentPage}</span>
+            <span className="text-sm text-gray-500">of</span>
+            <span className="text-sm font-medium text-gray-900">{totalPages}</span>
+          </div>
+          <Button
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+            <i className="fas fa-chevron-right ml-1"></i>
+          </Button>
+        </div>
       </div>
 
       {/* Desktop pagination */}
-      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-        <div className="flex items-center space-x-4">
-          <p className="text-sm text-gray-700">
-            Showing <span className="font-medium">{startIndex}</span> to{" "}
-            <span className="font-medium">{endIndex}</span> of{" "}
-            <span className="font-medium">{totalItems}</span> results
-          </p>
+      <div className="hidden sm:flex sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+          <div className="flex items-center justify-center sm:justify-start">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+              <p className="text-sm text-blue-700 font-medium">
+                <span className="font-bold">{startIndex}</span> - <span className="font-bold">{endIndex}</span> of{" "}
+                <span className="font-bold">{totalItems}</span> results
+              </p>
+            </div>
+          </div>
           
           {showItemsPerPage && onItemsPerPageChange && (
-            <div className="flex items-center space-x-2">
-              <label htmlFor="pageSize" className="text-sm text-gray-700">
+            <div className="flex items-center justify-center space-x-3 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <label htmlFor="pageSize" className="text-sm font-medium text-gray-700">
                 Show:
               </label>
               <select
                 id="pageSize"
                 value={itemsPerPage}
                 onChange={handlePageSizeChange}
-                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 {itemsPerPageOptions.map(option => (
                   <option key={option} value={option}>
@@ -91,18 +104,19 @@ const Pagination = ({
           )}
         </div>
 
-        <div>
+        <div className="flex justify-center">
           <nav
-            className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+            className="inline-flex rounded-lg border border-gray-200 bg-white shadow-sm"
             aria-label="Pagination"
           >
             <Button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-3 py-2 rounded-l-lg border-0 bg-transparent text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">Previous</span>
-              <i className="fas fa-chevron-left h-4 w-4" aria-hidden="true"></i>
+              <i className="fas fa-chevron-left text-xs mr-1" aria-hidden="true"></i>
+              <span className="hidden sm:inline">Previous</span>
             </Button>
 
             {/* Page numbers */}
@@ -123,10 +137,10 @@ const Pagination = ({
                   <Button
                     key={1}
                     onClick={() => onPageChange(1)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    className={`relative inline-flex items-center px-3 py-2 border-0 text-sm font-medium transition-colors ${
                       currentPage === 1
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "bg-purple-100 text-purple-700 font-bold"
+                        : "bg-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     1
@@ -135,7 +149,7 @@ const Pagination = ({
                 
                 if (startPage > 2) {
                   pages.push(
-                    <span key="ellipsis1" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    <span key="ellipsis1" className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400">
                       ...
                     </span>
                   );
@@ -150,10 +164,10 @@ const Pagination = ({
                   <Button
                     key={i}
                     onClick={() => onPageChange(i)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    className={`relative inline-flex items-center px-3 py-2 border-0 text-sm font-medium transition-colors ${
                       currentPage === i
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "bg-purple-100 text-purple-700 font-bold"
+                        : "bg-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     {i}
@@ -165,7 +179,7 @@ const Pagination = ({
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
                   pages.push(
-                    <span key="ellipsis2" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    <span key="ellipsis2" className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400">
                       ...
                     </span>
                   );
@@ -175,10 +189,10 @@ const Pagination = ({
                   <Button
                     key={totalPages}
                     onClick={() => onPageChange(totalPages)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    className={`relative inline-flex items-center px-3 py-2 border-0 text-sm font-medium transition-colors ${
                       currentPage === totalPages
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        ? "bg-purple-100 text-purple-700 font-bold"
+                        : "bg-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     {totalPages}
@@ -192,10 +206,11 @@ const Pagination = ({
             <Button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center px-3 py-2 rounded-r-lg border-0 bg-transparent text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">Next</span>
-              <i className="fas fa-chevron-right h-4 w-4" aria-hidden="true"></i>
+              <span className="hidden sm:inline">Next</span>
+              <i className="fas fa-chevron-right text-xs ml-1" aria-hidden="true"></i>
             </Button>
           </nav>
         </div>
