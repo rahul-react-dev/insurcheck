@@ -64,6 +64,12 @@ const AdminLayout = ({ children }) => {
       icon: "fas fa-clipboard-list",
       roles: ["super-admin"],
     },
+    {
+      name: "Deleted Documents",
+      path: "/super-admin/deleted-documents",
+      icon: "fas fa-trash-restore",
+      roles: ["super-admin"],
+    },
   ];
 
   const filteredNavigation = navigationItems.filter(
