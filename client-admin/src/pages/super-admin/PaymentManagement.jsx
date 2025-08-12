@@ -74,14 +74,20 @@ const PaymentManagement = () => {
     setFilters(newFilters);
     // Reset to first page when filters change
     setPagination(prev => ({ ...prev, page: 1 }));
+    // Trigger immediate fetch with new filters
+    dispatch(fetchInvoicesRequest({ ...newFilters, page: 1, limit: pagination.limit }));
   };
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
+    // Trigger immediate fetch with new page
+    dispatch(fetchInvoicesRequest({ ...filters, page: newPage, limit: pagination.limit }));
   };
 
   const handlePageSizeChange = (newLimit) => {
     setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+    // Trigger immediate fetch with new page size
+    dispatch(fetchInvoicesRequest({ ...filters, page: 1, limit: newLimit }));
   };
 
   const handleRefresh = () => {

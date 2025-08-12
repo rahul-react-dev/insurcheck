@@ -19,7 +19,7 @@ const api = {
   fetchInvoices: async (params = {}) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     const { page = 1, limit = 10, ...filters } = params;
 
     // Mock data - replace with actual API call
@@ -156,7 +156,7 @@ const api = {
     let filteredInvoices = mockInvoices;
 
     if (filters.tenantName) {
-      filteredInvoices = filteredInvoices.filter(inv => 
+      filteredInvoices = filteredInvoices.filter(inv =>
         inv.tenantName.toLowerCase().includes(filters.tenantName.toLowerCase())
       );
     }
@@ -192,10 +192,10 @@ const api = {
       totalPages: Math.ceil(filteredInvoices.length / limit)
     };
 
-    return { 
-      invoices: paginatedInvoices, 
-      summary, 
-      pagination 
+    return {
+      invoices: paginatedInvoices,
+      summary,
+      pagination
     };
   },
 
@@ -256,7 +256,8 @@ const api = {
 // Saga functions
 function* fetchInvoicesSaga(action) {
   try {
-    const response = yield call(api.fetchInvoices, action.payload || {});
+    const params = action.payload || {};
+    const response = yield call(api.fetchInvoices, params);
     yield put(fetchInvoicesSuccess(response));
   } catch (error) {
     yield put(fetchInvoicesFailure(error.message || 'Failed to fetch invoices'));
