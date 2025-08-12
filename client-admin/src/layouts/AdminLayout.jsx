@@ -29,6 +29,12 @@ const AdminLayout = ({ children }) => {
       roles: ["super-admin"],
     },
     {
+      name: "Manage Tenants",
+      path: "/super-admin/tenants",
+      icon: "fas fa-building",
+      roles: ["super-admin"],
+    },
+    {
       name: "Manage Subscriptions",
       path: "/super-admin/subscriptions",
       icon: "fas fa-credit-card",
@@ -160,13 +166,15 @@ const AdminLayout = ({ children }) => {
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
                   {location.pathname.includes("dashboard")
                     ? "System Monitoring"
-                    : location.pathname.includes("subscriptions")
-                      ? "Subscription Management"
-                      : location.pathname.includes("payments")
-                        ? "Payments & Invoices"
-                        : location.pathname.includes("invoice-generation")
-                          ? "Invoice Generation"
-                          : "Super Admin Panel"}
+                    : location.pathname.includes("tenants")
+                      ? "Tenant Management"
+                      : location.pathname.includes("subscriptions")
+                        ? "Subscription Management"
+                        : location.pathname.includes("payments")
+                          ? "Payments & Invoices"
+                          : location.pathname.includes("invoice-generation")
+                            ? "Invoice Generation"
+                            : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations

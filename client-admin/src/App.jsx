@@ -18,6 +18,8 @@ import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
 import store from './store';
+import AdminLayout from "./components/AdminLayout"; // Assuming AdminLayout is a common layout component
+import TenantManagement from "./pages/super-admin/TenantManagement"; // Import the new TenantManagement component
 
 function App() {
   // Debug store configuration
@@ -42,7 +44,19 @@ function App() {
               path="/super-admin/dashboard"
               element={
                 <ProtectedRoute>
-                  <SuperAdminDashboard />
+                  <AdminLayout>
+                    <SuperAdminDashboard />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/tenants"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <TenantManagement />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -50,7 +64,9 @@ function App() {
               path="/super-admin/subscriptions"
               element={
                 <ProtectedRoute>
-                  <SubscriptionManagement />
+                  <AdminLayout>
+                    <SubscriptionManagement />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
@@ -58,13 +74,21 @@ function App() {
               path="/super-admin/payments"
               element={
                 <ProtectedRoute>
-                  <PaymentManagement />
+                  <AdminLayout>
+                    <PaymentManagement />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
             <Route
               path="/super-admin/invoice-generation"
-              element={<InvoiceGeneration />}
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <InvoiceGeneration />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/super-admin/forgot-password"

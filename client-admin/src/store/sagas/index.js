@@ -4,6 +4,7 @@ import superAdminSaga from '../super-admin/superAdminSaga';
 import paymentSaga from '../super-admin/paymentSaga';
 import subscriptionSaga from '../super-admin/subscriptionSaga';
 import invoiceGenerationSaga from '../super-admin/invoiceGenerationSaga';
+import tenantSaga from '../super-admin/tenantSaga';
 
 export default function* rootSaga() {
   console.log('🔄 Root saga initialized');
@@ -13,7 +14,8 @@ export default function* rootSaga() {
     fork(superAdminSaga),
     fork(paymentSaga),
     fork(subscriptionSaga),
-    fork(invoiceGenerationSaga)
+    fork(invoiceGenerationSaga),
+    fork(tenantSaga)
   ]);
   console.log('✅ All sagas forked successfully');
 }

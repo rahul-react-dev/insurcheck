@@ -1,4 +1,3 @@
-
 import React, { forwardRef } from 'react';
 
 const Input = forwardRef(({ 
@@ -9,6 +8,8 @@ const Input = forwardRef(({
   rightIcon,
   fullWidth = true,
   className = '',
+  multiline = false,
+  rows = 3,
   ...props 
 }, ref) => {
   const baseInputClasses = `
@@ -34,6 +35,14 @@ const Input = forwardRef(({
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
+  const textareaClasses = `
+    ${baseInputClasses}
+    ${errorClasses}
+    ${widthClasses}
+    resize-y 
+    ${className}
+  `.trim().replace(/\s+/g, ' ');
+
   return (
     <div className={fullWidth ? 'w-full' : ''}>
       {label && (
@@ -42,23 +51,32 @@ const Input = forwardRef(({
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      
+
       <div className="relative">
-        {leftIcon && (
+        {leftIcon && !multiline && (
           <div className="absolute inset-y-0 left-0 flex items-center justify-center w-10 sm:w-12 pointer-events-none z-10">
             <div className="text-gray-400 text-sm sm:text-base flex items-center justify-center">
               {leftIcon}
             </div>
           </div>
         )}
-        
-        <input
-          ref={ref}
-          className={inputClasses}
-          {...props}
-        />
-        
-        {rightIcon && (
+
+        {multiline ? (
+          <textarea
+            ref={ref}
+            className={textareaClasses}
+            rows={rows}
+            {...props}
+          />
+        ) : (
+          <input
+            ref={ref}
+            className={inputClasses}
+            {...props}
+          />
+        )}
+
+        {rightIcon && !multiline && (
           <div className="absolute inset-y-0 right-0 flex items-center justify-center w-10 sm:w-12 z-10">
             <div className="text-gray-400 text-sm sm:text-base flex items-center justify-center cursor-pointer">
               {rightIcon}
@@ -66,14 +84,14 @@ const Input = forwardRef(({
           </div>
         )}
       </div>
-      
+
       {error && (
         <p className="mt-2 text-sm text-red-600 flex items-center">
           <i className="fas fa-exclamation-circle mr-1 flex-shrink-0"></i>
           <span>{error}</span>
         </p>
       )}
-      
+
       {helperText && !error && (
         <p className="mt-2 text-sm text-gray-500">
           {helperText}
