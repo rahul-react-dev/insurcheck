@@ -47,14 +47,14 @@ const Pagination = ({
         <Button
           onClick={handlePrevPage}
           disabled={currentPage === 1}
-          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-gray-700 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-gray-700 disabled:hover:border-gray-300"
         >
           Previous
         </Button>
         <Button
           onClick={handleNextPage}
           disabled={currentPage === totalPages}
-          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-gray-700 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-gray-700 disabled:hover:border-gray-300"
         >
           Next
         </Button>
@@ -99,11 +99,11 @@ const Pagination = ({
             <Button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
+              className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400 disabled:hover:border-gray-300"
             >
               <span className="sr-only">Previous</span>
-              <i className="fas fa-chevron-left h-4 w-4 text-gray-700" aria-hidden="true"></i>
-              <span className="ml-1 hidden sm:inline">Previous</span>
+              <i className="fas fa-chevron-left h-4 w-4" aria-hidden="true"></i>
+              <span className="ml-1 hidden sm:inline font-semibold">Previous</span>
             </Button>
 
             {/* Page numbers */}
@@ -124,10 +124,10 @@ const Pagination = ({
                   <Button
                     key={1}
                     onClick={() => onPageChange(1)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === 1
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-700 font-semibold"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-semibold"
                     }`}
                   >
                     1
@@ -136,8 +136,8 @@ const Pagination = ({
                 
                 if (startPage > 2) {
                   pages.push(
-                    <span key="ellipsis1" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-800">
-                      ...
+                    <span key="ellipsis1" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-600">
+                      <span className="font-bold">...</span>
                     </span>
                   );
                 }
@@ -151,10 +151,10 @@ const Pagination = ({
                   <Button
                     key={i}
                     onClick={() => onPageChange(i)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === i
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-700 font-semibold"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-semibold"
                     }`}
                   >
                     {i}
@@ -166,8 +166,8 @@ const Pagination = ({
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
                   pages.push(
-                    <span key="ellipsis2" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-800">
-                      ...
+                    <span key="ellipsis2" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-600">
+                      <span className="font-bold">...</span>
                     </span>
                   );
                 }
@@ -176,10 +176,10 @@ const Pagination = ({
                   <Button
                     key={totalPages}
                     onClick={() => onPageChange(totalPages)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors duration-200 ${
                       currentPage === totalPages
-                        ? "z-10 bg-blue-50 border-blue-500 text-blue-700 font-semibold"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        ? "z-10 bg-blue-600 border-blue-600 text-white font-bold shadow-md"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-semibold"
                     }`}
                   >
                     {totalPages}
@@ -193,11 +193,11 @@ const Pagination = ({
             <Button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
+              className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-white disabled:hover:text-gray-400 disabled:hover:border-gray-300"
             >
               <span className="sr-only">Next</span>
-              <span className="mr-1 hidden sm:inline">Next</span>
-              <i className="fas fa-chevron-right h-4 w-4 text-gray-700" aria-hidden="true"></i>
+              <span className="mr-1 hidden sm:inline font-semibold">Next</span>
+              <i className="fas fa-chevron-right h-4 w-4" aria-hidden="true"></i>
             </Button>
           </nav>
         </div>
