@@ -53,11 +53,17 @@ const AdminLayout = ({ children }) => {
       roles: ["super-admin"],
     },
     {
-        name: 'Activity Logs',
-        path: '/super-admin/activity-logs',
-        icon: 'fas fa-clipboard-list',
-        roles: ['super-admin']
-    }
+      name: "Activity Logs",
+      path: "/super-admin/activity-logs",
+      icon: "fas fa-clipboard-list",
+      roles: ["super-admin"],
+    },
+    {
+      name: "Tenant State Management",
+      path: "/super-admin/tenant-management",
+      icon: "fas fa-clipboard-list",
+      roles: ["super-admin"],
+    },
   ];
 
   const filteredNavigation = navigationItems.filter(
