@@ -1,5 +1,4 @@
-
-import { call, put, takeEvery, takeLatest } from 'redux-saga/effects';
+import { call, put, takeLatest, takeEvery } from 'redux-saga/effects';
 import {
   fetchInvoiceConfigRequest,
   fetchInvoiceConfigSuccess,
@@ -18,325 +17,156 @@ import {
   retryInvoiceGenerationFailure
 } from './invoiceGenerationSlice';
 
-// Mock API functions - replace with actual API calls
-const api = {
-  fetchInvoiceConfig: async () => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Mock configurations
-    const mockConfigurations = [
-      {
-        tenantId: '1',
-        frequency: 'monthly',
-        startDate: '2024-01-01',
-        billingContactEmail: 'billing@acme-insurance.com',
-        timezone: 'America/New_York',
-        generateOnWeekend: false,
-        autoSend: true,
-        reminderDays: 3,
-        isActive: true,
-        nextGenerationDate: '2024-04-01'
-      },
-      {
-        tenantId: '2',
-        frequency: 'monthly',
-        startDate: '2024-01-15',
-        billingContactEmail: 'finance@safeguard.com',
-        timezone: 'America/Chicago',
-        generateOnWeekend: true,
-        autoSend: true,
-        reminderDays: 5,
-        isActive: true,
-        nextGenerationDate: '2024-04-15'
-      }
-    ];
-
-    // Mock tenants
-    const mockTenants = [
-      { id: '1', name: 'Acme Insurance Co.', email: 'admin@acme-insurance.com', plan: 'Enterprise' },
-      { id: '2', name: 'SafeGuard Insurance', email: 'billing@safeguard.com', plan: 'Professional' },
-      { id: '3', name: 'Quick Insurance', email: 'finance@quickinsurance.com', plan: 'Basic' },
-      { id: '4', name: 'Premium Insurance Group', email: 'accounts@premium.com', plan: 'Enterprise Pro' },
-      { id: '5', name: 'Reliable Insurance', email: 'billing@reliable.com', plan: 'Professional Plus' }
-    ];
-
-    return { configurations: mockConfigurations, tenants: mockTenants };
+// Mock data
+const mockConfigurations = [
+  {
+    tenantId: 1,
+    tenantName: 'TechCorp Solutions',
+    frequency: 'monthly',
+    startDate: '2024-01-01',
+    billingContactEmail: 'billing@techcorp.com',
+    timezone: 'America/New_York',
+    generateOnWeekend: false,
+    autoSend: true,
+    reminderDays: 3,
+    isActive: true,
+    nextGenerationDate: '2024-02-01'
   },
-
-  updateInvoiceConfig: async (tenantId, config) => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Simulate potential errors
-    if (!config.billingContactEmail || !config.startDate) {
-      throw new Error('Missing required configuration fields');
-    }
-
-    return {
-      tenantId,
-      config: {
-        ...config,
-        isActive: true,
-        updatedAt: new Date().toISOString(),
-        // Calculate next generation date based on frequency
-        nextGenerationDate: calculateNextGenerationDate(config.startDate, config.frequency)
-      }
-    };
+  {
+    tenantId: 2,
+    tenantName: 'HealthPlus Insurance',
+    frequency: 'weekly',
+    startDate: '2024-01-01',
+    billingContactEmail: 'finance@healthplus.com',
+    timezone: 'America/Chicago',
+    generateOnWeekend: true,
+    autoSend: true,
+    reminderDays: 2,
+    isActive: true,
+    nextGenerationDate: '2024-01-28'
   },
-
-  generateInvoice: async (tenantId) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const isSuccess = Math.random() > 0.2; // 80% success rate
-
-    if (tenantId === 'all') {
-      // Generate for all tenants
-      const results = [];
-      for (let i = 1; i <= 5; i++) {
-        const success = Math.random() > 0.15;
-        results.push({
-          tenantId: i.toString(),
-          success,
-          invoiceId: success ? `INV-${Date.now()}-${i}` : null,
-          error: success ? null : 'Failed to generate invoice due to billing configuration error'
-        });
-      }
-      
-      return {
-        results,
-        summary: {
-          totalGenerated: results.filter(r => r.success).length,
-          totalFailed: results.filter(r => !r.success).length
-        }
-      };
-    } else {
-      // Generate for single tenant
-      if (!isSuccess) {
-        throw new Error('Failed to generate invoice. Please check tenant configuration.');
-      }
-
-      const invoiceId = `INV-${Date.now()}-${tenantId}`;
-      const log = {
-        id: Date.now().toString(),
-        invoiceId,
-        tenantId,
-        tenantName: `Tenant ${tenantId}`,
-        amount: Math.floor(Math.random() * 500) + 50,
-        status: 'success',
-        generationType: 'manual',
-        generationDate: new Date().toISOString(),
-        sentDate: new Date().toISOString(),
-        sentToEmail: `billing@tenant${tenantId}.com`,
-        notes: 'Invoice generated and sent successfully'
-      };
-
-      return { log };
-    }
-  },
-
-  fetchInvoiceLogs: async (params = {}) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const { page = 1, limit = 10, ...filters } = params;
-
-    // Mock logs data
-    const mockLogs = [
-      {
-        id: '1',
-        invoiceId: 'INV-2024-001',
-        tenantId: '1',
-        tenantName: 'Acme Insurance Co.',
-        amount: 299.99,
-        status: 'sent',
-        generationType: 'automatic',
-        generationDate: '2024-03-15T10:30:00Z',
-        sentDate: '2024-03-15T10:32:00Z',
-        sentToEmail: 'billing@acme-insurance.com',
-        notes: 'Monthly invoice generated and sent successfully'
-      },
-      {
-        id: '2',
-        invoiceId: 'INV-2024-002',
-        tenantId: '2',
-        tenantName: 'SafeGuard Insurance',
-        amount: 99.99,
-        status: 'failed',
-        generationType: 'automatic',
-        generationDate: '2024-03-14T15:20:00Z',
-        errorMessage: 'SMTP server connection failed. Email could not be sent.',
-        notes: 'Invoice generated but email delivery failed'
-      },
-      {
-        id: '3',
-        invoiceId: 'INV-2024-003',
-        tenantId: '3',
-        tenantName: 'Quick Insurance',
-        amount: 29.99,
-        status: 'success',
-        generationType: 'manual',
-        generationDate: '2024-03-13T09:15:00Z',
-        sentDate: '2024-03-13T09:16:00Z',
-        sentToEmail: 'finance@quickinsurance.com',
-        notes: 'Manual invoice generation requested by admin'
-      },
-      {
-        id: '4',
-        invoiceId: 'INV-2024-004',
-        tenantId: '4',
-        tenantName: 'Premium Insurance Group',
-        amount: 499.99,
-        status: 'pending',
-        generationType: 'automatic',
-        generationDate: '2024-03-12T14:45:00Z',
-        notes: 'Invoice generated, awaiting email delivery'
-      },
-      {
-        id: '5',
-        invoiceId: 'INV-2024-005',
-        tenantId: '5',
-        tenantName: 'Reliable Insurance',
-        amount: 149.99,
-        status: 'sent',
-        generationType: 'automatic',
-        generationDate: '2024-03-11T11:20:00Z',
-        sentDate: '2024-03-11T11:22:00Z',
-        sentToEmail: 'billing@reliable.com',
-        notes: 'Weekly invoice generated and sent successfully'
-      }
-    ];
-
-    // Apply filters
-    let filteredLogs = mockLogs;
-
-    if (filters.tenantName) {
-      filteredLogs = filteredLogs.filter(log =>
-        log.tenantName.toLowerCase().includes(filters.tenantName.toLowerCase())
-      );
-    }
-
-    if (filters.status) {
-      filteredLogs = filteredLogs.filter(log => log.status === filters.status);
-    }
-
-    if (filters.dateRange?.start) {
-      filteredLogs = filteredLogs.filter(log =>
-        new Date(log.generationDate) >= new Date(filters.dateRange.start)
-      );
-    }
-
-    if (filters.dateRange?.end) {
-      filteredLogs = filteredLogs.filter(log =>
-        new Date(log.generationDate) <= new Date(filters.dateRange.end)
-      );
-    }
-
-    // Calculate summary
-    const summary = {
-      totalGenerated: filteredLogs.length,
-      totalSent: filteredLogs.filter(log => log.status === 'sent').length,
-      totalFailed: filteredLogs.filter(log => log.status === 'failed').length,
-      totalAmount: filteredLogs.reduce((sum, log) => sum + log.amount, 0)
-    };
-
-    // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
-
-    const pagination = {
-      page,
-      limit,
-      total: filteredLogs.length,
-      totalPages: Math.ceil(filteredLogs.length / limit)
-    };
-
-    return {
-      logs: paginatedLogs,
-      summary,
-      pagination
-    };
-  },
-
-  retryInvoiceGeneration: async (logId) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const isSuccess = Math.random() > 0.3; // 70% success rate on retry
-
-    if (!isSuccess) {
-      throw new Error('Retry failed. Please check configuration and try again.');
-    }
-
-    return {
-      logId,
-      updatedLog: {
-        status: 'success',
-        sentDate: new Date().toISOString(),
-        sentToEmail: 'updated@email.com',
-        errorMessage: null,
-        notes: 'Successfully retried and sent via email'
-      }
-    };
+  {
+    tenantId: 3,
+    tenantName: 'SecureLife Ltd',
+    frequency: 'monthly',
+    startDate: '2024-01-15',
+    billingContactEmail: 'admin@securelife.com',
+    timezone: 'America/Los_Angeles',
+    generateOnWeekend: false,
+    autoSend: false,
+    reminderDays: 5,
+    isActive: false,
+    nextGenerationDate: null
   }
+];
+
+const mockTenants = [
+  {
+    id: 1,
+    name: 'TechCorp Solutions',
+    email: 'contact@techcorp.com',
+    plan: 'premium'
+  },
+  {
+    id: 2,
+    name: 'HealthPlus Insurance',
+    email: 'info@healthplus.com',
+    plan: 'enterprise'
+  },
+  {
+    id: 3,
+    name: 'SecureLife Ltd',
+    email: 'hello@securelife.com',
+    plan: 'basic'
+  },
+  {
+    id: 4,
+    name: 'AutoInsure Pro',
+    email: 'support@autoinsure.com',
+    plan: 'premium'
+  },
+  {
+    id: 5,
+    name: 'FamilyCare Insurance',
+    email: 'care@familycare.com',
+    plan: 'basic'
+  }
+];
+
+// Generate more mock logs
+const generateMockLogs = (count = 25) => {
+  const statuses = ['sent', 'failed', 'success', 'pending'];
+  const generationTypes = ['automatic', 'manual'];
+  const tenantNames = ['TechCorp Solutions', 'HealthPlus Insurance', 'SecureLife Ltd', 'AutoInsure Pro', 'FamilyCare Insurance'];
+
+  return Array.from({ length: count }, (_, index) => {
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const generationType = generationTypes[Math.floor(Math.random() * generationTypes.length)];
+    const tenantName = tenantNames[Math.floor(Math.random() * tenantNames.length)];
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() - Math.floor(Math.random() * 30));
+
+    return {
+      id: index + 1,
+      invoiceId: `INV-2024-${String(index + 1).padStart(3, '0')}`,
+      tenantName,
+      amount: Math.floor(Math.random() * 500) + 100,
+      status,
+      generationDate: baseDate.toISOString(),
+      sentDate: status === 'sent' ? new Date(baseDate.getTime() + 300000).toISOString() : null,
+      sentToEmail: status === 'sent' ? `billing@${tenantName.toLowerCase().replace(/\s+/g, '')}.com` : null,
+      generationType,
+      errorMessage: status === 'failed' ? 'SMTP server connection failed' : null,
+      notes: status === 'sent' ? 'Invoice generated and sent successfully' : 
+             status === 'failed' ? 'Email delivery failed, manual intervention required' :
+             status === 'pending' ? 'Invoice queued for email delivery' :
+             'Invoice generated successfully'
+    };
+  });
 };
 
-// Helper function to calculate next generation date
-function calculateNextGenerationDate(startDate, frequency) {
-  const start = new Date(startDate);
-  const now = new Date();
-  
-  switch (frequency) {
-    case 'weekly':
-      const nextWeek = new Date(start);
-      while (nextWeek <= now) {
-        nextWeek.setDate(nextWeek.getDate() + 7);
-      }
-      return nextWeek.toISOString();
-    
-    case 'monthly':
-      const nextMonth = new Date(start);
-      while (nextMonth <= now) {
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-      }
-      return nextMonth.toISOString();
-    
-    case 'quarterly':
-      const nextQuarter = new Date(start);
-      while (nextQuarter <= now) {
-        nextQuarter.setMonth(nextQuarter.getMonth() + 3);
-      }
-      return nextQuarter.toISOString();
-    
-    case 'yearly':
-      const nextYear = new Date(start);
-      while (nextYear <= now) {
-        nextYear.setFullYear(nextYear.getFullYear() + 1);
-      }
-      return nextYear.toISOString();
-    
-    default:
-      return start.toISOString();
-  }
-}
+const mockLogs = generateMockLogs(25);
 
-// Saga functions
+// API simulation delay
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Saga to fetch invoice configurations
 function* fetchInvoiceConfigSaga() {
   try {
-    console.log('📡 Fetching invoice configurations...');
-    const response = yield call(api.fetchInvoiceConfig);
-    console.log('✅ Invoice configurations fetched successfully:', response);
+    yield call(delay, 800); // Simulate API call
+
+    const response = {
+      configurations: mockConfigurations,
+      tenants: mockTenants
+    };
+
     yield put(fetchInvoiceConfigSuccess(response));
   } catch (error) {
-    console.error('❌ Error fetching invoice configurations:', error);
     yield put(fetchInvoiceConfigFailure(error.message || 'Failed to fetch invoice configurations'));
   }
 }
 
+// Saga to update invoice configuration
 function* updateInvoiceConfigSaga(action) {
   try {
-    console.log('📡 Updating invoice configuration:', action.payload);
+    yield call(delay, 800); // Simulate API call
+
     const { tenantId, config } = action.payload;
-    const response = yield call(api.updateInvoiceConfig, tenantId, config);
-    console.log('✅ Invoice configuration updated successfully:', response);
-    yield put(updateInvoiceConfigSuccess(response));
+
+    // Simulate updating configuration
+    const updatedConfig = {
+      ...config,
+      updatedAt: new Date().toISOString(),
+      nextGenerationDate: calculateNextGenerationDate(config.startDate, config.frequency)
+    };
+
+    // Find and update the configuration
+    const configIndex = mockConfigurations.findIndex(c => c.tenantId === tenantId);
+    if (configIndex !== -1) {
+      mockConfigurations[configIndex] = { ...mockConfigurations[configIndex], ...updatedConfig };
+    }
+
+    yield put(updateInvoiceConfigSuccess({ tenantId, config: updatedConfig }));
 
     // Show success message
     if (window.showNotification) {
@@ -353,16 +183,54 @@ function* updateInvoiceConfigSaga(action) {
   }
 }
 
+// Saga to generate invoice
 function* generateInvoiceSaga(action) {
   try {
-    console.log('📡 Generating invoice for tenant:', action.payload);
-    const response = yield call(api.generateInvoice, action.payload);
-    console.log('✅ Invoice generated successfully:', response);
-    yield put(generateInvoiceSuccess(response));
+    const tenantId = action.payload;
+    yield call(delay, 1500); // Simulate API call
+
+    // Simulate invoice generation
+    const isSuccess = Math.random() > 0.2; // 80% success rate
+
+    if (tenantId === 'all') {
+      const results = [];
+      for (let i = 1; i <= 5; i++) {
+        const success = Math.random() > 0.15;
+        results.push({
+          tenantId: i.toString(),
+          success,
+          invoiceId: success ? `INV-${Date.now()}-${i}` : null,
+          error: success ? null : 'Failed to generate invoice due to billing configuration error'
+        });
+      }
+      yield put(generateInvoiceSuccess({ results, summary: { totalGenerated: results.filter(r => r.success).length, totalFailed: results.filter(r => !r.success).length } }));
+    } else {
+      if (!isSuccess) {
+        throw new Error('Failed to generate invoice. Please check tenant configuration.');
+      }
+
+      const invoiceId = `INV-${Date.now()}-${tenantId}`;
+      const newLog = {
+        id: Date.now(),
+        invoiceId,
+        tenantId: tenantId,
+        tenantName: mockTenants.find(t => t.id === parseInt(tenantId))?.name || `Tenant ${tenantId}`,
+        amount: Math.floor(Math.random() * 500) + 50,
+        status: 'success',
+        generationType: 'manual',
+        generationDate: new Date().toISOString(),
+        sentDate: new Date().toISOString(),
+        sentToEmail: `billing@tenant${tenantId}.com`,
+        notes: 'Invoice generated and sent successfully'
+      };
+      mockLogs.unshift(newLog); // Add to the beginning of mockLogs
+
+      yield put(generateInvoiceSuccess({ log: newLog }));
+    }
 
     // Show success message
     if (window.showNotification) {
-      window.showNotification('Invoice generated and sent successfully.', 'success');
+      window.showNotification('Invoice generation process initiated.', 'success');
     }
   } catch (error) {
     console.error('❌ Error generating invoice:', error);
@@ -375,25 +243,98 @@ function* generateInvoiceSaga(action) {
   }
 }
 
+// Saga to fetch invoice logs
 function* fetchInvoiceLogsSaga(action) {
   try {
-    const params = action.payload || {};
-    console.log('📡 Fetching invoice logs with params:', params);
-    const response = yield call(api.fetchInvoiceLogs, params);
-    console.log('✅ Invoice logs fetched successfully:', response);
+    yield call(delay, 600); // Simulate API call
+
+    const { page = 1, limit = 10, tenantName = '', status = '', dateRange } = action.payload || {};
+
+    let filteredLogs = [...mockLogs];
+
+    // Apply filters
+    if (tenantName) {
+      filteredLogs = filteredLogs.filter(log => 
+        log.tenantName.toLowerCase().includes(tenantName.toLowerCase())
+      );
+    }
+
+    if (status) {
+      filteredLogs = filteredLogs.filter(log => log.status === status);
+    }
+
+    if (dateRange && dateRange.start) {
+      filteredLogs = filteredLogs.filter(log => 
+        new Date(log.generationDate) >= new Date(dateRange.start)
+      );
+    }
+
+    if (dateRange && dateRange.end) {
+      filteredLogs = filteredLogs.filter(log => 
+        new Date(log.generationDate) <= new Date(dateRange.end)
+      );
+    }
+
+    // Sort by generation date (newest first)
+    filteredLogs.sort((a, b) => new Date(b.generationDate) - new Date(a.generationDate));
+
+    // Apply pagination
+    const total = filteredLogs.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+    // Calculate summary
+    const summary = {
+      totalGenerated: mockLogs.length,
+      totalSent: mockLogs.filter(log => log.status === 'sent').length,
+      totalFailed: mockLogs.filter(log => log.status === 'failed').length,
+      totalAmount: mockLogs.reduce((sum, log) => sum + log.amount, 0)
+    };
+
+    const response = {
+      logs: paginatedLogs,
+      pagination: {
+        page,
+        limit,
+        total
+      },
+      summary
+    };
+
     yield put(fetchInvoiceLogsSuccess(response));
   } catch (error) {
-    console.error('❌ Error fetching invoice logs:', error);
     yield put(fetchInvoiceLogsFailure(error.message || 'Failed to fetch invoice logs'));
   }
 }
 
+// Saga to retry invoice generation
 function* retryInvoiceGenerationSaga(action) {
   try {
-    console.log('📡 Retrying invoice generation for log:', action.payload);
-    const response = yield call(api.retryInvoiceGeneration, action.payload);
-    console.log('✅ Invoice generation retried successfully:', response);
-    yield put(retryInvoiceGenerationSuccess(response));
+    const logId = action.payload;
+    yield call(delay, 1000); // Simulate API call
+
+    // Simulate retry
+    const isSuccess = Math.random() > 0.3; // 70% success rate on retry
+
+    if (!isSuccess) {
+      throw new Error('Retry failed. Please check configuration and try again.');
+    }
+
+    // Find log and update it
+    const logIndex = mockLogs.findIndex(log => log.id === logId);
+    if (logIndex !== -1) {
+      mockLogs[logIndex] = {
+        ...mockLogs[logIndex],
+        status: 'success',
+        sentDate: new Date().toISOString(),
+        sentToEmail: 'retry@example.com',
+        errorMessage: null,
+        notes: 'Successfully retried and sent via email'
+      };
+    }
+
+    yield put(retryInvoiceGenerationSuccess({ logId, updatedLog: mockLogs.find(log => log.id === logId) }));
 
     // Show success message
     if (window.showNotification) {
@@ -409,6 +350,46 @@ function* retryInvoiceGenerationSaga(action) {
     }
   }
 }
+
+// Helper function to calculate next generation date
+function calculateNextGenerationDate(startDate, frequency) {
+  const start = new Date(startDate);
+  const now = new Date();
+
+  switch (frequency) {
+    case 'weekly':
+      const nextWeek = new Date(start);
+      while (nextWeek <= now) {
+        nextWeek.setDate(nextWeek.getDate() + 7);
+      }
+      return nextWeek.toISOString();
+
+    case 'monthly':
+      const nextMonth = new Date(start);
+      while (nextMonth <= now) {
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+      }
+      return nextMonth.toISOString();
+
+    case 'quarterly':
+      const nextQuarter = new Date(start);
+      while (nextQuarter <= now) {
+        nextQuarter.setMonth(nextQuarter.getMonth() + 3);
+      }
+      return nextQuarter.toISOString();
+
+    case 'yearly':
+      const nextYear = new Date(start);
+      while (nextYear <= now) {
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+      }
+      return nextYear.toISOString();
+
+    default:
+      return start.toISOString();
+  }
+}
+
 
 // Watcher sagas
 export function* watchFetchInvoiceConfig() {

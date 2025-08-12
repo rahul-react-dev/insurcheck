@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -61,7 +60,7 @@ const invoiceGenerationSlice = createSlice({
       state.isLoading = false;
       const { tenantId, config } = action.payload;
       const existingIndex = state.configurations.findIndex(c => c.tenantId === tenantId);
-      
+
       if (existingIndex !== -1) {
         state.configurations[existingIndex] = { ...state.configurations[existingIndex], ...config };
       } else {
@@ -100,7 +99,7 @@ const invoiceGenerationSlice = createSlice({
     fetchInvoiceLogsRequest: (state, action) => {
       state.isLoadingLogs = true;
       state.error = null;
-      
+
       if (action.payload) {
         const { page, limit, total, ...filters } = action.payload;
         if (filters && Object.keys(filters).length > 0) {
