@@ -1,0 +1,33 @@
+ Documents Management Table
+Title: View and Manage Deleted Documents Table
+Story Description: As a super admin user, I want to view a table of deleted documents from all admins in the Super Admin Panel and export it in PDF, CSV, or Excel formats, as well as perform actions (view, download, recover, delete) so that I can manage deleted documents effectively.
+Acceptance Criteria:
+Given I am logged into the Super Admin Panel, I see a "Deleted Documents" table with columns: Document ID, Document Name, Version, Deleted By (Admin Email), Deletion Date, Original Owner (User Email), Action (View, Download, Recover, Delete).
+I can sort the table by Document ID, Document Name, Deletion Date, or Original Owner.
+I can paginate the table with options for 10, 25, or 50 entries per page.
+I can search by Document Name or Original Owner.
+I can export the table data in PDF, CSV, or Excel formats via an "Export" dropdown or buttons, with files named appropriately (e.g., "Deleted_Documents_{Timestamp}.pdf/csv/xlsx").
+The Action column includes buttons for View (open in new browser tab), Download (download the document), Recover (restore to original user’s admin panel), and Delete (permanently remove from database).
+Validations with Success/Error Messages:
+Table Data:
+Success: Table loads with correct deleted document data.
+Error: If no data, display: "No deleted documents available."
+Search:
+Success: Results filter based on Document Name or Original Owner input.
+Error: If no results, display: "No results found."
+Export:
+Success: File downloads in selected format (PDF, CSV, Excel).
+Error: "Failed to export [format]. Please try again."
+Expected Outcome:
+The super admin views, sorts, searches, and exports a table of deleted documents in PDF, CSV, or Excel formats.
+Action buttons allow further management of deleted documents.
+If no data is available or an export fails, clear error messages are displayed.
+Definition of Done:
+"Deleted Documents" table with specified columns is implemented in the Super Admin Panel.
+Sorting, pagination (10, 25, 50 entries), and search by Document Name/Original Owner are functional.
+Export functionality for PDF, CSV, and Excel is implemented with appropriate file naming.
+Action column with View, Download, Recover, and Delete buttons is implemented.
+Error messages for empty data or failed exports are displayed.
+Unit tests cover table rendering, sorting, pagination, search, and export (all formats).
+UI/UX is tested for responsiveness, accessibility, and button clarity.
+Feature is deployed and verified in production.
