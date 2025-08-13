@@ -112,11 +112,40 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handleDownloadDocument = (document) => {
-    // Create download link
-    const link = document.createElement("a");
-    link.href = document.downloadUrl;
-    link.download = document.name;
-    link.click();
+    try {
+      // Check if download URL is available
+      if (!document.downloadUrl) {
+        dispatch(setDocumentViewError("Download URL not available. File may be corrupted or inaccessible."));
+        return;
+      }
+
+      // Clear any previous errors
+      dispatch(clearError());
+
+      // Get file extension
+      const fileExtension = document.name.split('.').pop().toLowerCase();
+      
+      // Create appropriate filename: {Document_Name}_{Document_ID}.extension
+      const downloadFileName = `${document.name.split('.').slice(0, -1).join('.')}_${document.id}.${fileExtension}`;
+
+      // Create download link
+      const link = document.createElement("a");
+      link.href = document.downloadUrl;
+      link.download = downloadFileName;
+      link.style.display = "none";
+      
+      // Add to DOM, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Show success message (optional - could be a toast notification)
+      console.log(`Download initiated: ${downloadFileName}`);
+      
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      dispatch(setDocumentViewError("Failed to download document. Please try again."));
+    }
   };
 
   const handleRecoverDocument = (document) => {

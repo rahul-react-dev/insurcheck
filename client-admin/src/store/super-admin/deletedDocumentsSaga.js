@@ -1,4 +1,3 @@
-
 import { call, put, takeEvery, delay } from 'redux-saga/effects';
 import {
   fetchDeletedDocumentsStart,
@@ -28,7 +27,7 @@ const mockDeletedDocuments = [
     deletionReason: 'Document outdated and replaced',
     tags: ['insurance', 'policy', '2024'],
     description: 'Annual insurance policy document for corporate coverage',
-    downloadUrl: '#',
+    downloadUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
     viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   },
   {
@@ -45,8 +44,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Duplicate file removed',
     tags: ['claims', 'report', 'Q4'],
     description: 'Quarterly claims analysis and reporting document',
-    downloadUrl: '#',
-    viewUrl: '#'
+    downloadUrl: 'https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_XLS_10.xls',
+    viewUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_XLS_10.xls'
   },
   {
     id: 'DOC003',
@@ -62,8 +61,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Template updated with new version',
     tags: ['risk', 'assessment', 'template'],
     description: 'Standard risk assessment template for underwriting',
-    downloadUrl: '#',
-    viewUrl: '#'
+    downloadUrl: 'https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_DOCX_2MB.docx',
+    viewUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_DOCX_2MB.docx'
   },
   {
     id: 'DOC004',
@@ -79,8 +78,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Client requested removal',
     tags: ['presentation', 'client', 'marketing'],
     description: 'Marketing presentation for potential clients',
-    downloadUrl: '#',
-    viewUrl: '#'
+    downloadUrl: 'https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_PPTX_5MB.pptx',
+    viewUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_PPTX_5MB.pptx'
   },
   {
     id: 'DOC005',
@@ -96,7 +95,7 @@ const mockDeletedDocuments = [
     deletionReason: 'Regulatory changes made checklist obsolete',
     tags: ['compliance', 'checklist', 'regulatory'],
     description: 'Internal compliance verification checklist',
-    downloadUrl: '#',
+    downloadUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
     viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   },
   {
@@ -113,8 +112,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Confidentiality concerns',
     tags: ['financial', 'summary', '2023'],
     description: 'Annual financial performance summary',
-    downloadUrl: '#',
-    viewUrl: '#'
+    downloadUrl: 'https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_XLS_10.xls',
+    viewUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_XLS_10.xls'
   },
   {
     id: 'DOC007',
@@ -130,7 +129,7 @@ const mockDeletedDocuments = [
     deletionReason: 'New training program implemented',
     tags: ['training', 'manual', 'HR'],
     description: 'Employee training and onboarding manual',
-    downloadUrl: '#',
+    downloadUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
     viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   },
   {
@@ -147,8 +146,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Data privacy compliance',
     tags: ['customer', 'feedback', 'analysis'],
     description: 'Quarterly customer satisfaction analysis',
-    downloadUrl: '#',
-    viewUrl: '#'
+    downloadUrl: 'https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_DOCX_2MB.docx',
+    viewUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_DOCX_2MB.docx'
   },
   {
     id: 'DOC009',
@@ -164,8 +163,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Strategic direction changed',
     tags: ['product', 'roadmap', '2024'],
     description: 'Strategic product development roadmap',
-    downloadUrl: '#',
-    viewUrl: '#'
+    downloadUrl: 'https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_PPTX_5MB.pptx',
+    viewUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://file-examples.com/storage/fe8c8b0e4c4444aeae8b4c3/2017/10/file_example_PPTX_5MB.pptx'
   },
   {
     id: 'DOC010',
@@ -181,7 +180,7 @@ const mockDeletedDocuments = [
     deletionReason: 'Audit completed, no longer needed',
     tags: ['audit', 'report', 'december'],
     description: 'Monthly internal audit findings and recommendations',
-    downloadUrl: '#',
+    downloadUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
     viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   }
 ];
@@ -198,7 +197,7 @@ function* fetchDeletedDocumentsSaga(action) {
       const matchesSearch = !searchTerm || 
         doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.originalOwner.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesDeletedBy = !deletedBy || doc.deletedBy === deletedBy;
       const matchesOriginalOwner = !originalOwner || doc.originalOwner === originalOwner;
       const matchesDocumentType = !documentType || doc.name.toLowerCase().includes(documentType.toLowerCase());
@@ -211,12 +210,12 @@ function* fetchDeletedDocumentsSaga(action) {
       filteredDocuments.sort((a, b) => {
         let aVal = a[sortBy];
         let bVal = b[sortBy];
-        
+
         if (typeof aVal === 'string') {
           aVal = aVal.toLowerCase();
           bVal = bVal.toLowerCase();
         }
-        
+
         if (sortOrder === 'asc') {
           return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
         } else {
@@ -226,7 +225,7 @@ function* fetchDeletedDocumentsSaga(action) {
     }
 
     const totalCount = filteredDocuments.length;
-    
+
     // Paginate documents
     const startIndex = (page - 1) * pageSize;
     const paginatedDocuments = filteredDocuments.slice(startIndex, startIndex + pageSize);
@@ -251,7 +250,7 @@ function* exportDeletedDocumentsSaga(action) {
 
     // In a real implementation, this would generate and download the file
     console.log(`Exporting deleted documents as ${format}: ${filename}`);
-    
+
     // Simulate file download
     const blob = new Blob(['Mock exported data'], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
@@ -266,6 +265,70 @@ function* exportDeletedDocumentsSaga(action) {
     yield put(exportDeletedDocumentsFailure(`Failed to export ${action.payload.format}. Please try again.`));
   }
 }
+
+function* documentActionSaga(action) {
+  try {
+    yield put(documentActionStart());
+    yield delay(1500); // Simulate API call
+
+    const { documentId, action: actionType, documentName, documentExtension } = action.payload;
+    console.log(`Performing action: ${actionType} on document: ${documentId}`);
+
+    let message = '';
+    let responseData = { documentId, action: actionType };
+
+    switch (actionType) {
+      case 'recover':
+        message = 'Document has been recovered successfully.';
+        break;
+      case 'permanentlyDelete':
+        message = 'Document has been permanently deleted.';
+        break;
+      case 'download':
+        const document = mockDeletedDocuments.find(doc => doc.id === documentId);
+        if (!document) {
+          throw new Error('Document not found.');
+        }
+        
+        const downloadUrl = document.downloadUrl;
+        const fileExtension = documentName.split('.').pop(); // Extract extension from original name
+        const formattedFileName = `${documentName.replace(`.${fileExtension}`, '')}_${documentId}.${fileExtension}`;
+        
+        // Simulate download initiation
+        try {
+          const response = yield call(fetch, downloadUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const blob = yield call([response, 'blob']);
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = formattedFileName;
+          document.body.appendChild(link); // Append to body to ensure it works
+          link.click();
+          document.body.removeChild(link); // Clean up
+          window.URL.revokeObjectURL(url);
+          message = 'Document downloaded successfully.';
+        } catch (downloadError) {
+          console.error('Download failed:', downloadError);
+          throw new Error('Failed to download document. Please try again.');
+        }
+        break;
+      default:
+        throw new Error('Unknown action type');
+    }
+
+    responseData.message = message;
+    yield put(documentActionSuccess(responseData));
+  } catch (error) {
+    yield put(documentActionFailure({ 
+      message: error.message || 'An unexpected error occurred.',
+      action: action.payload.actionType 
+    }));
+  }
+}
+
 
 function* recoverDocumentSaga(action) {
   try {
@@ -308,6 +371,7 @@ function* permanentlyDeleteDocumentSaga(action) {
 export default function* deletedDocumentsSaga() {
   yield takeEvery('FETCH_DELETED_DOCUMENTS_REQUEST', fetchDeletedDocumentsSaga);
   yield takeEvery('EXPORT_DELETED_DOCUMENTS_REQUEST', exportDeletedDocumentsSaga);
-  yield takeEvery('RECOVER_DOCUMENT_REQUEST', recoverDocumentSaga);
-  yield takeEvery('PERMANENTLY_DELETE_DOCUMENT_REQUEST', permanentlyDeleteDocumentSaga);
+  yield takeEvery('DOCUMENT_ACTION_REQUEST', documentActionSaga); // Listening for general document actions
+  yield takeEvery('RECOVER_DOCUMENT_REQUEST', recoverDocumentSaga); // Kept for backward compatibility or specific use cases
+  yield takeEvery('PERMANENTLY_DELETE_DOCUMENT_REQUEST', permanentlyDeleteDocumentSaga); // Kept for backward compatibility or specific use cases
 }
