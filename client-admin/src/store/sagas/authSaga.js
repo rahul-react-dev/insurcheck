@@ -1,10 +1,15 @@
 import { call, put, takeEvery } from 'redux-saga/effects';
 import { loginRequest, loginSuccess, loginFailure } from '../authSlice';
-import { loginApi } from '../../utils/api';
+import { authAPI } from '../../utils/api';
 
 function* loginSaga(action) {
   try {
-    const response = yield call(loginApi, action.payload);
+    // Determine which login API to use based on role or route
+    const loginMethod = action.payload.role === 'admin' || window.location.pathname.includes('/admin/') 
+      ? authAPI.adminLogin 
+      : authAPI.superAdminLogin;
+    
+    const response = yield call(loginMethod, action.payload);
     
     // Check if response has data
     if (response?.data) {
