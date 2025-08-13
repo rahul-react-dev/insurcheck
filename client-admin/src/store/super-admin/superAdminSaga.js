@@ -68,60 +68,12 @@ const fetchSystemMetricsApi = () => {
 };
 
 const fetchErrorLogsApi = (filters) => {
-  // Mock API call with dummy error logs
-  return Promise.resolve({
-    data: [
-      {
-        id: 'ERR001',
-        timestamp: '2024-01-15T10:30:00Z',
-        errorType: 'Authentication Error',
-        description: 'Failed login attempt with invalid credentials',
-        affectedTenant: 'TechCorp Inc.',
-        affectedUser: 'john.doe@techcorp.com',
-        affectedDocument: null,
-        severity: 'Medium'
-      },
-      {
-        id: 'ERR002',
-        timestamp: '2024-01-15T09:15:00Z',
-        errorType: 'Document Processing Error',
-        description: 'Failed to extract text from uploaded PDF document',
-        affectedTenant: 'HealthPlus Ltd.',
-        affectedUser: 'sarah.smith@healthplus.com',
-        affectedDocument: 'policy_document_2024.pdf',
-        severity: 'High'
-      },
-      {
-        id: 'ERR003',
-        timestamp: '2024-01-15T08:45:00Z',
-        errorType: 'Database Connection Error',
-        description: 'Temporary database connection timeout during peak hours',
-        affectedTenant: 'InsuranceMax Corp.',
-        affectedUser: 'admin@insurancemax.com',
-        affectedDocument: null,
-        severity: 'Critical'
-      },
-      {
-        id: 'ERR004',
-        timestamp: '2024-01-15T07:20:00Z',
-        errorType: 'Validation Error',
-        description: 'Document format validation failed - unsupported file type',
-        affectedTenant: 'SecureLife Insurance',
-        affectedUser: 'manager@securelife.com',
-        affectedDocument: 'claim_form.docx',
-        severity: 'Low'
-      },
-      {
-        id: 'ERR005',
-        timestamp: '2024-01-15T06:55:00Z',
-        errorType: 'API Rate Limit',
-        description: 'Third-party compliance API rate limit exceeded',
-        affectedTenant: 'GlobalInsure Ltd.',
-        affectedUser: 'api.user@globalinsure.com',
-        affectedDocument: 'compliance_report_Q4.pdf',
-        severity: 'Medium'
-      }
-    ]
+  return api.get('/activity-logs', { 
+    params: { 
+      ...filters, 
+      level: 'error',
+      limit: 10
+    } 
   });
 };
 

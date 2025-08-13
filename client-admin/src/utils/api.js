@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -43,7 +42,12 @@ api.interceptors.response.use(
 export const authAPI = {
   superAdminLogin: (credentials) => api.post('/auth/super-admin/login', credentials),
   adminLogin: (credentials) => api.post('/auth/admin/login', credentials),
+  logout: () => api.post('/auth/logout'),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email })
 };
+
+// Legacy export for backward compatibility
+export const loginApi = authAPI.superAdminLogin;
 
 // Tenant Management APIs
 export const tenantAPI = {
@@ -135,6 +139,70 @@ export const userAPI = {
   delete: (id) => api.delete(`/users/${id}`),
   resetPassword: (id) => api.post(`/users/${id}/reset-password`),
   toggleStatus: (id) => api.put(`/users/${id}/toggle-status`),
+};
+
+// Super Admin APIs
+export const superAdminAPI = {
+  // Dashboard & Metrics
+  getSystemMetrics: () => api.get('/system-metrics'),
+  getErrorLogs: (params) => api.get('/activity-logs', { params: { ...params, level: 'error' } }),
+  exportErrorLogs: (data) => api.post('/activity-logs/export', data),
+
+  // Tenants
+  getTenants: (params) => api.get('/tenants', { params }),
+  createTenant: (data) => api.post('/tenants', data),
+  updateTenant: (id, data) => api.put(`/tenants/${id}`, data),
+  deleteTenant: (id) => api.delete(`/tenants/${id}`),
+  getTenantUsers: (id) => api.get(`/tenants/${id}/users`),
+
+  // Subscriptions & Plans
+  getSubscriptionPlans: (params) => api.get('/subscription-plans', { params }),
+  createSubscriptionPlan: (data) => api.post('/subscription-plans', data),
+  updateSubscriptionPlan: (id, data) => api.put(`/subscription-plans/${id}`, data),
+  deleteSubscriptionPlan: (id) => api.delete(`/subscription-plans/${id}`),
+  getSubscriptions: (params) => api.get('/subscriptions', { params }),
+  createSubscription: (data) => api.post('/subscriptions', data),
+  updateSubscription: (id, data) => api.put(`/subscriptions/${id}`, data),
+  cancelSubscription: (id) => api.patch(`/subscriptions/${id}/cancel`),
+
+  // Payments & Invoices
+  getPayments: (params) => api.get('/payments', { params }),
+  getInvoices: (params) => api.get('/invoices', { params }),
+  generateInvoice: (data) => api.post('/invoices/generate', data),
+  updateInvoiceStatus: (id, status) => api.patch(`/invoices/${id}/status`, { status }),
+  downloadInvoice: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
+
+  // Activity Logs
+  getActivityLogs: (params) => api.get('/activity-logs', { params }),
+  exportActivityLogs: (params) => api.post('/activity-logs/export', params),
+
+  // Deleted Documents
+  getDeletedDocuments: (params) => api.get('/deleted-documents', { params }),
+  restoreDocument: (id) => api.post(`/deleted-documents/${id}/restore`),
+  permanentlyDeleteDocument: (id) => api.delete(`/deleted-documents/${id}/permanent`),
+
+  // System Configuration
+  getSystemConfig: () => api.get('/system-config'),
+  updateSystemConfig: (key, data) => api.put(`/system-config/${key}`, data),
+  createSystemConfig: (data) => api.post('/system-config', data),
+
+  // Analytics
+  getAnalytics: (params) => api.get('/analytics', { params }),
+  getDashboardStats: () => api.get('/analytics/dashboard'),
+  getTenantAnalytics: (tenantId, params) => api.get(`/analytics/tenant/${tenantId}`, { params }),
+
+  // Users  
+  getUsers: (params) => api.get('/users', { params }),
+  createUser: (data) => api.post('/users', data),
+  updateUser: (id, data) => api.put(`/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/users/${id}`),
+
+  // Tenant State Management
+  getTenantStates: (params) => api.get('/tenant-states', { params }),
+  updateTenantState: (id, data) => api.put(`/tenant-states/${id}`, data),
+
+  // Test endpoints
+  runTests: () => api.get('/test/super-admin-features')
 };
 
 export default api;
