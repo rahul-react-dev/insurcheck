@@ -658,37 +658,139 @@ const SystemConfiguration = () => {
             icon="fas fa-toggle-on"
             iconColor="text-indigo-600"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <ConfigurationToggle
-                label="Trial Extensions"
-                description="Allow extending trial periods for tenants"
-                checked={formData.featureToggles?.trialExtensions || false}
-                onChange={(checked) => handleInputChange('featureToggles.trialExtensions', checked)}
-              />
-              <ConfigurationToggle
-                label="Auto Invoicing"
-                description="Automatically generate and send invoices"
-                checked={formData.featureToggles?.autoInvoicing || false}
-                onChange={(checked) => handleInputChange('featureToggles.autoInvoicing', checked)}
-              />
-              <ConfigurationToggle
-                label="Document Versioning"
-                description="Enable document version control"
-                checked={formData.featureToggles?.documentVersioning || false}
-                onChange={(checked) => handleInputChange('featureToggles.documentVersioning', checked)}
-              />
-              <ConfigurationToggle
-                label="Advanced Analytics"
-                description="Enable advanced analytics and reporting"
-                checked={formData.featureToggles?.advancedAnalytics || false}
-                onChange={(checked) => handleInputChange('featureToggles.advancedAnalytics', checked)}
-              />
-              <ConfigurationToggle
-                label="API Access"
-                description="Allow API access for third-party integrations"
-                checked={formData.featureToggles?.apiAccess || false}
-                onChange={(checked) => handleInputChange('featureToggles.apiAccess', checked)}
-              />
+            <div className="space-y-8">
+              {/* Core Features */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-star text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Core Features</h3>
+                    <p className="text-sm text-gray-600">Essential platform functionality</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg p-4 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="Trial Extensions"
+                      description="Allow extending trial periods for tenants"
+                      checked={formData.featureToggles?.trialExtensions || false}
+                      onChange={(checked) => handleInputChange('featureToggles.trialExtensions', checked)}
+                    />
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="Auto Invoicing"
+                      description="Automatically generate and send invoices"
+                      checked={formData.featureToggles?.autoInvoicing || false}
+                      onChange={(checked) => handleInputChange('featureToggles.autoInvoicing', checked)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Document Management */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="h-8 w-8 bg-green-600 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-file-alt text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Document Management</h3>
+                    <p className="text-sm text-gray-600">Document handling and processing features</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="bg-white rounded-lg p-4 border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="Document Versioning"
+                      description="Enable document version control and history tracking"
+                      checked={formData.featureToggles?.documentVersioning || false}
+                      onChange={(checked) => handleInputChange('featureToggles.documentVersioning', checked)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Analytics & Integration */}
+              <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-6 border border-purple-200">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="h-8 w-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-chart-line text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Analytics & Integration</h3>
+                    <p className="text-sm text-gray-600">Advanced reporting and third-party integrations</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg p-4 border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="Advanced Analytics"
+                      description="Enable comprehensive analytics dashboard and detailed reporting"
+                      checked={formData.featureToggles?.advancedAnalytics || false}
+                      onChange={(checked) => handleInputChange('featureToggles.advancedAnalytics', checked)}
+                    />
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="API Access"
+                      description="Allow REST API access for third-party integrations and custom applications"
+                      checked={formData.featureToggles?.apiAccess || false}
+                      onChange={(checked) => handleInputChange('featureToggles.apiAccess', checked)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Summary */}
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-8 w-8 bg-gray-600 rounded-lg flex items-center justify-center">
+                      <i className="fas fa-info-circle text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Feature Summary</h3>
+                      <p className="text-sm text-gray-600">Current feature activation status</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {Object.values(formData.featureToggles || {}).filter(Boolean).length}/5
+                    </div>
+                    <div className="text-sm text-gray-500">Features Enabled</div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {[
+                    { key: 'trialExtensions', label: 'Trial Extensions', icon: 'fas fa-clock' },
+                    { key: 'autoInvoicing', label: 'Auto Invoicing', icon: 'fas fa-file-invoice' },
+                    { key: 'documentVersioning', label: 'Doc Versioning', icon: 'fas fa-file-alt' },
+                    { key: 'advancedAnalytics', label: 'Analytics', icon: 'fas fa-chart-bar' },
+                    { key: 'apiAccess', label: 'API Access', icon: 'fas fa-plug' }
+                  ].map((feature) => (
+                    <div
+                      key={feature.key}
+                      className={`
+                        p-3 rounded-lg border text-center transition-all
+                        ${formData.featureToggles?.[feature.key]
+                          ? 'bg-green-100 border-green-300 text-green-800'
+                          : 'bg-red-100 border-red-300 text-red-800'
+                        }
+                      `}
+                    >
+                      <i className={`${feature.icon} text-lg mb-1`}></i>
+                      <div className="text-xs font-medium">{feature.label}</div>
+                      <div className="text-xs">
+                        {formData.featureToggles?.[feature.key] ? 'Enabled' : 'Disabled'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </ConfigurationSection>
         </div>
