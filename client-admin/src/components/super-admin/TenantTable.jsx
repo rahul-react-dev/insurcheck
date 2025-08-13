@@ -237,15 +237,15 @@ const TenantTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Users:</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
                       {tenant.userCount || 0}
                     </span>
                     {tenant.userCount > 0 && (
                       <Button
                         onClick={() => onViewUsers(tenant)}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
                       >
-                        <i className="fas fa-eye"></i>
+                        View
                       </Button>
                     )}
                   </div>
@@ -351,16 +351,15 @@ const TenantTable = ({
                   {getPlanBadge(tenant.subscriptionPlan)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-900">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-lg font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-md min-w-[50px] text-center">
                       {tenant.userCount || 0}
                     </span>
                     {tenant.userCount > 0 && (
                       <Button
                         onClick={() => onViewUsers(tenant)}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md font-medium"
                       >
-                        <i className="fas fa-eye mr-1"></i>
                         View
                       </Button>
                     )}
