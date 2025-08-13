@@ -18,7 +18,10 @@ import {
   suspendTenantFailure,
   deleteTenantRequest,
   deleteTenantSuccess,
-  deleteTenantFailure
+  deleteTenantFailure,
+  fetchTenantUsersRequest,
+  fetchTenantUsersSuccess,
+  fetchTenantUsersFailure
 } from './tenantSlice';
 
 // Mock API functions - replace with actual API calls
@@ -457,6 +460,114 @@ const api = {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     return tenantId;
+  },
+
+  fetchTenantUsers: async (tenantId) => {
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    // Mock user data for each tenant
+    const mockUsersData = {
+      '1': [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Smith',
+          email: 'john.smith@acme-insurance.com',
+          phoneNumber: '+1-555-0101',
+          status: 'activated',
+          createdAt: '2024-01-16T08:30:00Z'
+        },
+        {
+          id: '2',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          email: 'sarah.johnson@acme-insurance.com',
+          phoneNumber: '+1-555-0102',
+          status: 'activated',
+          createdAt: '2024-01-18T10:15:00Z'
+        },
+        {
+          id: '3',
+          firstName: 'Michael',
+          lastName: 'Brown',
+          email: 'michael.brown@acme-insurance.com',
+          phoneNumber: '+1-555-0103',
+          status: 'activated',
+          createdAt: '2024-01-20T14:45:00Z'
+        }
+      ],
+      '2': [
+        {
+          id: '4',
+          firstName: 'Emma',
+          lastName: 'Davis',
+          email: 'emma.davis@safeguard.com',
+          phoneNumber: '+1-555-0201',
+          status: 'activated',
+          createdAt: '2024-01-22T09:20:00Z'
+        },
+        {
+          id: '5',
+          firstName: 'James',
+          lastName: 'Wilson',
+          email: 'james.wilson@safeguard.com',
+          phoneNumber: '+1-555-0202',
+          status: 'deactivated',
+          createdAt: '2024-01-25T11:30:00Z'
+        }
+      ],
+      '6': [
+        {
+          id: '6',
+          firstName: 'Lisa',
+          lastName: 'Anderson',
+          email: 'lisa.anderson@securelife.com',
+          phoneNumber: '+1-555-0301',
+          status: 'activated',
+          createdAt: '2024-02-14T13:15:00Z'
+        },
+        {
+          id: '7',
+          firstName: 'Robert',
+          lastName: 'Taylor',
+          email: 'robert.taylor@securelife.com',
+          phoneNumber: '+1-555-0302',
+          status: 'activated',
+          createdAt: '2024-02-16T15:45:00Z'
+        },
+        {
+          id: '8',
+          firstName: 'Jennifer',
+          lastName: 'Martinez',
+          email: 'jennifer.martinez@securelife.com',
+          phoneNumber: '+1-555-0303',
+          status: 'pending',
+          createdAt: '2024-02-18T12:00:00Z'
+        }
+      ]
+    };
+
+    // Generate more users for other tenants
+    const generateUsersForTenant = (tenantId, count) => {
+      const firstNames = ['Alex', 'Chris', 'Jordan', 'Taylor', 'Casey', 'Morgan', 'Riley', 'Avery', 'Quinn', 'Blake'];
+      const lastNames = ['Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez'];
+      const statuses = ['activated', 'activated', 'activated', 'deactivated', 'pending'];
+      
+      return Array.from({ length: count }, (_, index) => ({
+        id: `${tenantId}_${index + 1}`,
+        firstName: firstNames[index % firstNames.length],
+        lastName: lastNames[index % lastNames.length],
+        email: `user${index + 1}@tenant${tenantId}.com`,
+        phoneNumber: `+1-555-${String(tenantId).padStart(2, '0')}${String(index + 1).padStart(2, '0')}`,
+        status: statuses[index % statuses.length],
+        createdAt: new Date(2024, 0, 15 + index, 10 + (index % 12), 30).toISOString()
+      }));
+    };
+
+    // Return mock users or generate them
+    const users = mockUsersData[tenantId] || generateUsersForTenant(tenantId, Math.floor(Math.random() * 15) + 1);
+    
+    return users;
   }
 };
 
@@ -576,6 +687,16 @@ function* deleteTenantSaga(action) {
   }
 }
 
+function* fetchTenantUsersSaga(action) {
+  try {
+    const tenantId = action.payload;
+    const users = yield call(api.fetchTenantUsers, tenantId);
+    yield put(fetchTenantUsersSuccess({ tenantId, users }));
+  } catch (error) {
+    yield put(fetchTenantUsersFailure(error.message || 'Failed to fetch tenant users'));
+  }
+}
+
 // Watcher sagas
 function* watchFetchTenants() {
   console.log('🔧 watchFetchTenants started');
@@ -607,6 +728,11 @@ function* watchDeleteTenant() {
   yield takeEvery(deleteTenantRequest.type, deleteTenantSaga);
 }
 
+function* watchFetchTenantUsers() {
+  console.log('🔧 watchFetchTenantUsers started');
+  yield takeEvery(fetchTenantUsersRequest.type, fetchTenantUsersSaga);
+}
+
 // Root tenant saga
 export default function* tenantSaga() {
   console.log('🔧 Tenant saga initialized');
@@ -616,7 +742,8 @@ export default function* tenantSaga() {
     fork(watchCreateTenant),
     fork(watchUpdateTenant),
     fork(watchSuspendTenant),
-    fork(watchDeleteTenant)
+    fork(watchDeleteTenant),
+    fork(watchFetchTenantUsers)
   ]);
   console.log('✅ Tenant saga watchers started');
 }

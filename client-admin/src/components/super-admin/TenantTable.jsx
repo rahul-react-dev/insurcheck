@@ -9,6 +9,7 @@ const TenantTable = ({
   onEditTenant,
   onSuspendTenant,
   onDeleteTenant,
+  onViewUsers,
   pagination = { page: 1, limit: 10, total: 0 },
   totalTenants = 0,
   onPageChange,
@@ -117,6 +118,7 @@ const TenantTable = ({
                   "Status",
                   "Created Date",
                   "Subscription Plan",
+                  "Users",
                   "Actions",
                 ].map((header) => (
                   <th
@@ -152,6 +154,9 @@ const TenantTable = ({
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-6 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-12"></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex space-x-2">
@@ -229,6 +234,22 @@ const TenantTable = ({
                     {formatDate(tenant.createdDate)}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Users:</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-900">
+                      {tenant.userCount || 0}
+                    </span>
+                    {tenant.userCount > 0 && (
+                      <Button
+                        onClick={() => onViewUsers(tenant)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col space-y-2">
@@ -288,6 +309,9 @@ const TenantTable = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Subscription Plan
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Users
+              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -325,6 +349,22 @@ const TenantTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getPlanBadge(tenant.subscriptionPlan)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-900">
+                      {tenant.userCount || 0}
+                    </span>
+                    {tenant.userCount > 0 && (
+                      <Button
+                        onClick={() => onViewUsers(tenant)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1"
+                      >
+                        <i className="fas fa-eye mr-1"></i>
+                        View
+                      </Button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">

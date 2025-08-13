@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "../../components/ui/Button";
@@ -6,6 +5,7 @@ import Card from "../../components/ui/Card";
 import TenantTable from "../../components/super-admin/TenantTable";
 import TenantModal from "../../components/super-admin/TenantModal";
 import TenantFilters from "../../components/super-admin/TenantFilters";
+import TenantUsersModal from "../../components/super-admin/TenantUsersModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import {
   fetchTenantsRequest,
@@ -14,16 +14,24 @@ import {
   updateTenantRequest,
   suspendTenantRequest,
   deleteTenantRequest,
+  fetchTenantUsersRequest,
+  updateFilters,
+  clearFilters,
   clearError,
 } from "../../store/super-admin/tenantSlice";
 
 const TenantManagement = () => {
   const dispatch = useDispatch();
-  const [selectedTenant, setSelectedTenant] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tenantToDelete, setTenantToDelete] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
   const [modalMode, setModalMode] = useState("create"); // create, edit
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+  });
   const [filters, setFilters] = useState({
     tenantName: "",
     status: "",
@@ -33,42 +41,55 @@ const TenantManagement = () => {
       end: "",
     },
   });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
 
   const {
     tenants,
     subscriptionPlans,
+    tenantUsers,
     isLoading,
+    isLoadingPlans,
+    isLoadingUsers,
     error,
     totalTenants,
     statusCounts,
     pagination: storePagination,
-  } = useSelector((state) => state.tenant);
+    hasInitialLoad,
+  } = useSelector((state) => ({
+    tenants: state.tenant.tenants,
+    subscriptionPlans: state.tenant.subscriptionPlans,
+    tenantUsers: state.tenant.tenantUsers,
+    isLoading: state.tenant.isLoading,
+    isLoadingPlans: state.tenant.isLoadingPlans,
+    isLoadingUsers: state.tenant.isLoadingUsers,
+    error: state.tenant.error,
+    totalTenants: state.tenant.totalTenants,
+    statusCounts: state.tenant.statusCounts,
+    pagination: state.tenant.pagination,
+    hasInitialLoad: state.tenant.hasInitialLoad,
+  }));
 
   // Sync pagination with store
   useEffect(() => {
     if (storePagination) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
-        ...storePagination
+        ...storePagination,
       }));
     }
   }, [storePagination]);
 
   // Fetch initial data when component mounts
   useEffect(() => {
-    console.log('🚀 TenantManagement: Component mounted, dispatching fetchTenantsRequest');
-    
+    console.log(
+      "🚀 TenantManagement: Component mounted, dispatching fetchTenantsRequest",
+    );
+
     const fetchParams = {
       page: 1,
       limit: 10,
       ...filters,
     };
-    
+
     dispatch(fetchTenantsRequest(fetchParams));
     dispatch(fetchSubscriptionPlansRequest());
   }, [dispatch]);
@@ -88,20 +109,31 @@ const TenantManagement = () => {
   const handleSuspendTenant = (tenantId, currentStatus) => {
     const action = currentStatus === "active" ? "suspend" : "reactivate";
     if (window.confirm(`Are you sure you want to ${action} this tenant?`)) {
-      dispatch(suspendTenantRequest({ tenantId, suspend: currentStatus === "active" }));
+      dispatch(
+        suspendTenantRequest({ tenantId, suspend: currentStatus === "active" }),
+      );
     }
   };
 
   const handleDeleteTenant = (tenant) => {
-    setTenantToDelete(tenant);
-    setIsDeleteModalOpen(true);
+    setSelectedTenant(tenant);
+    setConfirmAction(() => () => {
+      dispatch(deleteTenantRequest(tenant.id));
+      setIsConfirmModalOpen(false);
+      setSelectedTenant(null);
+    });
+    setIsConfirmModalOpen(true);
   };
 
-  const confirmDeleteTenant = () => {
-    if (tenantToDelete) {
-      dispatch(deleteTenantRequest(tenantToDelete.id));
-      setIsDeleteModalOpen(false);
-      setTenantToDelete(null);
+  const handleViewUsers = (tenant) => {
+    setSelectedTenant(tenant);
+    setIsUsersModalOpen(true);
+    dispatch(fetchTenantUsersRequest(tenant.id));
+  };
+
+  const handleRefreshUsers = () => {
+    if (selectedTenant) {
+      dispatch(fetchTenantUsersRequest(selectedTenant.id));
     }
   };
 
@@ -224,7 +256,9 @@ const TenantManagement = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">Active</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                Active
+              </p>
               <p className="text-2xl font-bold text-green-600">
                 {statusCounts?.active || 0}
               </p>
@@ -280,7 +314,7 @@ const TenantManagement = () => {
               subscriptionPlans={subscriptionPlans}
             />
           </div>
-          
+
           {/* Actions Section */}
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <Button
@@ -306,11 +340,12 @@ const TenantManagement = () => {
       <Card className="overflow-hidden">
         <TenantTable
           tenants={tenants}
-          isLoading={isLoading}
+          isLoading={isLoading && !hasInitialLoad}
           onEditTenant={handleEditTenant}
           onSuspendTenant={handleSuspendTenant}
           onDeleteTenant={handleDeleteTenant}
-          pagination={pagination}
+          onViewUsers={handleViewUsers}
+          pagination={storePagination}
           totalTenants={totalTenants}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
@@ -334,41 +369,35 @@ const TenantManagement = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && tenantToDelete && (
-        <ConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setTenantToDelete(null);
-          }}
-          onConfirm={confirmDeleteTenant}
-          title="Delete Tenant"
-          message={
-            <div>
-              <p className="mb-4">
-                Are you sure you want to delete <strong>{tenantToDelete.tenantName}</strong>?
-              </p>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <i className="fas fa-exclamation-triangle text-red-500 mt-0.5 flex-shrink-0"></i>
-                  <div>
-                    <h4 className="text-red-800 font-medium mb-2">Warning: This action cannot be undone</h4>
-                    <ul className="text-red-700 text-sm space-y-1">
-                      <li>• All tenant users will be permanently deleted</li>
-                      <li>• All tenant documents will be removed</li>
-                      <li>• All tenant logs will be deleted</li>
-                      <li>• Billing and subscription data will be archived</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
-          confirmText="Delete Tenant"
-          confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-          isLoading={isLoading}
-        />
-      )}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => {
+          setIsConfirmModalOpen(false);
+          setSelectedTenant(null);
+          setConfirmAction(null);
+        }}
+        onConfirm={confirmAction}
+        title="Confirm Action"
+        message={
+          confirmAction?.toString().includes("deleteTenant")
+            ? `Are you sure you want to delete "${selectedTenant?.tenantName}"? This action cannot be undone.`
+            : `Are you sure you want to ${selectedTenant?.status === "active" ? "suspend" : "reactivate"} "${selectedTenant?.tenantName}"?`
+        }
+        isLoading={isLoading}
+      />
+
+      {/* Tenant Users Modal */}
+      <TenantUsersModal
+        isOpen={isUsersModalOpen}
+        onClose={() => {
+          setIsUsersModalOpen(false);
+          setSelectedTenant(null);
+        }}
+        tenant={selectedTenant}
+        users={selectedTenant ? tenantUsers[selectedTenant.id] || [] : []}
+        isLoading={isLoadingUsers}
+        onRefresh={handleRefreshUsers}
+      />
     </div>
   );
 };

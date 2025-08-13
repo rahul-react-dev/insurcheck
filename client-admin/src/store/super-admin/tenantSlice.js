@@ -4,8 +4,10 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   tenants: [],
   subscriptionPlans: [],
+  tenantUsers: {},
   isLoading: false,
   isLoadingPlans: false,
+  isLoadingUsers: false,
   error: null,
   totalTenants: 0,
   statusCounts: {
@@ -211,6 +213,22 @@ const tenantSlice = createSlice({
       state.error = null;
     },
 
+    // Fetch tenant users
+    fetchTenantUsersRequest: (state, action) => {
+      state.isLoadingUsers = true;
+      state.error = null;
+    },
+    fetchTenantUsersSuccess: (state, action) => {
+      state.isLoadingUsers = false;
+      const { tenantId, users } = action.payload;
+      state.tenantUsers[tenantId] = users;
+      state.error = null;
+    },
+    fetchTenantUsersFailure: (state, action) => {
+      state.isLoadingUsers = false;
+      state.error = action.payload;
+    },
+
     // Clear all data
     clearTenantData: (state) => {
       return initialState;
@@ -237,6 +255,9 @@ export const {
   deleteTenantRequest,
   deleteTenantSuccess,
   deleteTenantFailure,
+  fetchTenantUsersRequest,
+  fetchTenantUsersSuccess,
+  fetchTenantUsersFailure,
   updateFilters,
   clearFilters,
   clearError,
