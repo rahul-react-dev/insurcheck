@@ -14,6 +14,7 @@ import activityLogReducer from './super-admin/activityLogSlice';
 import tenantStateReducer from './super-admin/tenantStateSlice';
 import deletedDocumentsReducer from './super-admin/deletedDocumentsSlice';
 import systemConfigReducer from './super-admin/systemConfigSlice';
+import analyticsReducer from './super-admin/analyticsSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -33,6 +34,7 @@ const rootReducer = combineReducers({
   tenantState: tenantStateReducer,
   deletedDocuments: deletedDocumentsReducer,
   systemConfig: systemConfigReducer,
+  analytics: analyticsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
