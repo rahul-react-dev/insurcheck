@@ -543,19 +543,97 @@ const SystemConfiguration = () => {
             icon="fas fa-shield-alt"
             iconColor="text-green-600"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ConfigurationToggle
-                label="Email 2FA Authentication"
-                description="Enable two-factor authentication via email"
-                checked={formData.twoFactorAuth?.emailEnabled || false}
-                onChange={(checked) => handleInputChange('twoFactorAuth.emailEnabled', checked)}
-              />
-              <ConfigurationToggle
-                label="SMS 2FA Authentication"
-                description="Enable two-factor authentication via SMS"
-                checked={formData.twoFactorAuth?.smsEnabled || false}
-                onChange={(checked) => handleInputChange('twoFactorAuth.smsEnabled', checked)}
-              />
+            <div className="space-y-8">
+              {/* Authentication Methods */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="h-8 w-8 bg-green-600 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-key text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Two-Factor Authentication</h3>
+                    <p className="text-sm text-gray-600">Enhance account security with multi-factor authentication</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg p-4 border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="Email 2FA Authentication"
+                      description="Enable two-factor authentication via email verification codes"
+                      checked={formData.twoFactorAuth?.emailEnabled || false}
+                      onChange={(checked) => handleInputChange('twoFactorAuth.emailEnabled', checked)}
+                    />
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+                    <ConfigurationToggle
+                      label="SMS 2FA Authentication"
+                      description="Enable two-factor authentication via SMS verification codes"
+                      checked={formData.twoFactorAuth?.smsEnabled || false}
+                      onChange={(checked) => handleInputChange('twoFactorAuth.smsEnabled', checked)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Summary */}
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-8 w-8 bg-gray-600 rounded-lg flex items-center justify-center">
+                      <i className="fas fa-shield-check text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Security Status</h3>
+                      <p className="text-sm text-gray-600">Current security configuration overview</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {Object.values(formData.twoFactorAuth || {}).filter(Boolean).length}/2
+                    </div>
+                    <div className="text-sm text-gray-500">2FA Methods Active</div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { key: 'emailEnabled', label: 'Email 2FA', icon: 'fas fa-envelope' },
+                    { key: 'smsEnabled', label: 'SMS 2FA', icon: 'fas fa-mobile-alt' }
+                  ].map((method) => (
+                    <div
+                      key={method.key}
+                      className={`
+                        p-4 rounded-lg border text-center transition-all
+                        ${formData.twoFactorAuth?.[method.key]
+                          ? 'bg-green-100 border-green-300 text-green-800'
+                          : 'bg-red-100 border-red-300 text-red-800'
+                        }
+                      `}
+                    >
+                      <i className={`${method.icon} text-lg mb-2`}></i>
+                      <div className="text-sm font-medium">{method.label}</div>
+                      <div className="text-xs">
+                        {formData.twoFactorAuth?.[method.key] ? 'Active' : 'Inactive'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Security Recommendations */}
+                {Object.values(formData.twoFactorAuth || {}).filter(Boolean).length < 2 && (
+                  <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <i className="fas fa-lightbulb text-yellow-500 mt-0.5"></i>
+                      <div>
+                        <h4 className="text-yellow-800 font-medium text-sm">Security Recommendation</h4>
+                        <p className="text-yellow-700 text-xs mt-1">
+                          Enable both Email and SMS 2FA for maximum security across your platform.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </ConfigurationSection>
 
