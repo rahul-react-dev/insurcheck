@@ -26,6 +26,7 @@ import {
 let mockPlans = [
   {
     id: '1',
+    planId: 'BASIC_001',
     name: 'Basic Plan',
     description: 'Perfect for small businesses getting started with compliance management',
     price: 29.99,
@@ -44,6 +45,7 @@ let mockPlans = [
   },
   {
     id: '2',
+    planId: 'PRO_001',
     name: 'Professional Plan',
     description: 'Advanced features for growing organizations with enhanced compliance needs',
     price: 99.99,
@@ -62,6 +64,7 @@ let mockPlans = [
   },
   {
     id: '3',
+    planId: 'ENT_001',
     name: 'Enterprise Plan',
     description: 'Unlimited access with dedicated support for large organizations',
     price: 299.99,
@@ -138,6 +141,7 @@ const mockCreatePlan = (planData) => {
 
       const newPlan = {
         id: Date.now().toString(),
+        planId: planData.planId || `PLAN_${Date.now()}`,
         ...planData,
         features: planData.features || {}, // Ensure features is an object
         isActive: true,
@@ -252,24 +256,23 @@ function* fetchPlansSaga() {
 
 function* createPlanSaga(action) {
   try {
-    const response = yield call(api.post, '/api/super-admin/subscription-plans', action.payload);
-    yield put(createPlanSuccess(response.data));
+    const newPlan = yield call(mockCreatePlan, action.payload);
+    yield put(createPlanSuccess(newPlan));
     yield put(hidePlanModal());
     // Show success message here if needed
   } catch (error) {
-    yield put(createPlanFailure(error.response?.data?.message || 'Failed to create plan'));
+    yield put(createPlanFailure(error.message || 'Failed to create plan'));
   }
 }
 
 function* updatePlanSaga(action) {
   try {
-    const { id, ...planData } = action.payload;
-    const response = yield call(api.put, `/api/super-admin/subscription-plans/${id}`, planData);
-    yield put(updatePlanSuccess(response.data));
+    const updatedPlan = yield call(mockUpdatePlan, action.payload);
+    yield put(updatePlanSuccess(updatedPlan));
     yield put(hidePlanModal());
     // Show success message here if needed
   } catch (error) {
-    yield put(updatePlanFailure(error.response?.data?.message || 'Failed to update plan'));
+    yield put(updatePlanFailure(error.message || 'Failed to update plan'));
   }
 }
 

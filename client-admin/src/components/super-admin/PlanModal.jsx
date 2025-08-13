@@ -59,7 +59,7 @@ const PlanModal = () => {
       });
     }
     setErrors({});
-  }, [editingPlan]);
+  }, [editingPlan, showPlanModal]);
 
   const handleInputChange = (field, value) => {
     if (field.startsWith('features.')) {
@@ -185,8 +185,14 @@ const PlanModal = () => {
                   onChange={(e) => handleInputChange('planId', e.target.value)}
                   placeholder="e.g., BASIC_001"
                   error={errors.planId}
+                  disabled={!!editingPlan}
                   required
                 />
+                {editingPlan && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Plan ID cannot be changed after creation
+                  </p>
+                )}
               </div>
               <div>
                 <Input
