@@ -37,26 +37,38 @@ const DeletedDocumentsManagement = () => {
 
   useEffect(() => {
     dispatch(fetchDeletedDocuments({ ...filters, ...pagination }));
-  }, [dispatch, filters, pagination]);
+  }, [dispatch]); // Remove filters and pagination dependencies to avoid double calls
 
   const handleSearch = (searchTerm) => {
     dispatch(setFilters({ searchTerm }));
+    dispatch(setPagination({ page: 1 }));
+    // Trigger immediate fetch with new search term
+    dispatch(fetchDeletedDocuments({ ...filters, searchTerm, ...pagination, page: 1 }));
   };
 
   const handleFilterChange = (newFilters) => {
     dispatch(setFilters(newFilters));
+    dispatch(setPagination({ page: 1 }));
+    // Trigger immediate fetch with new filters
+    dispatch(fetchDeletedDocuments({ ...filters, ...newFilters, ...pagination, page: 1 }));
   };
 
   const handlePageChange = (page) => {
     dispatch(setPagination({ page }));
+    // Trigger immediate fetch with new page
+    dispatch(fetchDeletedDocuments({ ...filters, ...pagination, page }));
   };
 
   const handlePageSizeChange = (pageSize) => {
     dispatch(setPagination({ pageSize, page: 1 }));
+    // Trigger immediate fetch with new page size
+    dispatch(fetchDeletedDocuments({ ...filters, pageSize, page: 1 }));
   };
 
   const handleSort = (sortBy, sortOrder) => {
     dispatch(setFilters({ sortBy, sortOrder }));
+    // Trigger immediate fetch with new sort parameters
+    dispatch(fetchDeletedDocuments({ ...filters, sortBy, sortOrder, ...pagination }));
   };
 
   const handleExport = (format) => {

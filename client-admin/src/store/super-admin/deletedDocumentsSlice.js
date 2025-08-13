@@ -16,9 +16,13 @@ const initialState = {
   },
   pagination: {
     page: 1,
-    pageSize: 25
+    pageSize: 25,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false
   },
   totalCount: 0,
+  appliedFilters: {},
   exportLoading: false,
   actionLoading: false
 };
@@ -36,6 +40,20 @@ const deletedDocumentsSlice = createSlice({
       state.loading = false;
       state.deletedDocuments = action.payload.documents;
       state.totalCount = action.payload.totalCount;
+      
+      // Update pagination metadata if provided
+      if (action.payload.pagination) {
+        state.pagination = {
+          ...state.pagination,
+          ...action.payload.pagination
+        };
+      }
+      
+      // Update applied filters if provided
+      if (action.payload.appliedFilters) {
+        state.appliedFilters = action.payload.appliedFilters;
+      }
+      
       state.error = null;
     },
     fetchDeletedDocumentsFailure: (state, action) => {

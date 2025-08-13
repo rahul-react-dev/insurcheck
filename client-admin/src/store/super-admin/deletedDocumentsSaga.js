@@ -190,30 +190,72 @@ function* fetchDeletedDocumentsSaga(action) {
     yield put(fetchDeletedDocumentsStart());
     yield delay(1000); // Simulate API call
 
-    const { searchTerm, deletedBy, originalOwner, dateRange, documentType, sortBy, sortOrder, page, pageSize } = action.payload;
+    // Extract pagination and filter parameters
+    const { 
+      searchTerm = '', 
+      deletedBy = '', 
+      originalOwner = '', 
+      dateRange = '', 
+      documentType = '', 
+      sortBy = 'deletedAt', 
+      sortOrder = 'desc', 
+      page = 1, 
+      pageSize = 25 
+    } = action.payload;
 
-    // Filter documents based on criteria
+    // In a real implementation, these parameters would be sent to the API
+    const apiParams = {
+      searchTerm,
+      deletedBy,
+      originalOwner,
+      dateRange,
+      documentType,
+      sortBy,
+      sortOrder,
+      page,
+      pageSize
+    };
+
+    console.log('API Parameters:', apiParams); // For debugging
+
+    // Simulate server-side filtering and pagination
     let filteredDocuments = mockDeletedDocuments.filter(doc => {
       const matchesSearch = !searchTerm || 
         doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.originalOwner.toLowerCase().includes(searchTerm.toLowerCase());
+        doc.originalOwner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.deletedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.tenantName.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesDeletedBy = !deletedBy || doc.deletedBy === deletedBy;
       const matchesOriginalOwner = !originalOwner || doc.originalOwner === originalOwner;
       const matchesDocumentType = !documentType || doc.name.toLowerCase().includes(documentType.toLowerCase());
 
-      return matchesSearch && matchesDeletedBy && matchesOriginalOwner && matchesDocumentType;
+      // Date range filtering (if provided)
+      let matchesDateRange = true;
+      if (dateRange) {
+        // Expected format: "YYYY-MM-DD to YYYY-MM-DD" or specific date formats
+        // For now, just check if the date range contains the deletion date
+        const deletedDate = new Date(doc.deletedAt);
+        // Add your date range logic here
+        matchesDateRange = true;
+      }
+
+      return matchesSearch && matchesDeletedBy && matchesOriginalOwner && matchesDocumentType && matchesDateRange;
     });
 
-    // Sort documents
+    // Simulate server-side sorting
     if (sortBy && sortOrder) {
       filteredDocuments.sort((a, b) => {
         let aVal = a[sortBy];
         let bVal = b[sortBy];
 
+        // Handle different data types
         if (typeof aVal === 'string') {
           aVal = aVal.toLowerCase();
           bVal = bVal.toLowerCase();
+        } else if (aVal instanceof Date || typeof aVal === 'string') {
+          aVal = new Date(aVal);
+          bVal = new Date(bVal);
         }
 
         if (sortOrder === 'asc') {
@@ -224,16 +266,42 @@ function* fetchDeletedDocumentsSaga(action) {
       });
     }
 
+    // Get total count after filtering (this would come from the API)
     const totalCount = filteredDocuments.length;
 
-    // Paginate documents
-    const startIndex = (page - 1) * pageSize;
-    const paginatedDocuments = filteredDocuments.slice(startIndex, startIndex + pageSize);
+    // Simulate server-side pagination
+    const offset = (page - 1) * pageSize;
+    const paginatedDocuments = filteredDocuments.slice(offset, offset + pageSize);
+
+    // Simulate API response structure
+    const response = {
+      data: paginatedDocuments,
+      pagination: {
+        currentPage: page,
+        pageSize: pageSize,
+        totalCount: totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+        hasNextPage: page < Math.ceil(totalCount / pageSize),
+        hasPreviousPage: page > 1
+      },
+      filters: {
+        searchTerm,
+        deletedBy,
+        originalOwner,
+        dateRange,
+        documentType,
+        sortBy,
+        sortOrder
+      }
+    };
 
     yield put(fetchDeletedDocumentsSuccess({ 
-      documents: paginatedDocuments, 
-      totalCount 
+      documents: response.data, 
+      totalCount: response.pagination.totalCount,
+      pagination: response.pagination,
+      appliedFilters: response.filters
     }));
+
   } catch (error) {
     yield put(fetchDeletedDocumentsFailure('Failed to fetch deleted documents. Please try again.'));
   }
