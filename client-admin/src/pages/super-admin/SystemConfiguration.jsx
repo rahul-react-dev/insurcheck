@@ -77,16 +77,18 @@ const SystemConfiguration = () => {
 
   useEffect(() => {
     if (configurationScope === 'system-wide' && configuration) {
-      setFormData(configuration);
+      // Deep copy to avoid mutation issues
+      setFormData(JSON.parse(JSON.stringify(configuration)));
       setHasUnsavedChanges(false);
     } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
       const tenantConfig = tenantConfigurations?.[selectedTenantId];
       if (tenantConfig) {
-        setFormData(tenantConfig);
+        // Deep copy to avoid mutation issues
+        setFormData(JSON.parse(JSON.stringify(tenantConfig)));
       } else {
         // Use system-wide config as default for new tenant configurations
         setFormData({
-          ...configuration,
+          ...JSON.parse(JSON.stringify(configuration || {})),
           inheritFromSystem: true
         });
       }
@@ -108,14 +110,20 @@ const SystemConfiguration = () => {
 
   const handleInputChange = (path, value) => {
     const pathArray = path.split('.');
-    const newFormData = { ...formData };
     
-    // Navigate to nested object
+    // Create a deep copy of formData to avoid mutations
+    const newFormData = JSON.parse(JSON.stringify(formData));
+    
+    // Navigate to nested object and create new objects along the path
     let current = newFormData;
     for (let i = 0; i < pathArray.length - 1; i++) {
+      if (!current[pathArray[i]]) {
+        current[pathArray[i]] = {};
+      }
       current = current[pathArray[i]];
     }
     
+    // Set the final value
     current[pathArray[pathArray.length - 1]] = value;
     
     setFormData(newFormData);
@@ -186,14 +194,14 @@ const SystemConfiguration = () => {
 
   const handleCancel = () => {
     if (configurationScope === 'system-wide' && configuration) {
-      setFormData(configuration);
+      setFormData(JSON.parse(JSON.stringify(configuration)));
     } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
       const tenantConfig = tenantConfigurations?.[selectedTenantId];
       if (tenantConfig) {
-        setFormData(tenantConfig);
+        setFormData(JSON.parse(JSON.stringify(tenantConfig)));
       } else {
         setFormData({
-          ...configuration,
+          ...JSON.parse(JSON.stringify(configuration || {})),
           inheritFromSystem: true
         });
       }
