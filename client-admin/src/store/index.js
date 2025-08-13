@@ -1,9 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
+import { combineReducers } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 
+// Import reducers
 import authReducer from './authSlice';
 import superAdminReducer from './super-admin/superAdminSlice';
 import subscriptionReducer from './super-admin/subscriptionSlice';
@@ -15,6 +16,7 @@ import tenantStateReducer from './super-admin/tenantStateSlice';
 import deletedDocumentsReducer from './super-admin/deletedDocumentsSlice';
 import systemConfigReducer from './super-admin/systemConfigSlice';
 import analyticsReducer from './super-admin/analyticsSlice';
+import adminReducer from './admin/adminSlice'; // Import the new admin reducer
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -35,6 +37,7 @@ const rootReducer = combineReducers({
   deletedDocuments: deletedDocumentsReducer,
   systemConfig: systemConfigReducer,
   analytics: analyticsReducer,
+  admin: adminReducer, // Add the admin reducer to the root reducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

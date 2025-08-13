@@ -25,6 +25,9 @@ import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsMana
 import SystemConfiguration from './pages/super-admin/SystemConfiguration';
 // Import the new AnalyticsDashboard component
 import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 function App() {
   // Debug store configuration
@@ -130,6 +133,18 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Admin/Tenant Admin routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminProtectedRoute>
+                  <AdminDashboard />
+                </AdminProtectedRoute>
+              }
+            />
+            {/* Add more admin routes here as needed */}
 
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/login" replace />} />

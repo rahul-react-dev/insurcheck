@@ -10,6 +10,7 @@ import tenantStateSaga from '../super-admin/tenantStateSaga';
 import deletedDocumentsSaga from '../super-admin/deletedDocumentsSaga';
 import systemConfigSaga from '../super-admin/systemConfigSaga';
 import analyticsSaga from '../super-admin/analyticsSaga';
+import adminSaga from '../admin/adminSaga';
 
 export default function* rootSaga() {
   console.log('🔄 Root saga initialized');
@@ -26,6 +27,7 @@ export default function* rootSaga() {
     fork(deletedDocumentsSaga),
     fork(systemConfigSaga),
     fork(analyticsSaga),
+    fork(adminSaga),
   ]);
   console.log('✅ All sagas forked successfully');
 }
