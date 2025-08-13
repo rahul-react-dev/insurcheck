@@ -35,6 +35,7 @@ const PlanCard = ({ plan }) => {
   };
 
   const getPlanColor = (planId) => {
+    if (!planId || typeof planId !== 'string') return 'gray';
     if (planId.includes('BASIC')) return 'blue';
     if (planId.includes('PRO')) return 'purple';
     if (planId.includes('ENT')) return 'gold';
