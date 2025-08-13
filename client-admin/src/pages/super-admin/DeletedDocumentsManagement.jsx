@@ -14,6 +14,7 @@ import {
   clearError,
   setFilters,
   setPagination,
+  setDocumentViewError,
 } from "../../store/super-admin/deletedDocumentsSlice";
 
 const DeletedDocumentsManagement = () => {
@@ -64,8 +65,50 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handleViewDocument = (document) => {
-    setSelectedDocument(document);
-    setIsViewModalOpen(true);
+    try {
+      // Check if document has a valid view URL
+      if (!document.viewUrl && !document.downloadUrl) {
+        dispatch(setDocumentViewError("Document URL not available. File may be corrupted or inaccessible."));
+        return;
+      }
+
+      const documentUrl = document.viewUrl || document.downloadUrl;
+      const fileExtension = document.name.split('.').pop().toLowerCase();
+      
+      // Clear any previous errors
+      dispatch(clearError());
+      
+      // For PDFs, use browser's built-in PDF viewer
+      if (fileExtension === 'pdf') {
+        const newWindow = window.open(documentUrl, '_blank');
+        if (!newWindow) {
+          dispatch(setDocumentViewError("Pop-up blocked. Please allow pop-ups for this site and try again."));
+        }
+      }
+      // For supported document types that browsers can handle
+      else if (['txt', 'jpg', 'jpeg', 'png', 'gif', 'svg'].includes(fileExtension)) {
+        const newWindow = window.open(documentUrl, '_blank');
+        if (!newWindow) {
+          dispatch(setDocumentViewError("Pop-up blocked. Please allow pop-ups for this site and try again."));
+        }
+      }
+      // For Office documents, try to open with browser's capabilities
+      else if (['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt'].includes(fileExtension)) {
+        // Try to open in new tab, fallback to download if browser can't handle
+        const newWindow = window.open(documentUrl, '_blank');
+        if (!newWindow) {
+          dispatch(setDocumentViewError("Pop-up blocked. Please allow pop-ups for this site and try again."));
+        }
+      }
+      // For other file types, show info modal instead
+      else {
+        setSelectedDocument(document);
+        setIsViewModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Error opening document:', error);
+      dispatch(setDocumentViewError("Failed to open document. File may be corrupted or inaccessible."));
+    }
   };
 
   const handleDownloadDocument = (document) => {

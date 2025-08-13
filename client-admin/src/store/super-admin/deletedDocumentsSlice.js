@@ -98,6 +98,11 @@ const deletedDocumentsSlice = createSlice({
     // Clear error
     clearError: (state) => {
       state.error = null;
+    },
+
+    // Document view error
+    setDocumentViewError: (state, action) => {
+      state.error = action.payload;
     }
   }
 });
@@ -115,7 +120,8 @@ export const {
   setFilters,
   clearFilters,
   setPagination,
-  clearError
+  clearError,
+  setDocumentViewError
 } = deletedDocumentsSlice.actions;
 
 // Action creators for saga

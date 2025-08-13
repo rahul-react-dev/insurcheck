@@ -213,6 +213,7 @@ export const DeletedDocumentsTable = ({
                       variant="outline"
                       onClick={() => onViewDocument(document)}
                       className="text-blue-600 hover:text-blue-800 border-blue-200 hover:border-blue-300"
+                      title="View Document"
                     >
                       <i className="fas fa-eye"></i>
                     </Button>
@@ -304,6 +305,7 @@ export const DeletedDocumentsTable = ({
                 variant="outline"
                 onClick={() => onViewDocument(document)}
                 className="text-blue-600 hover:text-blue-800 border-blue-200"
+                title="View Document"
               >
                 <i className="fas fa-eye mr-1"></i>
                 View

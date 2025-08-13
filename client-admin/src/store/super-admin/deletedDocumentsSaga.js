@@ -28,7 +28,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Document outdated and replaced',
     tags: ['insurance', 'policy', '2024'],
     description: 'Annual insurance policy document for corporate coverage',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   },
   {
     id: 'DOC002',
@@ -44,7 +45,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Duplicate file removed',
     tags: ['claims', 'report', 'Q4'],
     description: 'Quarterly claims analysis and reporting document',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: '#'
   },
   {
     id: 'DOC003',
@@ -60,7 +62,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Template updated with new version',
     tags: ['risk', 'assessment', 'template'],
     description: 'Standard risk assessment template for underwriting',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: '#'
   },
   {
     id: 'DOC004',
@@ -76,7 +79,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Client requested removal',
     tags: ['presentation', 'client', 'marketing'],
     description: 'Marketing presentation for potential clients',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: '#'
   },
   {
     id: 'DOC005',
@@ -92,7 +96,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Regulatory changes made checklist obsolete',
     tags: ['compliance', 'checklist', 'regulatory'],
     description: 'Internal compliance verification checklist',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   },
   {
     id: 'DOC006',
@@ -108,7 +113,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Confidentiality concerns',
     tags: ['financial', 'summary', '2023'],
     description: 'Annual financial performance summary',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: '#'
   },
   {
     id: 'DOC007',
@@ -124,7 +130,8 @@ const mockDeletedDocuments = [
     deletionReason: 'New training program implemented',
     tags: ['training', 'manual', 'HR'],
     description: 'Employee training and onboarding manual',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   },
   {
     id: 'DOC008',
@@ -140,7 +147,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Data privacy compliance',
     tags: ['customer', 'feedback', 'analysis'],
     description: 'Quarterly customer satisfaction analysis',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: '#'
   },
   {
     id: 'DOC009',
@@ -156,7 +164,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Strategic direction changed',
     tags: ['product', 'roadmap', '2024'],
     description: 'Strategic product development roadmap',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: '#'
   },
   {
     id: 'DOC010',
@@ -172,7 +181,8 @@ const mockDeletedDocuments = [
     deletionReason: 'Audit completed, no longer needed',
     tags: ['audit', 'report', 'december'],
     description: 'Monthly internal audit findings and recommendations',
-    downloadUrl: '#'
+    downloadUrl: '#',
+    viewUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'
   }
 ];
 
