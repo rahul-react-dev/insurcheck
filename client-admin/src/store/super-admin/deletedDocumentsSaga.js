@@ -528,6 +528,9 @@ function* fetchDeletedDocumentsSaga(action) {
     const offset = (page - 1) * pageSize;
     const paginatedDocuments = filteredDocuments.slice(offset, offset + pageSize);
 
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
     // Simulate API response structure
     const response = {
       data: paginatedDocuments,
@@ -535,8 +538,8 @@ function* fetchDeletedDocumentsSaga(action) {
         currentPage: page,
         pageSize: pageSize,
         totalCount: totalCount,
-        totalPages: Math.ceil(totalCount / pageSize),
-        hasNextPage: page < Math.ceil(totalCount / pageSize),
+        totalPages: totalPages,
+        hasNextPage: page < totalPages,
         hasPreviousPage: page > 1
       },
       filters: {

@@ -344,6 +344,11 @@ export const DeletedDocumentsTable = ({
 
       {/* Pagination */}
       <div className="border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+        {/* Debug info - remove this after testing */}
+        <div className="text-xs text-gray-500 mb-2">
+          Debug: Page {pagination.page} of {Math.ceil(totalCount / pagination.pageSize)} | Total: {totalCount} | Page Size: {pagination.pageSize}
+        </div>
+        
         <Pagination
           currentPage={pagination.page}
           totalPages={Math.ceil(totalCount / pagination.pageSize)}

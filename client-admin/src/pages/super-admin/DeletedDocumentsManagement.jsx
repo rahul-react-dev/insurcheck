@@ -38,6 +38,13 @@ const DeletedDocumentsManagement = () => {
   useEffect(() => {
     dispatch(fetchDeletedDocuments({ ...filters, ...pagination }));
   }, [dispatch]); // Remove filters and pagination dependencies to avoid double calls
+  
+  // Debug logging to check pagination state
+  useEffect(() => {
+    console.log('Pagination state:', pagination);
+    console.log('Total count:', totalCount);
+    console.log('Documents count:', deletedDocuments?.length);
+  }, [pagination, totalCount, deletedDocuments]);
 
   const handleSearch = (searchTerm) => {
     dispatch(setFilters({ searchTerm }));

@@ -45,7 +45,11 @@ const deletedDocumentsSlice = createSlice({
       if (action.payload.pagination) {
         state.pagination = {
           ...state.pagination,
-          ...action.payload.pagination
+          page: action.payload.pagination.currentPage,
+          pageSize: action.payload.pagination.pageSize,
+          totalPages: action.payload.pagination.totalPages,
+          hasNextPage: action.payload.pagination.hasNextPage,
+          hasPreviousPage: action.payload.pagination.hasPreviousPage
         };
       }
       
