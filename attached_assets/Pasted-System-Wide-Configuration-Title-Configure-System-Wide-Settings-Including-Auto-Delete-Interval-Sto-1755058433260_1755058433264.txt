@@ -1,0 +1,60 @@
+System-Wide Configuration
+Title: Configure System-Wide Settings Including Auto-Delete Interval
+Story Description: As a super admin user, I want to configure system-wide settings, including the auto-delete interval for deleted documents, so that I can customize the platform’s behavior, limits, and document retention policies.
+Acceptance Criteria:
+Given I am logged into the Super Admin Panel, I can access a settings interface in the System-Wide Configuration section to configure:
+I want to enable/disable 2FA Authenticator for email / SMS.
+Max File Size (numeric, default 10MB, in MB).
+Max Users per Tenant (numeric, positive integer).
+Max Documents per Tenant (numeric, positive integer).
+Email Retry Limits (numeric, positive integer, default 3).
+Backup Frequency (dropdown, e.g., Daily, Weekly, Monthly).
+Auto-Delete Interval for Deleted Documents (numeric, in days, default 60 days).
+Feature Toggles (e.g., enable/disable trial extensions, auto-invoicing).
+I can apply settings system-wide or per tenant as specified.
+The system automatically deletes documents from the Deleted Documents table after the configured auto-delete interval (from deletion date).
+I can save or cancel changes to the configuration.
+Configuration changes are logged in the super admin audit logs with Timestamp, Modified Setting, New Value, and Status.
+Auto-deletion of documents is logged in the audit logs with Document ID, Timestamp, and Status.
+Validations with Success/Error Messages:
+Max File Size:
+Success: Positive number (e.g., 10).
+Error: "Max File Size must be a positive number."
+Max Users per Tenant:
+Success: Positive integer.
+Error: "Max Users per Tenant must be a positive integer."
+Max Documents per Tenant:
+Success: Positive integer.
+Error: "Max Documents per Tenant must be a positive integer."
+Email Retry Limits:
+Success: Positive integer (e.g., 3).
+Error: "Email Retry Limits must be a positive integer."
+Backup Frequency:
+Success: Valid selection (Daily, Weekly, Monthly).
+Error: "Please select a valid Backup Frequency."
+Auto-Delete Interval:
+Success: Positive integer (e.g., 60).
+Error: "Auto-Delete Interval must be a positive integer."
+Feature Toggles:
+Success: Boolean (enabled/disabled).
+Error: None (toggles are binary).
+Configuration Update:
+Success: "Settings updated successfully."
+Error: "Invalid settings. Please check inputs."
+Auto-Deletion Process:
+Success: Documents are deleted after the configured interval.
+Error: If deletion fails, log error in audit logs: "Auto-deletion failed for Document ID: [ID]."
+Expected Outcome:
+The super admin customizes system settings, including the auto-delete interval for deleted documents, and changes are applied system-wide or per tenant as specified.
+Deleted documents are automatically removed after the configured interval (default 60 days).
+All configuration changes and auto-deletions are logged in the audit logs, and errors are communicated or logged appropriately.
+Definition of Done:
+Settings interface with fields for Max File Size, Max Users per Tenant, Max Documents per Tenant, Email Retry Limits, Backup Frequency, Auto-Delete Interval, and Feature Toggles is implemented in the System-Wide Configuration section.
+The system-wide and per-tenant setting application is functional.
+Auto-deletion process removes documents from the Deleted Documents table after the configured interval.
+Save and cancel functionalities for configuration are functional.
+Audit log entries for configuration changes (Timestamp, Modified Setting, New Value, Status) and auto-deletions (Document ID, Timestamp, Status) are created.
+Error handling for invalid inputs and failed auto-deletions is implemented.
+Unit tests cover all field validations, configuration logic, auto-deletion logic, and audit logging.
+UI/UX is tested for form usability, error display, and responsiveness.
+Feature is deployed and verified in production.

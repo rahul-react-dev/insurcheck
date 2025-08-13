@@ -16,7 +16,7 @@ const initialState = {
   },
   pagination: {
     page: 1,
-    pageSize: 25,
+    pageSize: 10,
     totalPages: 0,
     hasNextPage: false,
     hasPreviousPage: false

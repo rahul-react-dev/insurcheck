@@ -61,12 +61,14 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handlePageChange = (page) => {
+    console.log('Page change requested:', page);
     dispatch(setPagination({ page }));
     // Trigger immediate fetch with new page
     dispatch(fetchDeletedDocuments({ ...filters, ...pagination, page }));
   };
 
   const handlePageSizeChange = (pageSize) => {
+    console.log('Page size change requested:', pageSize);
     dispatch(setPagination({ pageSize, page: 1 }));
     // Trigger immediate fetch with new page size
     dispatch(fetchDeletedDocuments({ ...filters, pageSize, page: 1 }));

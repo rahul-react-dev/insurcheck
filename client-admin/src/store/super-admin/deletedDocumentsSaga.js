@@ -455,7 +455,7 @@ function* fetchDeletedDocumentsSaga(action) {
       sortBy = 'deletedAt', 
       sortOrder = 'desc', 
       page = 1, 
-      pageSize = 25 
+      pageSize = 10 
     } = action.payload;
 
     // In a real implementation, these parameters would be sent to the API
@@ -472,6 +472,7 @@ function* fetchDeletedDocumentsSaga(action) {
     };
 
     console.log('API Parameters:', apiParams); // For debugging
+    console.log('Total mock documents:', mockDeletedDocuments.length);
 
     // Simulate server-side filtering and pagination
     let filteredDocuments = mockDeletedDocuments.filter(doc => {
@@ -523,13 +524,20 @@ function* fetchDeletedDocumentsSaga(action) {
 
     // Get total count after filtering (this would come from the API)
     const totalCount = filteredDocuments.length;
+    
+    console.log('Filtered documents count:', totalCount);
+    console.log('Page:', page, 'PageSize:', pageSize);
 
     // Simulate server-side pagination
     const offset = (page - 1) * pageSize;
     const paginatedDocuments = filteredDocuments.slice(offset, offset + pageSize);
+    
+    console.log('Offset:', offset, 'Paginated documents count:', paginatedDocuments.length);
 
     // Calculate pagination info
     const totalPages = Math.ceil(totalCount / pageSize);
+    
+    console.log('Total pages calculated:', totalPages);
     
     // Simulate API response structure
     const response = {
