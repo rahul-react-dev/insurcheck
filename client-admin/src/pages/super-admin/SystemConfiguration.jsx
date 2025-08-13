@@ -12,7 +12,9 @@ import {
   fetchSystemConfigRequest,
   updateSystemConfigRequest,
   resetConfigurationState,
-  clearConfigurationErrors
+  clearConfigurationErrors,
+  fetchTenantConfigRequest,
+  updateTenantConfigRequest
 } from '../../store/super-admin/systemConfigSlice';
 
 const SystemConfiguration = () => {
@@ -20,6 +22,8 @@ const SystemConfiguration = () => {
   
   const {
     configuration,
+    tenantConfigurations,
+    availableTenants,
     isLoading,
     isUpdating,
     error,
@@ -59,6 +63,9 @@ const SystemConfiguration = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [configurationScope, setConfigurationScope] = useState('system-wide'); // 'system-wide' or 'tenant-specific'
+  const [selectedTenantId, setSelectedTenantId] = useState('');
+  const [tenantSearchTerm, setTenantSearchTerm] = useState('');
 
   useEffect(() => {
     dispatch(fetchSystemConfigRequest());
@@ -69,11 +76,23 @@ const SystemConfiguration = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (configuration) {
+    if (configurationScope === 'system-wide' && configuration) {
       setFormData(configuration);
       setHasUnsavedChanges(false);
+    } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
+      const tenantConfig = tenantConfigurations?.[selectedTenantId];
+      if (tenantConfig) {
+        setFormData(tenantConfig);
+      } else {
+        // Use system-wide config as default for new tenant configurations
+        setFormData({
+          ...configuration,
+          inheritFromSystem: true
+        });
+      }
+      setHasUnsavedChanges(false);
     }
-  }, [configuration]);
+  }, [configuration, tenantConfigurations, configurationScope, selectedTenantId]);
 
   useEffect(() => {
     if (updateSuccess) {
@@ -155,16 +174,33 @@ const SystemConfiguration = () => {
       return;
     }
     
-    dispatch(updateSystemConfigRequest(formData));
+    if (configurationScope === 'system-wide') {
+      dispatch(updateSystemConfigRequest(formData));
+    } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
+      dispatch(updateTenantConfigRequest({ 
+        tenantId: selectedTenantId, 
+        configuration: formData 
+      }));
+    }
   };
 
   const handleCancel = () => {
-    if (configuration) {
+    if (configurationScope === 'system-wide' && configuration) {
       setFormData(configuration);
-      setHasUnsavedChanges(false);
-      setValidationErrors({});
-      dispatch(clearConfigurationErrors());
+    } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
+      const tenantConfig = tenantConfigurations?.[selectedTenantId];
+      if (tenantConfig) {
+        setFormData(tenantConfig);
+      } else {
+        setFormData({
+          ...configuration,
+          inheritFromSystem: true
+        });
+      }
     }
+    setHasUnsavedChanges(false);
+    setValidationErrors({});
+    dispatch(clearConfigurationErrors());
   };
 
   const backupFrequencyOptions = [
@@ -172,6 +208,36 @@ const SystemConfiguration = () => {
     { value: 'Weekly', label: 'Weekly' },
     { value: 'Monthly', label: 'Monthly' }
   ];
+
+  const handleScopeChange = (scope) => {
+    setConfigurationScope(scope);
+    setSelectedTenantId('');
+    setHasUnsavedChanges(false);
+    setValidationErrors({});
+    dispatch(clearConfigurationErrors());
+  };
+
+  const handleTenantSelect = (tenantId) => {
+    setSelectedTenantId(tenantId);
+    setHasUnsavedChanges(false);
+    setValidationErrors({});
+    dispatch(clearConfigurationErrors());
+    
+    if (tenantId) {
+      dispatch(fetchTenantConfigRequest(tenantId));
+    }
+  };
+
+  const filteredTenants = availableTenants?.filter(tenant =>
+    tenant.name.toLowerCase().includes(tenantSearchTerm.toLowerCase()) ||
+    tenant.id.toLowerCase().includes(tenantSearchTerm.toLowerCase())
+  ) || [];
+
+  const selectedTenant = availableTenants?.find(tenant => tenant.id === selectedTenantId);
+  
+  const getTenantConfigStatus = (tenantId) => {
+    return tenantConfigurations?.[tenantId] ? 'Custom' : 'Inherited';
+  };
 
   return (
     <div className="space-y-6">
@@ -233,15 +299,191 @@ const SystemConfiguration = () => {
         </div>
       )}
 
+      {/* Configuration Scope Selector */}
+      <Card className="p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <i className="fas fa-globe text-blue-600"></i>
+              <h3 className="text-lg font-semibold text-gray-900">Configuration Scope</h3>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* System-wide Option */}
+            <div
+              onClick={() => handleScopeChange('system-wide')}
+              className={`
+                p-4 rounded-lg border-2 cursor-pointer transition-all
+                ${configurationScope === 'system-wide'
+                  ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start space-x-3">
+                <div className={`
+                  h-5 w-5 rounded-full border-2 flex items-center justify-center mt-0.5
+                  ${configurationScope === 'system-wide' ? 'border-blue-500' : 'border-gray-300'}
+                `}>
+                  {configurationScope === 'system-wide' && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">System-Wide Configuration</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Apply settings globally to all tenants as default values
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tenant-specific Option */}
+            <div
+              onClick={() => handleScopeChange('tenant-specific')}
+              className={`
+                p-4 rounded-lg border-2 cursor-pointer transition-all
+                ${configurationScope === 'tenant-specific'
+                  ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start space-x-3">
+                <div className={`
+                  h-5 w-5 rounded-full border-2 flex items-center justify-center mt-0.5
+                  ${configurationScope === 'tenant-specific' ? 'border-blue-500' : 'border-gray-300'}
+                `}>
+                  {configurationScope === 'tenant-specific' && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">Tenant-Specific Configuration</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Override system settings for individual tenants
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tenant Selection */}
+          {configurationScope === 'tenant-specific' && (
+            <div className="border-t border-gray-200 pt-4">
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search tenants..."
+                      value={tenantSearchTerm}
+                      onChange={(e) => setTenantSearchTerm(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  {selectedTenant && (
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span className="text-gray-600">Selected:</span>
+                      <span className="font-medium text-blue-600">{selectedTenant.name}</span>
+                      <span className={`
+                        px-2 py-1 rounded-full text-xs font-medium
+                        ${getTenantConfigStatus(selectedTenantId) === 'Custom'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-green-100 text-green-800'
+                        }
+                      `}>
+                        {getTenantConfigStatus(selectedTenantId)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {filteredTenants.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                    {filteredTenants.map((tenant) => (
+                      <div
+                        key={tenant.id}
+                        onClick={() => handleTenantSelect(tenant.id)}
+                        className={`
+                          p-3 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors
+                          ${selectedTenantId === tenant.id
+                            ? 'bg-blue-50 border-l-4 border-l-blue-500'
+                            : 'hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{tenant.name}</h4>
+                            <p className="text-sm text-gray-600">{tenant.email}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className={`
+                              px-2 py-1 rounded-full text-xs font-medium
+                              ${getTenantConfigStatus(tenant.id) === 'Custom'
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-green-100 text-green-800'
+                              }
+                            `}>
+                              {getTenantConfigStatus(tenant.id)}
+                            </span>
+                            {selectedTenantId === tenant.id && (
+                              <i className="fas fa-check text-blue-500"></i>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {filteredTenants.length === 0 && tenantSearchTerm && (
+                  <div className="text-center py-4 text-gray-500">
+                    <i className="fas fa-search text-2xl mb-2"></i>
+                    <p>No tenants found matching "{tenantSearchTerm}"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Configuration Status Banner */}
+      {configurationScope === 'tenant-specific' && selectedTenant && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <i className="fas fa-info-circle text-blue-500 mt-0.5"></i>
+            <div className="flex-1">
+              <h4 className="font-medium text-blue-900">
+                Configuring: {selectedTenant.name}
+              </h4>
+              <p className="text-blue-700 text-sm mt-1">
+                {getTenantConfigStatus(selectedTenantId) === 'Custom' 
+                  ? 'This tenant has custom configuration settings that override system defaults.'
+                  : 'This tenant is currently using system-wide configuration. Any changes will create tenant-specific overrides.'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <Button
           onClick={handleSave}
-          disabled={!hasUnsavedChanges || isUpdating}
+          disabled={!hasUnsavedChanges || isUpdating || (configurationScope === 'tenant-specific' && !selectedTenantId)}
           className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
         >
           <i className="fas fa-save mr-2"></i>
-          {isUpdating ? 'Saving...' : 'Save Changes'}
+          {isUpdating 
+            ? 'Saving...' 
+            : configurationScope === 'system-wide' 
+              ? 'Save System-Wide Changes'
+              : 'Save Tenant Configuration'
+          }
         </Button>
         <Button
           onClick={handleCancel}
@@ -260,18 +502,28 @@ const SystemConfiguration = () => {
         </Button>
       </div>
 
-      {isLoading ? (
-        /* Loading State */
+      {isLoading || (configurationScope === 'tenant-specific' && !selectedTenantId) ? (
+        /* Loading State or No Tenant Selected */
         <div className="space-y-6">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
-              <div className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded w-32"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-              </div>
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="p-6 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
+                <div className="space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-32"></div>
+                  <div className="h-10 bg-gray-200 rounded"></div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <Card className="p-8 text-center">
+              <i className="fas fa-building text-4xl text-gray-300 mb-4"></i>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Tenant</h3>
+              <p className="text-gray-600">
+                Choose a tenant from the list above to configure their specific settings.
+              </p>
             </Card>
-          ))}
+          )}
         </div>
       ) : (
         /* Configuration Sections */

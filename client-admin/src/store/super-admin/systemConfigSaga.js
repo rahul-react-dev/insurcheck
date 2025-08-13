@@ -7,6 +7,13 @@ import {
   updateSystemConfigRequest,
   updateSystemConfigSuccess,
   updateSystemConfigFailure,
+  fetchTenantConfigRequest,
+  fetchTenantConfigSuccess,
+  fetchTenantConfigFailure,
+  updateTenantConfigRequest,
+  updateTenantConfigSuccess,
+  updateTenantConfigFailure,
+  setAvailableTenants,
   fetchAuditLogsRequest,
   fetchAuditLogsSuccess,
   fetchAuditLogsFailure
@@ -33,6 +40,84 @@ const mockSystemConfig = {
   },
   lastUpdated: '2024-01-15T10:30:00Z',
   updatedBy: 'admin@insurcheck.com'
+};
+
+// Mock available tenants
+const mockAvailableTenants = [
+  {
+    id: '1',
+    name: 'Acme Insurance Solutions',
+    email: 'admin@acme-insurance.com',
+    status: 'active'
+  },
+  {
+    id: '2',
+    name: 'SafeGuard Insurance Co.',
+    email: 'billing@safeguard.com',
+    status: 'active'
+  },
+  {
+    id: '3',
+    name: 'Quick Insurance Ltd.',
+    email: 'contact@quickinsurance.com',
+    status: 'suspended'
+  },
+  {
+    id: '4',
+    name: 'Premium Insurance Group',
+    email: 'admin@premium-group.com',
+    status: 'active'
+  }
+];
+
+// Mock tenant-specific configurations
+const mockTenantConfigurations = {
+  '1': {
+    // Acme has custom settings
+    twoFactorAuth: {
+      emailEnabled: true,
+      smsEnabled: true
+    },
+    maxFileSize: 25, // Higher limit
+    maxUsersPerTenant: 100,
+    maxDocumentsPerTenant: 5000,
+    emailRetryLimits: 5,
+    backupFrequency: 'Daily',
+    autoDeleteInterval: 90, // Longer retention
+    featureToggles: {
+      trialExtensions: false,
+      autoInvoicing: true,
+      documentVersioning: true,
+      advancedAnalytics: true,
+      apiAccess: true
+    },
+    inheritFromSystem: false,
+    customizedBy: 'admin@insurcheck.com',
+    customizedAt: '2024-01-10T14:20:00Z'
+  },
+  '3': {
+    // Quick Insurance has limited settings
+    twoFactorAuth: {
+      emailEnabled: false,
+      smsEnabled: false
+    },
+    maxFileSize: 5, // Lower limit
+    maxUsersPerTenant: 10,
+    maxDocumentsPerTenant: 200,
+    emailRetryLimits: 1,
+    backupFrequency: 'Weekly',
+    autoDeleteInterval: 30, // Shorter retention
+    featureToggles: {
+      trialExtensions: false,
+      autoInvoicing: false,
+      documentVersioning: false,
+      advancedAnalytics: false,
+      apiAccess: false
+    },
+    inheritFromSystem: false,
+    customizedBy: 'admin@insurcheck.com',
+    customizedAt: '2024-01-12T09:30:00Z'
+  }
 };
 
 // Mock audit logs
@@ -148,6 +233,7 @@ function* fetchSystemConfigSaga(action) {
     });
 
     yield put(fetchSystemConfigSuccess(response.data));
+    yield put(setAvailableTenants(mockAvailableTenants));
     
   } catch (error) {
     console.error('Failed to fetch system configuration:', error.message);
@@ -204,6 +290,88 @@ function* updateSystemConfigSaga(action) {
   }
 }
 
+function* fetchTenantConfigSaga(action) {
+  try {
+    const tenantId = action.payload;
+    console.log('Fetching tenant configuration for:', tenantId);
+    
+    // Simulate API call
+    const tenantConfig = mockTenantConfigurations[tenantId];
+    
+    if (tenantConfig) {
+      const response = yield call(mockApiCall, { 
+        tenantId, 
+        configuration: tenantConfig 
+      });
+      yield put(fetchTenantConfigSuccess(response.data));
+    } else {
+      // No custom config found, tenant uses system defaults
+      yield put(fetchTenantConfigSuccess({ 
+        tenantId, 
+        configuration: null 
+      }));
+    }
+    
+  } catch (error) {
+    console.error('Failed to fetch tenant configuration:', error.message);
+    yield put(fetchTenantConfigFailure({ 
+      message: error.message || 'Failed to fetch tenant configuration' 
+    }));
+  }
+}
+
+function* updateTenantConfigSaga(action) {
+  try {
+    const { tenantId, configuration } = action.payload;
+    console.log('Updating tenant configuration for:', tenantId, configuration);
+    
+    // Simulate API call
+    yield delay(1500);
+    
+    const updatedConfig = {
+      ...configuration,
+      inheritFromSystem: false,
+      customizedBy: 'admin@insurcheck.com', // This would come from auth state
+      customizedAt: new Date().toISOString()
+    };
+
+    const tenant = mockAvailableTenants.find(t => t.id === tenantId);
+    
+    // Create audit log entry
+    const auditLog = {
+      id: mockAuditLogs.length + 1,
+      timestamp: new Date().toISOString(),
+      action: 'UPDATE',
+      setting: 'tenantConfiguration',
+      oldValue: mockTenantConfigurations[tenantId] ? 'Custom Configuration' : 'System Default',
+      newValue: 'Updated Custom Configuration',
+      status: 'SUCCESS',
+      user: 'admin@insurcheck.com',
+      type: 'TENANT_CONFIGURATION',
+      description: `Updated configuration for tenant: ${tenant?.name || tenantId}`
+    };
+
+    // Update mock data
+    mockTenantConfigurations[tenantId] = updatedConfig;
+
+    const response = yield call(mockApiCall, {
+      tenantId,
+      configuration: updatedConfig,
+      auditLog: auditLog
+    });
+
+    yield put(updateTenantConfigSuccess(response.data));
+    
+    console.log('Tenant configuration updated successfully');
+    
+  } catch (error) {
+    console.error('Failed to update tenant configuration:', error.message);
+    yield put(updateTenantConfigFailure({ 
+      message: error.message || 'Failed to update tenant configuration' 
+    }));
+  }
+}
+
 function* fetchAuditLogsSaga(action) {
   try {
     console.log('Fetching audit logs...');
@@ -246,5 +414,7 @@ function* fetchAuditLogsSaga(action) {
 export default function* systemConfigSaga() {
   yield takeEvery(fetchSystemConfigRequest.type, fetchSystemConfigSaga);
   yield takeEvery(updateSystemConfigRequest.type, updateSystemConfigSaga);
+  yield takeEvery(fetchTenantConfigRequest.type, fetchTenantConfigSaga);
+  yield takeEvery(updateTenantConfigRequest.type, updateTenantConfigSaga);
   yield takeEvery(fetchAuditLogsRequest.type, fetchAuditLogsSaga);
 }

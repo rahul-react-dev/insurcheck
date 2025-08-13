@@ -3,6 +3,8 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   configuration: null,
+  tenantConfigurations: {},
+  availableTenants: [],
   auditLogs: [],
   isLoading: false,
   isUpdating: false,
@@ -70,6 +72,50 @@ const systemConfigSlice = createSlice({
       state.error = action.payload.message || 'Failed to fetch audit logs';
     },
 
+    // Fetch Tenant Configuration
+    fetchTenantConfigRequest: (state, action) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchTenantConfigSuccess: (state, action) => {
+      state.isLoading = false;
+      const { tenantId, configuration } = action.payload;
+      state.tenantConfigurations[tenantId] = configuration;
+      state.error = null;
+    },
+    fetchTenantConfigFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload.message || 'Failed to fetch tenant configuration';
+    },
+
+    // Update Tenant Configuration
+    updateTenantConfigRequest: (state, action) => {
+      state.isUpdating = true;
+      state.error = null;
+      state.updateSuccess = false;
+    },
+    updateTenantConfigSuccess: (state, action) => {
+      state.isUpdating = false;
+      const { tenantId, configuration, auditLog } = action.payload;
+      state.tenantConfigurations[tenantId] = configuration;
+      state.updateSuccess = true;
+      state.error = null;
+      
+      if (auditLog) {
+        state.auditLogs.unshift(auditLog);
+      }
+    },
+    updateTenantConfigFailure: (state, action) => {
+      state.isUpdating = false;
+      state.error = action.payload.message || 'Failed to update tenant configuration';
+      state.updateSuccess = false;
+    },
+
+    // Set Available Tenants
+    setAvailableTenants: (state, action) => {
+      state.availableTenants = action.payload;
+    },
+
     // Clear errors and success states
     clearConfigurationErrors: (state) => {
       state.error = null;
@@ -90,6 +136,13 @@ export const {
   updateSystemConfigRequest,
   updateSystemConfigSuccess,
   updateSystemConfigFailure,
+  fetchTenantConfigRequest,
+  fetchTenantConfigSuccess,
+  fetchTenantConfigFailure,
+  updateTenantConfigRequest,
+  updateTenantConfigSuccess,
+  updateTenantConfigFailure,
+  setAvailableTenants,
   fetchAuditLogsRequest,
   fetchAuditLogsSuccess,
   fetchAuditLogsFailure,
