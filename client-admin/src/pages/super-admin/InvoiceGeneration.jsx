@@ -4,6 +4,7 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import InvoiceGenerationConfig from "../../components/super-admin/InvoiceGenerationConfig";
 import InvoiceGenerationLogs from "../../components/super-admin/InvoiceGenerationLogs";
+import InvoiceLogDetailModal from "../../components/super-admin/InvoiceLogDetailModal";
 import {
   fetchInvoiceConfigRequest,
   fetchInvoiceLogsRequest,
@@ -18,6 +19,8 @@ const InvoiceGeneration = () => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('configuration');
   const [selectedTenant, setSelectedTenant] = useState(null);
+  const [showLogDetailModal, setShowLogDetailModal] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
 
   const {
     configurations,
@@ -96,8 +99,13 @@ const InvoiceGeneration = () => {
   };
 
   const handleViewDetails = (log) => {
-    // TODO: Implement log details modal
-    console.log('Viewing log details:', log);
+    setSelectedLog(log);
+    setShowLogDetailModal(true);
+  };
+
+  const handleCloseLogDetailModal = () => {
+    setShowLogDetailModal(false);
+    setSelectedLog(null);
   };
 
   const handleRefresh = () => {
@@ -307,6 +315,13 @@ const InvoiceGeneration = () => {
           )}
         </div>
       </div>
+
+      {/* Invoice Log Detail Modal */}
+      <InvoiceLogDetailModal
+        isOpen={showLogDetailModal}
+        onClose={handleCloseLogDetailModal}
+        log={selectedLog}
+      />
     </div>
   );
 };
