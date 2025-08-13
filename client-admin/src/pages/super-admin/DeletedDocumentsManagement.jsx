@@ -111,7 +111,7 @@ const DeletedDocumentsManagement = () => {
     }
   };
 
-  const handleDownloadDocument = (document) => {
+  const handleDownloadDocument = async (document) => {
     try {
       // Check if download URL is available
       if (!document.downloadUrl) {
@@ -128,9 +128,18 @@ const DeletedDocumentsManagement = () => {
       // Create appropriate filename: {Document_Name}_{Document_ID}.extension
       const downloadFileName = `${document.name.split('.').slice(0, -1).join('.')}_${document.id}.${fileExtension}`;
 
-      // Create download link
+      // Fetch the file as blob to force download
+      const response = await fetch(document.downloadUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Create blob URL and download link
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = window.document.createElement("a");
-      link.href = document.downloadUrl;
+      link.href = blobUrl;
       link.download = downloadFileName;
       link.style.display = "none";
       
@@ -138,9 +147,12 @@ const DeletedDocumentsManagement = () => {
       window.document.body.appendChild(link);
       link.click();
       window.document.body.removeChild(link);
+      
+      // Clean up blob URL
+      window.URL.revokeObjectURL(blobUrl);
 
       // Show success message (optional - could be a toast notification)
-      console.log(`Download initiated: ${downloadFileName}`);
+      console.log(`Download completed: ${downloadFileName}`);
       
     } catch (error) {
       console.error('Error downloading document:', error);
