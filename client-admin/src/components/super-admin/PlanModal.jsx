@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
@@ -78,7 +76,7 @@ const PlanModal = () => {
         [field]: value
       }));
     }
-    
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -132,7 +130,7 @@ const PlanModal = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -252,7 +250,7 @@ const PlanModal = () => {
 
             <div className="border-t pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Feature Limits</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Input

@@ -1,28 +1,19 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  // Plans state
   plans: [],
-  currentPlan: null,
-  isLoadingPlans: false,
-  plansError: null,
-  
-  // Tenants state
   tenants: [],
+  isLoading: false,
+  isLoadingPlans: false,
   isLoadingTenants: false,
-  tenantsError: null,
-  
-  // Assignment state
-  isAssigning: false,
-  assignmentError: null,
-  
-  // UI state
-  showPlanModal: false,
-  editingPlan: null,
-  filters: {
-    searchTerm: '',
-    status: 'all'
+  error: null,
+  planError: null,
+  tenantError: null,
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
   }
 };
 
@@ -30,128 +21,118 @@ const subscriptionSlice = createSlice({
   name: 'subscription',
   initialState,
   reducers: {
-    // Plan actions
+    // Plans
     fetchPlansRequest: (state) => {
       state.isLoadingPlans = true;
-      state.plansError = null;
+      state.planError = null;
     },
     fetchPlansSuccess: (state, action) => {
       state.isLoadingPlans = false;
       state.plans = action.payload;
-      state.plansError = null;
+      state.planError = null;
     },
     fetchPlansFailure: (state, action) => {
       state.isLoadingPlans = false;
-      state.plansError = action.payload;
+      state.planError = action.payload;
     },
 
+    // Create Plan
     createPlanRequest: (state) => {
-      state.isLoadingPlans = true;
-      state.plansError = null;
+      state.isLoading = true;
+      state.error = null;
     },
     createPlanSuccess: (state, action) => {
-      state.isLoadingPlans = false;
+      state.isLoading = false;
       state.plans.push(action.payload);
-      state.showPlanModal = false;
-      state.editingPlan = null;
-      state.plansError = null;
+      state.error = null;
     },
     createPlanFailure: (state, action) => {
-      state.isLoadingPlans = false;
-      state.plansError = action.payload;
+      state.isLoading = false;
+      state.error = action.payload;
     },
 
+    // Update Plan
     updatePlanRequest: (state) => {
-      state.isLoadingPlans = true;
-      state.plansError = null;
+      state.isLoading = true;
+      state.error = null;
     },
     updatePlanSuccess: (state, action) => {
-      state.isLoadingPlans = false;
+      state.isLoading = false;
       const index = state.plans.findIndex(plan => plan.id === action.payload.id);
       if (index !== -1) {
         state.plans[index] = action.payload;
       }
-      state.showPlanModal = false;
-      state.editingPlan = null;
-      state.plansError = null;
+      state.error = null;
     },
     updatePlanFailure: (state, action) => {
-      state.isLoadingPlans = false;
-      state.plansError = action.payload;
+      state.isLoading = false;
+      state.error = action.payload;
     },
 
+    // Delete Plan
     deletePlanRequest: (state) => {
-      state.isLoadingPlans = true;
-      state.plansError = null;
+      state.isLoading = true;
+      state.error = null;
     },
     deletePlanSuccess: (state, action) => {
-      state.isLoadingPlans = false;
+      state.isLoading = false;
       state.plans = state.plans.filter(plan => plan.id !== action.payload);
-      state.plansError = null;
+      state.error = null;
     },
     deletePlanFailure: (state, action) => {
-      state.isLoadingPlans = false;
-      state.plansError = action.payload;
+      state.isLoading = false;
+      state.error = action.payload;
     },
 
-    // Tenant actions
+    // Tenants
     fetchTenantsRequest: (state) => {
       state.isLoadingTenants = true;
-      state.tenantsError = null;
+      state.tenantError = null;
     },
     fetchTenantsSuccess: (state, action) => {
       state.isLoadingTenants = false;
       state.tenants = action.payload;
-      state.tenantsError = null;
+      state.tenantError = null;
     },
     fetchTenantsFailure: (state, action) => {
       state.isLoadingTenants = false;
-      state.tenantsError = action.payload;
+      state.tenantError = action.payload;
     },
 
-    // Assignment actions
+    // Assign Plan to Tenant
     assignPlanToTenantRequest: (state) => {
-      state.isAssigning = true;
-      state.assignmentError = null;
+      state.isLoading = true;
+      state.error = null;
     },
     assignPlanToTenantSuccess: (state, action) => {
-      state.isAssigning = false;
+      state.isLoading = false;
       const { tenantId, planId } = action.payload;
-      const tenant = state.tenants.find(t => t.id === tenantId);
-      if (tenant) {
-        tenant.planId = planId;
-        tenant.plan = state.plans.find(p => p.id === planId);
+      const tenantIndex = state.tenants.findIndex(tenant => tenant.id === tenantId);
+      if (tenantIndex !== -1) {
+        const plan = state.plans.find(p => p.id === planId);
+        state.tenants[tenantIndex] = {
+          ...state.tenants[tenantIndex],
+          subscriptionPlan: plan?.name || planId,
+          planId: planId
+        };
       }
-      state.assignmentError = null;
+      state.error = null;
     },
     assignPlanToTenantFailure: (state, action) => {
-      state.isAssigning = false;
-      state.assignmentError = action.payload;
+      state.isLoading = false;
+      state.error = action.payload;
     },
 
-    // UI actions
-    showCreatePlanModal: (state) => {
-      state.showPlanModal = true;
-      state.editingPlan = null;
-    },
-    showEditPlanModal: (state, action) => {
-      state.showPlanModal = true;
-      state.editingPlan = action.payload;
-    },
-    hidePlanModal: (state) => {
-      state.showPlanModal = false;
-      state.editingPlan = null;
-      state.plansError = null;
+    // Clear errors
+    clearError: (state) => {
+      state.error = null;
+      state.planError = null;
+      state.tenantError = null;
     },
 
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-
-    clearErrors: (state) => {
-      state.plansError = null;
-      state.tenantsError = null;
-      state.assignmentError = null;
+    // Reset state
+    resetSubscriptionState: (state) => {
+      return initialState;
     }
   }
 });
@@ -175,11 +156,8 @@ export const {
   assignPlanToTenantRequest,
   assignPlanToTenantSuccess,
   assignPlanToTenantFailure,
-  showCreatePlanModal,
-  showEditPlanModal,
-  hidePlanModal,
-  setFilters,
-  clearErrors
+  clearError,
+  resetSubscriptionState
 } = subscriptionSlice.actions;
 
 export default subscriptionSlice.reducer;

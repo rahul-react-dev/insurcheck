@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../components/ui/Button';
@@ -25,8 +24,13 @@ const SubscriptionManagement = () => {
     plans,
     tenants,
     isLoading,
-    error
+    error,
+    planError, // Assuming these are defined in your slice
+    tenantError // Assuming these are defined in your slice
   } = useSelector(state => state.subscription);
+
+  // Determine if the plans tab is loading specifically
+  const isLoadingPlans = isLoading; // This might need refinement based on your slice's loading states
 
   useEffect(() => {
     dispatch(fetchPlansRequest());
@@ -101,22 +105,31 @@ const SubscriptionManagement = () => {
         </div>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-6">
-          <div className="flex items-start space-x-3">
-            <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-red-800 font-medium text-sm sm:text-base">Error</h3>
-              <p className="text-red-700 text-sm break-words">{error}</p>
+      {/* Tabs Navigation and Error Display */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        {/* Error Display */}
+        {(error || planError || tenantError) && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
+                <i className="fas fa-exclamation-triangle text-red-400 mt-0.5"></i>
+                <div>
+                  <h3 className="text-red-800 font-medium">Error</h3>
+                  <p className="text-red-700 text-sm">{error || planError || tenantError}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => dispatch({ type: 'subscription/clearError' })}
+                className="text-red-400 hover:text-red-600"
+              >
+                <i className="fas fa-times"></i>
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Tabs Navigation */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200 bg-white rounded-t-xl">
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200">
           <nav className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300" aria-label="Tabs">
             {tabs.map((tab) => (
               <button
@@ -164,41 +177,48 @@ const SubscriptionManagement = () => {
             </div>
 
             {/* Plans Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="bg-gray-100 rounded-xl h-80 animate-pulse"></div>
-                ))}
-              </div>
-            ) : plans && plans.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {plans.map((plan) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {isLoadingPlans ? (
+                // Loading skeleton
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                    <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+                    <div className="space-y-2 mb-4">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <div className="h-8 bg-gray-200 rounded flex-1"></div>
+                      <div className="h-8 bg-gray-200 rounded flex-1"></div>
+                    </div>
+                  </div>
+                ))
+              ) : plans && plans.length > 0 ? (
+                plans.map((plan) => (
                   <PlanCard
                     key={plan.id}
                     plan={plan}
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
                   />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 sm:py-16">
-                <div className="max-w-md mx-auto px-4">
-                  <i className="fas fa-credit-card text-4xl sm:text-6xl text-gray-300 mb-4 sm:mb-6"></i>
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Plans Available</h3>
-                  <p className="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
-                    Create your first subscription plan to get started
-                  </p>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <i className="fas fa-credit-card text-4xl text-gray-300 mb-4"></i>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Plans Found</h3>
+                  <p className="text-gray-500 mb-4">Get started by creating your first subscription plan</p>
                   <Button
                     onClick={handleCreatePlan}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2"
                   >
                     <i className="fas fa-plus mr-2"></i>
-                    Create Plan
+                    Create First Plan
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
@@ -210,7 +230,7 @@ const SubscriptionManagement = () => {
                 Assign subscription plans to tenants and manage their access
               </p>
             </div>
-            
+
             <TenantPlanAssignment
               tenants={tenants}
               plans={plans}
