@@ -237,16 +237,17 @@ const TenantTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Users:</span>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-sm font-bold text-gray-900">
                       {tenant.userCount || 0}
                     </span>
                     {tenant.userCount > 0 && (
-                      <Button
+                      <button
                         onClick={() => onViewUsers(tenant)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
+                        className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors"
+                        title="View Users"
                       >
-                        View
-                      </Button>
+                        <i className="fas fa-eye text-xs"></i>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -352,16 +353,17 @@ const TenantTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
-                    <span className="text-lg font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-md min-w-[50px] text-center">
+                    <span className="text-lg font-bold text-gray-900 min-w-[50px] text-center">
                       {tenant.userCount || 0}
                     </span>
                     {tenant.userCount > 0 && (
-                      <Button
+                      <button
                         onClick={() => onViewUsers(tenant)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md font-medium"
+                        className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors"
+                        title="View Users"
                       >
-                        View
-                      </Button>
+                        <i className="fas fa-eye text-sm"></i>
+                      </button>
                     )}
                   </div>
                 </td>
