@@ -22,6 +22,7 @@ import "./index.css";
 import store from "./store";
 import TenantManagement from "./pages/super-admin/TenantManagement"; // Import the new TenantManagement component
 import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsManagement';
+import SystemConfiguration from './pages/super-admin/SystemConfiguration';
 
 function App() {
   // Debug store configuration
@@ -107,6 +108,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DeletedDocumentsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/system-config"
+              element={
+                <ProtectedRoute>
+                  <SystemConfiguration />
                 </ProtectedRoute>
               }
             />

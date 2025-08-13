@@ -70,6 +70,12 @@ const AdminLayout = ({ children }) => {
       icon: "fas fa-trash-restore",
       roles: ["super-admin"],
     },
+    {
+      name: "System Configuration",
+      path: "/super-admin/system-config",
+      icon: "fas fa-cogs",
+      roles: ["super-admin"],
+    },
   ];
 
   const filteredNavigation = navigationItems.filter(
@@ -194,7 +200,9 @@ const AdminLayout = ({ children }) => {
                             ? "Invoice Generation"
                             : location.pathname.includes("activity-logs")
                               ? "Tenant Activity Logs"
-                              : "Super Admin Panel"}
+                              : location.pathname.includes("system-config")
+                                ? "System Configuration"
+                                : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations
