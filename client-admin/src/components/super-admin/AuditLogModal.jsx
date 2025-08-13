@@ -13,6 +13,7 @@ const AuditLogModal = ({
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterType, setFilterType] = useState('');
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   if (!isOpen) return null;
 
@@ -74,6 +75,94 @@ const AuditLogModal = ({
   };
 
   const logTypes = [...new Set(logs.map(log => log.type))];
+
+  const handleExport = (format) => {
+    setShowExportDropdown(false);
+    
+    // Use filtered and sorted logs for export
+    const dataToExport = sortedLogs.map(log => ({
+      timestamp: formatTimestamp(log.timestamp),
+      action: log.action,
+      setting: log.setting,
+      oldValue: log.oldValue || '-',
+      newValue: log.newValue || '-',
+      status: log.status,
+      user: log.user || 'System',
+      type: log.type,
+      description: log.description || '-'
+    }));
+
+    if (format === 'csv') {
+      exportToCSV(dataToExport);
+    } else if (format === 'excel') {
+      exportToExcel(dataToExport);
+    }
+  };
+
+  const exportToCSV = (data) => {
+    const headers = ['Timestamp', 'Action', 'Setting', 'Old Value', 'New Value', 'Status', 'User', 'Type', 'Description'];
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        Object.values(row).map(field => 
+          `"${String(field).replace(/"/g, '""')}"` // Escape quotes
+        ).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToExcel = (data) => {
+    // Create HTML table for Excel export
+    const headers = ['Timestamp', 'Action', 'Setting', 'Old Value', 'New Value', 'Status', 'User', 'Type', 'Description'];
+    let html = '<table><thead><tr>';
+    headers.forEach(header => {
+      html += `<th style="background-color: #f3f4f6; font-weight: bold; padding: 8px; border: 1px solid #d1d5db;">${header}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    data.forEach(row => {
+      html += '<tr>';
+      Object.values(row).forEach(cell => {
+        html += `<td style="padding: 8px; border: 1px solid #d1d5db;">${cell}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `audit_logs_${new Date().toISOString().split('T')[0]}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.relative')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -272,7 +361,44 @@ const AuditLogModal = ({
           )}
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+            {/* Export Actions */}
+            <div className="flex space-x-3">
+              <div className="relative">
+                <Button
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 relative"
+                >
+                  <i className="fas fa-download mr-2"></i>
+                  Export Logs
+                  <i className="fas fa-chevron-down ml-2"></i>
+                </Button>
+                
+                {/* Export Dropdown */}
+                {showExportDropdown && (
+                  <div className="absolute left-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="py-1">
+                      <button
+                        onClick={() => handleExport('csv')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <i className="fas fa-file-csv mr-3 text-green-500"></i>
+                        Export as CSV
+                      </button>
+                      <button
+                        onClick={() => handleExport('excel')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <i className="fas fa-file-excel mr-3 text-green-600"></i>
+                        Export as Excel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Close Button */}
             <Button
               onClick={onClose}
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2"
