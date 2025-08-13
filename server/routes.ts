@@ -1,4 +1,3 @@
-
 import { Router, Request, Response } from 'express';
 import { db } from './db';
 import { 
@@ -62,7 +61,7 @@ router.post('/auth/admin/login', async (req: Request, res: Response) => {
 
     // Find user
     const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    
+
     if (user.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -159,7 +158,7 @@ router.post('/auth/super-admin/login', async (req: Request, res: Response) => {
 
     // Find user
     const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    
+
     if (user.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -693,7 +692,7 @@ router.post('/invoices/generate', authenticateToken, requireSuperAdmin, async (r
 
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-    
+
     const newInvoice = await db.insert(invoices).values({
       invoiceNumber,
       tenantId,

@@ -137,6 +137,43 @@ class SuperAdminTester {
   }
 
   async testTenantManagement() {
+    // Test Get Tenants API
+    await this.runTest('Get Tenants with Pagination', async () => {
+      const response = await this.makeRequest('/tenants?page=1&limit=10');
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error('Invalid tenants response structure');
+      }
+      console.log('🏢 Tenants retrieved successfully:', response.data.length);
+    });
+
+    // Test Create Tenant API
+    await this.runTest('Create New Tenant', async () => {
+      const newTenant = {
+        name: 'Test Insurance Corp',
+        domain: 'testinsurance.com',
+        adminEmail: 'admin@testinsurance.com',
+        adminPassword: 'admin123'
+      };
+      
+      const response = await this.makeRequest('/tenants', {
+        method: 'POST',
+        body: JSON.stringify(newTenant)
+      });
+      
+      if (!response.data || !response.data.id) {
+        throw new Error('Failed to create tenant');
+      }
+      console.log('🏢 Tenant created successfully:', response.data.name);
+    });
+
+    // Test Get Tenant Users
+    await this.runTest('Get Tenant Users', async () => {
+      const response = await this.makeRequest('/tenants/1/users');
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error('Invalid tenant users response');
+      }
+      console.log('👥 Tenant users retrieved successfully');
+    });
     let createdTenantId = null;
 
     await this.runTest('Get Tenants List', async () => {

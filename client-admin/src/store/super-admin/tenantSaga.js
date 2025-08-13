@@ -1,4 +1,3 @@
-
 import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
 import {
   fetchTenantsRequest,
@@ -448,7 +447,7 @@ const api = {
     await new Promise(resolve => setTimeout(resolve, 600));
 
     const newStatus = suspend ? 'suspended' : 'active';
-    
+
     return {
       tenantId,
       newStatus,
@@ -552,7 +551,7 @@ const api = {
       const firstNames = ['Alex', 'Chris', 'Jordan', 'Taylor', 'Casey', 'Morgan', 'Riley', 'Avery', 'Quinn', 'Blake'];
       const lastNames = ['Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez'];
       const statuses = ['activated', 'activated', 'activated', 'deactivated', 'pending'];
-      
+
       return Array.from({ length: count }, (_, index) => ({
         id: `${tenantId}_${index + 1}`,
         firstName: firstNames[index % firstNames.length],
@@ -566,7 +565,7 @@ const api = {
 
     // Return mock users or generate them
     const users = mockUsersData[tenantId] || generateUsersForTenant(tenantId, Math.floor(Math.random() * 15) + 1);
-    
+
     return users;
   }
 };
@@ -576,10 +575,10 @@ function* fetchTenantsSaga(action) {
   try {
     const params = action.payload || { page: 1, limit: 10 };
     console.log('📡 fetchTenantsSaga triggered with params:', params);
-    
+
     const response = yield call(api.fetchTenants, params);
     console.log('✅ Tenant API response received:', response);
-    
+
     // Ensure response has required structure
     const validatedResponse = {
       tenants: response.tenants || [],
@@ -589,7 +588,7 @@ function* fetchTenantsSaga(action) {
       },
       pagination: response.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 }
     };
-    
+
     console.log('📤 Dispatching tenant success with:', validatedResponse);
     yield put(fetchTenantsSuccess(validatedResponse));
   } catch (error) {
