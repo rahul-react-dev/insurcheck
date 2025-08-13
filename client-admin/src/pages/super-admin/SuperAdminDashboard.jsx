@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -88,6 +87,24 @@ const SuperAdminDashboard = () => {
                   <i className="fas fa-clock"></i>
                   <span>Last updated: {new Date().toLocaleTimeString()}</span>
                 </div>
+                {process.env.NODE_ENV === 'development' && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      if (window.SuperAdminTester) {
+                        const tester = new window.SuperAdminTester();
+                        tester.runAllTests();
+                      } else {
+                        console.warn('SuperAdminTester not available. Import the test utility first.');
+                      }
+                    }}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs"
+                  >
+                    <i className="fas fa-flask mr-1"></i>
+                    Run Tests
+                  </button>
+                </div>
+              )}
               </div>
             </div>
             <div className="hidden lg:block flex-shrink-0">
@@ -155,7 +172,7 @@ const SuperAdminDashboard = () => {
               Real-time system performance indicators
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {isLoadingMetrics ? (
               // Enhanced Loading skeleton
@@ -259,7 +276,7 @@ const SuperAdminDashboard = () => {
               </div>
               <p className="text-green-600 font-medium text-sm sm:text-base">Operational</p>
             </div>
-            
+
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <i className="fas fa-server text-blue-500"></i>
@@ -267,7 +284,7 @@ const SuperAdminDashboard = () => {
               </div>
               <p className="text-blue-600 font-medium text-sm sm:text-base">99.9%</p>
             </div>
-            
+
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <i className="fas fa-clock text-purple-500"></i>
