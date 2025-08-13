@@ -9,6 +9,8 @@ const initialState = {
   error: null,
   planError: null,
   tenantError: null,
+  showPlanModal: false,
+  editingPlan: null,
   pagination: {
     page: 1,
     limit: 10,
@@ -123,6 +125,20 @@ const subscriptionSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Modal Management
+    showCreatePlanModal: (state) => {
+      state.showPlanModal = true;
+      state.editingPlan = null;
+    },
+    showEditPlanModal: (state, action) => {
+      state.showPlanModal = true;
+      state.editingPlan = action.payload;
+    },
+    hidePlanModal: (state) => {
+      state.showPlanModal = false;
+      state.editingPlan = null;
+    },
+
     // Clear errors
     clearError: (state) => {
       state.error = null;
@@ -156,6 +172,9 @@ export const {
   assignPlanToTenantRequest,
   assignPlanToTenantSuccess,
   assignPlanToTenantFailure,
+  showCreatePlanModal,
+  showEditPlanModal,
+  hidePlanModal,
   clearError,
   resetSubscriptionState
 } = subscriptionSlice.actions;

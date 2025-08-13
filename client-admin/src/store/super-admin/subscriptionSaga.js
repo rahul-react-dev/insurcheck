@@ -18,7 +18,8 @@ import {
   fetchTenantsFailure,
   assignPlanToTenantRequest,
   assignPlanToTenantSuccess,
-  assignPlanToTenantFailure
+  assignPlanToTenantFailure,
+  hidePlanModal,
 } from './subscriptionSlice';
 
 // Mock data
@@ -251,21 +252,24 @@ function* fetchPlansSaga() {
 
 function* createPlanSaga(action) {
   try {
-    const response = yield call(mockCreatePlan, action.payload);
-    yield put(createPlanSuccess(response));
+    const response = yield call(api.post, '/api/super-admin/subscription-plans', action.payload);
+    yield put(createPlanSuccess(response.data));
+    yield put(hidePlanModal());
+    // Show success message here if needed
   } catch (error) {
-    const errorMessage = error.message || 'Failed to create subscription plan';
-    yield put(createPlanFailure(errorMessage));
+    yield put(createPlanFailure(error.response?.data?.message || 'Failed to create plan'));
   }
 }
 
 function* updatePlanSaga(action) {
   try {
-    const response = yield call(mockUpdatePlan, action.payload);
-    yield put(updatePlanSuccess(response));
+    const { id, ...planData } = action.payload;
+    const response = yield call(api.put, `/api/super-admin/subscription-plans/${id}`, planData);
+    yield put(updatePlanSuccess(response.data));
+    yield put(hidePlanModal());
+    // Show success message here if needed
   } catch (error) {
-    const errorMessage = error.message || 'Failed to update subscription plan';
-    yield put(updatePlanFailure(errorMessage));
+    yield put(updatePlanFailure(error.response?.data?.message || 'Failed to update plan'));
   }
 }
 

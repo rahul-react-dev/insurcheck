@@ -12,25 +12,27 @@ import {
   updatePlanRequest,
   deletePlanRequest,
   assignPlanToTenantRequest,
+  showCreatePlanModal,
+  showEditPlanModal,
+  hidePlanModal,
 } from '../../store/super-admin/subscriptionSlice';
 
 const SubscriptionManagement = () => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('plans');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
 
   const {
     plans,
     tenants,
     isLoading,
+    isLoadingPlans,
+    isLoadingTenants,
     error,
-    planError, // Assuming these are defined in your slice
-    tenantError // Assuming these are defined in your slice
+    planError,
+    tenantError,
+    showPlanModal,
+    editingPlan
   } = useSelector(state => state.subscription);
-
-  // Determine if the plans tab is loading specifically
-  const isLoadingPlans = isLoading; // This might need refinement based on your slice's loading states
 
   useEffect(() => {
     dispatch(fetchPlansRequest());
@@ -38,23 +40,11 @@ const SubscriptionManagement = () => {
   }, [dispatch]);
 
   const handleCreatePlan = () => {
-    setSelectedPlan(null);
-    setIsModalOpen(true);
+    dispatch(showCreatePlanModal());
   };
 
   const handleEditPlan = (plan) => {
-    setSelectedPlan(plan);
-    setIsModalOpen(true);
-  };
-
-  const handleSavePlan = (planData) => {
-    if (selectedPlan) {
-      dispatch(updatePlanRequest({ id: selectedPlan.id, ...planData }));
-    } else {
-      dispatch(createPlanRequest(planData));
-    }
-    setIsModalOpen(false);
-    setSelectedPlan(null);
+    dispatch(showEditPlanModal(plan));
   };
 
   const handleDeletePlan = (planId) => {
@@ -242,18 +232,7 @@ const SubscriptionManagement = () => {
       </div>
 
       {/* Plan Modal */}
-      {isModalOpen && (
-        <PlanModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedPlan(null);
-          }}
-          onSave={handleSavePlan}
-          plan={selectedPlan}
-          isLoading={isLoading}
-        />
-      )}
+      <PlanModal />
     </div>
   );
 };
