@@ -129,15 +129,15 @@ const DeletedDocumentsManagement = () => {
       const downloadFileName = `${document.name.split('.').slice(0, -1).join('.')}_${document.id}.${fileExtension}`;
 
       // Create download link
-      const link = document.createElement("a");
+      const link = window.document.createElement("a");
       link.href = document.downloadUrl;
       link.download = downloadFileName;
       link.style.display = "none";
       
       // Add to DOM, click, and remove
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
 
       // Show success message (optional - could be a toast notification)
       console.log(`Download initiated: ${downloadFileName}`);
