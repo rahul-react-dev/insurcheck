@@ -37,7 +37,7 @@ const TenantStateManagement = () => {
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
   });
 
   const {
@@ -62,7 +62,7 @@ const TenantStateManagement = () => {
   useEffect(() => {
     const fetchParams = {
       page: 1,
-      limit: 10,
+      limit: 5,
       ...filters,
     };
     dispatch(fetchTenantStatesRequest(fetchParams));

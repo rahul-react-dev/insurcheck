@@ -20,7 +20,7 @@ const api = {
   fetchTenantStates: async (params = {}) => {
     await delay(800);
 
-    const { page = 1, limit = 10, ...filters } = params;
+    const { page = 1, limit = 5, ...filters } = params;
     console.log('🔍 Mock Tenant State API called with params:', { page, limit, ...filters });
 
     // Mock tenant state data with comprehensive state information

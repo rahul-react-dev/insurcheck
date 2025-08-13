@@ -152,7 +152,7 @@ const TenantStateTable = ({
         {/* Mobile Loading Skeleton */}
         <div className="block lg:hidden">
           <div className="p-4 space-y-4">
-            {Array.from({ length: pagination?.limit || 10 }).map((_, index) => (
+            {Array.from({ length: pagination?.limit || 5 }).map((_, index) => (
               <div
                 key={index}
                 className="bg-gray-50 rounded-lg p-4 animate-pulse"
@@ -199,7 +199,7 @@ const TenantStateTable = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {Array.from({ length: pagination?.limit || 10 }).map(
+              {Array.from({ length: pagination?.limit || 5 }).map(
                 (_, index) => (
                   <tr key={index} className="animate-pulse">
                     <td className="px-6 py-4">
@@ -519,7 +519,7 @@ const TenantStateTable = ({
         onPageChange={onPageChange}
         onItemsPerPageChange={onPageSizeChange}
         showItemsPerPage={true}
-        itemsPerPageOptions={[10, 25, 50, 100]}
+        itemsPerPageOptions={[5, 10, 25, 50]}
       />
     </div>
   );
