@@ -15,15 +15,17 @@ const initialState = {
   systemMetrics: [],
   errorLogs: [],
   filteredErrorLogs: [],
+  isLoadingMetrics: false,
+  isLoadingLogs: false,
+  isExporting: false, // Added for export functionality
+  metricsError: null,
+  logsError: null,
+  exportError: null, // Added for export errors
   filters: {
     tenantName: '',
     errorType: '',
     dateRange: null
-  },
-  isLoadingMetrics: false,
-  isLoadingLogs: false,
-  metricsError: null,
-  logsError: null
+  }
 };
 
 const superAdminSlice = createSlice({
@@ -104,6 +106,19 @@ const superAdminSlice = createSlice({
       state.logsError = action.payload;
     },
 
+    // Export actions
+    exportErrorLogsRequest: (state) => {
+      state.isExporting = true;
+      state.exportError = null;
+    },
+    exportErrorLogsSuccess: (state) => {
+      state.isExporting = false;
+    },
+    exportErrorLogsFailure: (state, action) => {
+      state.isExporting = false;
+      state.exportError = action.payload;
+    },
+
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
       // Apply filters
@@ -121,6 +136,16 @@ const superAdminSlice = createSlice({
         );
       }
 
+      // Add date range filtering if dateRange is provided and has valid start/end
+      if (state.filters.dateRange && state.filters.dateRange.start && state.filters.dateRange.end) {
+        const startDate = new Date(state.filters.dateRange.start);
+        const endDate = new Date(state.filters.dateRange.end);
+        filtered = filtered.filter(log => {
+          const logDate = new Date(log.timestamp); // Assuming log has a timestamp field
+          return logDate >= startDate && logDate <= endDate;
+        });
+      }
+
       state.filteredErrorLogs = filtered;
     },
 
@@ -134,16 +159,18 @@ const superAdminSlice = createSlice({
     },
 
     clearErrors: (state) => {
+      state.error = null;
       state.metricsError = null;
       state.logsError = null;
+      state.exportError = null; // Clear export error as well
     },
 
+    // Logout action to clear token from localStorage
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
       state.isLoading = false;
-      // Clear token from localStorage on logout
       localStorage.removeItem('token');
     },
   },
@@ -160,6 +187,9 @@ export const {
   fetchErrorLogsRequest,
   fetchErrorLogsSuccess,
   fetchErrorLogsFailure,
+  exportErrorLogsRequest, // Export new actions
+  exportErrorLogsSuccess,
+  exportErrorLogsFailure,
   setFilters,
   clearFilters,
   clearErrors

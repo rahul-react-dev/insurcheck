@@ -9,6 +9,7 @@ import Button from '../../components/ui/Button';
 import {
   fetchSystemMetricsRequest,
   fetchErrorLogsRequest,
+  exportErrorLogsRequest,
   clearErrors
 } from '../../store/super-admin/superAdminSlice';
 
@@ -21,16 +22,20 @@ const SuperAdminDashboard = () => {
     errorLogs,
     isLoadingMetrics,
     isLoadingLogs,
+    isExporting,
     metricsError,
     logsError,
+    exportError,
     user
   } = useSelector(state => ({
     systemMetrics: state.superAdmin.systemMetrics,
     errorLogs: state.superAdmin.errorLogs,
     isLoadingMetrics: state.superAdmin.isLoadingMetrics,
     isLoadingLogs: state.superAdmin.isLoadingLogs,
+    isExporting: state.superAdmin.isExporting,
     metricsError: state.superAdmin.metricsError,
     logsError: state.superAdmin.logsError,
+    exportError: state.superAdmin.exportError,
     user: state.auth.user
   }));
 
@@ -55,8 +60,7 @@ const SuperAdminDashboard = () => {
   };
 
   const handleExportLogs = () => {
-    // TODO: Implement CSV export functionality
-    console.log('Exporting logs...', errorLogs);
+    dispatch(exportErrorLogsRequest(errorLogs));
   };
 
   const handleRefreshMetrics = () => {
@@ -95,14 +99,14 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Error Alert */}
-        {(metricsError || logsError) && (
+        {(metricsError || logsError || exportError) && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-start justify-between space-x-3">
               <div className="flex items-start space-x-3 flex-1 min-w-0">
                 <i className="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
                 <div className="min-w-0">
                   <h3 className="text-red-800 font-medium">System Alert</h3>
-                  <p className="text-red-700 text-sm break-words">{metricsError || logsError}</p>
+                  <p className="text-red-700 text-sm break-words">{metricsError || logsError || exportError}</p>
                 </div>
               </div>
               <button
@@ -136,9 +140,10 @@ const SuperAdminDashboard = () => {
           <Button
             onClick={handleExportLogs}
             className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-3 text-sm sm:text-base"
+            disabled={isExporting}
           >
-            <i className="fas fa-download mr-2"></i>
-            Export Data
+            <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-download'} mr-2`}></i>
+            {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
         </div>
 
@@ -226,9 +231,10 @@ const SuperAdminDashboard = () => {
                 <Button
                   onClick={handleExportLogs}
                   className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 text-sm"
+                  disabled={isExporting}
                 >
-                  <i className="fas fa-download mr-2"></i>
-                  Export CSV
+                  <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-download'} mr-2`}></i>
+                  {isExporting ? 'Exporting...' : 'Export CSV'}
                 </Button>
               </div>
             </div>

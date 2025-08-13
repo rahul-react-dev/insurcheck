@@ -1,4 +1,4 @@
-import { call, put, takeLatest } from 'redux-saga/effects';
+import { call, put, takeLatest, takeEvery, all } from 'redux-saga/effects';
 import api from '../../utils/api';
 import {
   loginRequest,
@@ -9,7 +9,10 @@ import {
   fetchSystemMetricsFailure,
   fetchErrorLogsRequest,
   fetchErrorLogsSuccess,
-  fetchErrorLogsFailure
+  fetchErrorLogsFailure,
+  exportErrorLogsRequest,
+  exportErrorLogsSuccess,
+  exportErrorLogsFailure
 } from './superAdminSlice';
 
 // API calls
@@ -170,19 +173,103 @@ function* fetchSystemMetricsSaga() {
   }
 }
 
-function* fetchErrorLogsSaga() {
+function* fetchErrorLogsSaga(action) {
   try {
-    const response = yield call(fetchErrorLogsApi);
-    yield put(fetchErrorLogsSuccess(response.data));
+    const filters = action.payload || {};
+    const response = yield call(fetchErrorLogsApi, filters);
+
+    // Apply filters to the response data
+    let filteredLogs = response.data;
+
+    if (filters.tenantName) {
+      filteredLogs = filteredLogs.filter(log => 
+        log.affectedTenant && log.affectedTenant.toLowerCase().includes(filters.tenantName.toLowerCase())
+      );
+    }
+
+    if (filters.errorType) {
+      filteredLogs = filteredLogs.filter(log => 
+        log.errorType && log.errorType.toLowerCase().includes(filters.errorType.toLowerCase())
+      );
+    }
+
+    if (filters.dateRange && filters.dateRange.start) {
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        const startDate = new Date(filters.dateRange.start);
+        return logDate >= startDate;
+      });
+    }
+
+    if (filters.dateRange && filters.dateRange.end) {
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        const endDate = new Date(filters.dateRange.end);
+        endDate.setHours(23, 59, 59, 999); // Include the entire end date
+        return logDate <= endDate;
+      });
+    }
+
+    yield put(fetchErrorLogsSuccess(filteredLogs));
   } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Failed to fetch error logs';
-    yield put(fetchErrorLogsFailure(errorMessage));
+    yield put(fetchErrorLogsFailure(error.message || 'Failed to fetch error logs'));
   }
+}
+
+function* exportErrorLogsSaga(action) {
+  try {
+    const logs = action.payload || [];
+
+    // Create CSV content
+    const headers = ['Error ID', 'Timestamp', 'Type', 'Description', 'Tenant', 'User'];
+    const csvContent = [
+      headers.join(','),
+      ...logs.map(log => [
+        `"${log.id || ''}"`,
+        `"${new Date(log.timestamp).toLocaleString()}"`,
+        `"${log.errorType || ''}"`,
+        `"${(log.description || '').replace(/"/g, '""')}"`,
+        `"${log.affectedTenant || 'N/A'}"`,
+        `"${log.affectedUser || 'N/A'}"`
+      ].join(','))
+    ].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `error_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    yield put(exportErrorLogsSuccess());
+  } catch (error) {
+    yield put(exportErrorLogsFailure(error.message || 'Failed to export error logs'));
+  }
+}
+
+
+// Saga watchers
+function* watchFetchSystemMetrics() {
+  yield takeLatest(fetchSystemMetricsRequest.type, fetchSystemMetricsSaga);
+}
+
+function* watchFetchErrorLogs() {
+  yield takeEvery('superAdmin/fetchErrorLogsRequest', fetchErrorLogsSaga);
+}
+
+function* watchExportErrorLogs() {
+  yield takeEvery('superAdmin/exportErrorLogsRequest', exportErrorLogsSaga);
 }
 
 // Root saga
 export default function* superAdminSaga() {
-  yield takeLatest(loginRequest.type, loginSaga);
-  yield takeLatest(fetchSystemMetricsRequest.type, fetchSystemMetricsSaga);
-  yield takeLatest(fetchErrorLogsRequest.type, fetchErrorLogsSaga);
+  yield all([
+    watchFetchSystemMetrics(),
+    watchFetchErrorLogs(),
+    watchExportErrorLogs()
+  ]);
 }
