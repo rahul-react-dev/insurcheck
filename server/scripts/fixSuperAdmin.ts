@@ -1,7 +1,7 @@
 
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
-import { db } from '../db.ts';
+import { db } from '../db.js';
 
 const fixSuperAdmin = async () => {
   try {
@@ -23,7 +23,7 @@ const fixSuperAdmin = async () => {
         console.log(`  - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`);
       });
     } catch (error) {
-      console.log('⚠️ Could not read table structure:', error.message);
+      console.log('⚠️ Could not read table structure:', error);
     }
 
     // Add missing columns if they don't exist
@@ -50,6 +50,34 @@ const fixSuperAdmin = async () => {
       console.log('ℹ️ tenant_id column likely already exists');
     }
 
+    try {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()`);
+      console.log('✅ Added created_at column');
+    } catch (error) {
+      console.log('ℹ️ created_at column likely already exists');
+    }
+
+    try {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()`);
+      console.log('✅ Added updated_at column');
+    } catch (error) {
+      console.log('ℹ️ updated_at column likely already exists');
+    }
+
+    try {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`);
+      console.log('✅ Added last_login_at column');
+    } catch (error) {
+      console.log('ℹ️ last_login_at column likely already exists');
+    }
+
+    try {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0`);
+      console.log('✅ Added failed_login_attempts column');
+    } catch (error) {
+      console.log('ℹ️ failed_login_attempts column likely already exists');
+    }
+
     // Hash the password
     const hashedPassword = await bcrypt.hash('admin123', 12);
 
@@ -57,14 +85,15 @@ const fixSuperAdmin = async () => {
     console.log('👤 Creating/updating super admin user...');
     
     const result = await db.execute(sql`
-      INSERT INTO users (username, email, password, role, tenant_id, is_active)
-      VALUES ('superadmin', 'superadmin@insurcheck.com', ${hashedPassword}, 'super-admin', NULL, true)
+      INSERT INTO users (username, email, password, role, tenant_id, is_active, created_at, updated_at)
+      VALUES ('superadmin', 'superadmin@insurcheck.com', ${hashedPassword}, 'super-admin', NULL, true, NOW(), NOW())
       ON CONFLICT (email) DO UPDATE SET
         username = EXCLUDED.username,
         password = EXCLUDED.password,
         role = EXCLUDED.role,
         tenant_id = EXCLUDED.tenant_id,
-        is_active = EXCLUDED.is_active
+        is_active = EXCLUDED.is_active,
+        updated_at = NOW()
       RETURNING email, username, role;
     `);
 
@@ -81,7 +110,7 @@ const fixSuperAdmin = async () => {
 
   } catch (error) {
     console.error('❌ Error fixing database:', error);
-    console.error('Error details:', error.message);
+    console.error('Error details:', (error as Error).message);
     process.exit(1);
   }
 };

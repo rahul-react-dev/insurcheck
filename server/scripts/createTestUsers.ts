@@ -1,6 +1,9 @@
-import { sql } from 'drizzle-orm';
-import { db } from '../db.ts';
+
 import bcrypt from 'bcryptjs';
+import { sql } from 'drizzle-orm';
+import { db } from '../db.js';
+import { users, tenants } from '../../shared/schema.js';
+import { eq } from 'drizzle-orm';
 
 const createTestUsers = async () => {
   try {
@@ -16,29 +19,15 @@ const createTestUsers = async () => {
 
     // First create a test tenant
     console.log('🏢 Creating test tenant...');
-    // Using ON CONFLICT to ensure tenant is created or updated if it already exists based on domain
-    const tenantResult = await db.execute(sql`
-      INSERT INTO tenants (name, domain) 
-      VALUES ('InsurCheck Demo', 'insurcheck.com')
-      ON CONFLICT (domain) DO UPDATE SET name = EXCLUDED.name
-      RETURNING id
-    `);
+    const tenant = await db.insert(tenants).values({
+      name: 'InsurCheck Demo',
+      domain: 'insurcheck.demo'
+    }).returning();
 
-    // tenantResult.rows[0]?.id will be undefined if the tenant already existed and no new row was inserted.
-    // In such cases, we need to fetch the existing tenant's ID.
-    let tenantId;
-    if (tenantResult.rows.length > 0) {
-      tenantId = tenantResult.rows[0].id;
-      console.log(`✅ Created or updated tenant: InsurCheck Demo (ID: ${tenantId})`);
-    } else {
-      // If no rows were returned, it means the tenant already exists. Fetch its ID.
-      const existingTenant = await db.execute(sql`SELECT id FROM tenants WHERE domain = 'insurcheck.com' LIMIT 1`);
-      tenantId = existingTenant.rows[0]?.id;
-      console.log(`✅ Tenant 'InsurCheck Demo' already exists with ID: ${tenantId}`);
-    }
+    const tenantId = tenant[0].id;
+    console.log(`✅ Created tenant: ${tenant[0].name} (ID: ${tenantId})`);
 
-
-    // Test users data
+    // Test users data using the new schema
     const testUsers = [
       {
         username: 'superadmin',
@@ -49,7 +38,7 @@ const createTestUsers = async () => {
       },
       {
         username: 'admin',
-        email: 'admin@insurcheck.com', 
+        email: 'admin@insurcheck.com',
         password: hashedPassword,
         role: 'tenant-admin' as const,
         tenantId: tenantId
@@ -63,45 +52,52 @@ const createTestUsers = async () => {
       }
     ];
 
-    // Insert users using raw SQL with ON CONFLICT for upserting
+    // Insert users using Drizzle ORM
     console.log('👥 Creating test users...');
     for (const userData of testUsers) {
       try {
-        // Using ON CONFLICT to ensure user is created or updated if it already exists based on email
-        const newUser = await db.execute(sql`
-          INSERT INTO users (username, email, password, role, tenant_id)
-          VALUES (${userData.username}, ${userData.email}, ${userData.password}, ${userData.role}, ${userData.tenantId})
-          ON CONFLICT (email) DO UPDATE SET
-            username = EXCLUDED.username,
-            password = EXCLUDED.password,
-            role = EXCLUDED.role,
-            tenant_id = EXCLUDED.tenant_id
-          RETURNING email
-        `);
-        
-        if (newUser.rows.length > 0) {
-          console.log(`✅ Created or updated user: ${newUser.rows[0].email}`);
+        // Check if user exists
+        const existingUser = await db.select()
+          .from(users)
+          .where(eq(users.email, userData.email))
+          .limit(1);
+
+        if (existingUser.length > 0) {
+          // Update existing user
+          const updatedUser = await db.update(users)
+            .set({
+              password: userData.password,
+              role: userData.role,
+              tenantId: userData.tenantId
+            })
+            .where(eq(users.email, userData.email))
+            .returning();
+
+          console.log(`🔄 Updated user: ${updatedUser[0].email}`);
         } else {
-          // This case should ideally not happen with RETURNING clause if the query is successful
-          console.log(`ℹ️ User ${userData.email} processed (no new row inserted, likely already up-to-date).`);
+          // Create new user
+          const newUser = await db.insert(users)
+            .values(userData)
+            .returning();
+
+          console.log(`✅ Created user: ${newUser[0].email}`);
         }
-      } catch (userError: any) {
-        console.error(`❌ Error with user ${userData.email}:`, userError.message);
+      } catch (userError) {
+        console.error(`❌ Error with user ${userData.email}:`, (userError as Error).message);
       }
     }
 
     console.log('\n🎉 Test users and tenant created successfully!');
     console.log('\n📋 Test Credentials:');
-    console.log('================================');
-    testUsers.forEach(user => {
-      console.log(`Role: ${user.role}, Email: ${user.email}, Password: Solulab@123`);
-    });
-    
+    console.log('Super Admin: superadmin@insurcheck.com / Solulab@123');
+    console.log('Tenant Admin: admin@insurcheck.com / Solulab@123');
+    console.log('User: user@insurcheck.com / Solulab@123');
+
     process.exit(0);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Error creating test users:', error);
-    console.error('Error details:', error.message);
+    console.error('Error details:', (error as Error).message);
     process.exit(1);
   }
 };
