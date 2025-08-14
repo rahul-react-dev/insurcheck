@@ -140,6 +140,30 @@ const systemConfigSlice = createSlice({
       state.backupError = null;
     },
 
+    // Create Configuration
+    createSystemConfigRequest: (state) => {
+      state.isUpdating = true;
+      state.error = null;
+      state.updateSuccess = false;
+    },
+    createSystemConfigSuccess: (state, action) => {
+      state.isUpdating = false;
+      state.updateSuccess = true;
+      state.error = null;
+      
+      // Add the new config to the configuration object
+      if (state.configuration) {
+        state.configuration = { ...state.configuration, ...action.payload };
+      } else {
+        state.configuration = action.payload;
+      }
+    },
+    createSystemConfigFailure: (state, action) => {
+      state.isUpdating = false;
+      state.error = action.payload;
+      state.updateSuccess = false;
+    },
+
     // Clear configuration errors
     clearConfigurationErrors: (state) => {
       state.error = null;
@@ -163,12 +187,9 @@ export const {
   updateSystemConfigRequest,
   updateSystemConfigSuccess,
   updateSystemConfigFailure,
-  createBackupRequest,
-  createBackupSuccess,
-  createBackupFailure,
-  setSelectedConfig,
-  updateLocalConfig,
-  resetLocalConfig,
+  createSystemConfigRequest,
+  createSystemConfigSuccess,
+  createSystemConfigFailure,
   clearErrors,
   setAvailableTenants,
   fetchAuditLogsRequest,
