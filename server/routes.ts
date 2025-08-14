@@ -1,26 +1,15 @@
-import { Router, Request, Response } from 'express';
-import { db } from './db';
-import { 
-  tenants, 
-  users, 
-  subscriptionPlans, 
-  subscriptions, 
-  documents, 
-  payments, 
-  invoices, 
-  activityLogs, 
-  systemConfig, 
-  systemMetrics 
-} from '../shared/schema';
-import { eq, and, desc, asc, like, gte, lte, count, sql, inArray } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { db } = require('./db.js');
+const { users, tenants, subscriptions, subscriptionPlans, payments, invoices, documents, activityLogs } = require('./shared/schema.js');
+const { eq, and, gte, desc, count, sql, like, or, isNull, isNotNull } = require('drizzle-orm');
 
-const router = Router();
+const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Authentication middleware
-const authenticateToken = (req: Request, res: Response, next: any) => {
+// Middleware to authenticate token
+const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -28,15 +17,18 @@ const authenticateToken = (req: Request, res: Response, next: any) => {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
-    req.user = user;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
     next();
-  });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(403).json({ error: 'Invalid or expired token' });
+  }
 };
 
 // Super Admin middleware
-const requireSuperAdmin = (req: Request, res: Response, next: any) => {
+const requireSuperAdmin = (req, res, next) => {
   if (req.user?.role !== 'super-admin') {
     return res.status(403).json({ error: 'Super admin access required' });
   }
@@ -46,9 +38,9 @@ const requireSuperAdmin = (req: Request, res: Response, next: any) => {
 // ===================== SYSTEM HEALTH & METRICS ROUTES =====================
 
 // System health check
-router.get('/health', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'healthy', 
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
@@ -57,7 +49,7 @@ router.get('/health', (req: Request, res: Response) => {
 });
 
 // Get system metrics for dashboard
-router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     // Get real metrics from database
     const activeTenantsCount = await db.select({ count: count() })
@@ -132,13 +124,13 @@ router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req: 
 });
 
 // Get activity logs with filters
-router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      level, 
-      tenantId, 
+    const {
+      page = 1,
+      limit = 10,
+      level,
+      tenantId,
       userId,
       action,
       startDate,
@@ -148,12 +140,12 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: R
     const offset = (Number(page) - 1) * Number(limit);
     const conditions = [];
 
-    if (level) conditions.push(eq(activityLogs.level, level as string));
-    if (tenantId) conditions.push(eq(activityLogs.tenantId, tenantId as string));
-    if (userId) conditions.push(eq(activityLogs.userId, userId as string));
+    if (level) conditions.push(eq(activityLogs.level, level));
+    if (tenantId) conditions.push(eq(activityLogs.tenantId, tenantId));
+    if (userId) conditions.push(eq(activityLogs.userId, userId));
     if (action) conditions.push(like(activityLogs.action, `%${action}%`));
-    if (startDate) conditions.push(gte(activityLogs.createdAt, new Date(startDate as string)));
-    if (endDate) conditions.push(lte(activityLogs.createdAt, new Date(endDate as string)));
+    if (startDate) conditions.push(gte(activityLogs.createdAt, new Date(startDate)));
+    if (endDate) conditions.push(lte(activityLogs.createdAt, new Date(endDate)));
 
     const totalResult = await db.select({ count: count() })
       .from(activityLogs)
@@ -199,7 +191,7 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: R
 });
 
 // Export activity logs
-router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { format = 'csv', filters = {} } = req.body;
 
@@ -259,7 +251,7 @@ router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async
 // ===================== AUTHENTICATION ROUTES =====================
 
 // Tenant Admin Login
-router.post('/auth/admin/login', async (req: Request, res: Response) => {
+router.post('/auth/admin/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -356,7 +348,7 @@ router.post('/auth/admin/login', async (req: Request, res: Response) => {
 });
 
 // Super Admin Login
-router.post('/auth/super-admin/login', async (req: Request, res: Response) => {
+router.post('/auth/super-admin/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -453,7 +445,7 @@ router.post('/auth/super-admin/login', async (req: Request, res: Response) => {
 // ===================== TENANT MANAGEMENT ROUTES =====================
 
 // Get all tenants with pagination and filters
-router.get('/tenants', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -470,7 +462,7 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req: Request
       storageLimit: tenants.storageLimit,
       createdAt: tenants.createdAt,
       updatedAt: tenants.updatedAt,
-      userCount: sql<number>`(SELECT COUNT(*) FROM ${users} WHERE ${users.tenantId} = ${tenants.id})`
+      userCount: sql` (SELECT COUNT(*) FROM ${users} WHERE ${users.tenantId} = ${tenants.id})`
     }).from(tenants);
 
     // Apply filters
@@ -479,7 +471,7 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req: Request
       conditions.push(like(tenants.name, `%${search}%`));
     }
     if (status) {
-      conditions.push(eq(tenants.status, status as any));
+      conditions.push(eq(tenants.status, status));
     }
 
     if (conditions.length > 0) {
@@ -488,9 +480,9 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req: Request
 
     // Apply sorting
     if (sortOrder === 'asc') {
-      query = query.orderBy(asc(tenants[sortBy as keyof typeof tenants]));
+      query = query.orderBy(asc(tenants[sortBy]));
     } else {
-      query = query.orderBy(desc(tenants[sortBy as keyof typeof tenants]));
+      query = query.orderBy(desc(tenants[sortBy]));
     }
 
     // Apply pagination
@@ -520,7 +512,7 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req: Request
 });
 
 // Create new tenant
-router.post('/tenants', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { name, domain, maxUsers = 10, storageLimit = 100 } = req.body;
 
@@ -565,7 +557,7 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req: Reques
 });
 
 // Update tenant
-router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const tenantId = parseInt(req.params.id);
     const { name, domain, status, maxUsers, storageLimit } = req.body;
@@ -605,7 +597,7 @@ router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req: Req
 });
 
 // Delete tenant
-router.delete('/tenants/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.delete('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const tenantId = parseInt(req.params.id);
 
@@ -637,7 +629,7 @@ router.delete('/tenants/:id', authenticateToken, requireSuperAdmin, async (req: 
 });
 
 // Get tenant users
-router.get('/tenants/:id/users', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/tenants/:id/users', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const tenantId = parseInt(req.params.id);
 
@@ -662,7 +654,7 @@ router.get('/tenants/:id/users', authenticateToken, requireSuperAdmin, async (re
 // ===================== SUBSCRIPTION MANAGEMENT ROUTES =====================
 
 // Get subscription plans
-router.get('/subscription-plans', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/subscription-plans', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const plans = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, true));
     res.json(plans);
@@ -673,7 +665,7 @@ router.get('/subscription-plans', authenticateToken, requireSuperAdmin, async (r
 });
 
 // Create subscription plan
-router.post('/subscription-plans', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/subscription-plans', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { name, description, price, billingCycle, features, maxUsers, storageLimit } = req.body;
 
@@ -696,7 +688,7 @@ router.post('/subscription-plans', authenticateToken, requireSuperAdmin, async (
 });
 
 // Get subscriptions with pagination
-router.get('/subscriptions', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/subscriptions', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, tenantId } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -727,7 +719,7 @@ router.get('/subscriptions', authenticateToken, requireSuperAdmin, async (req: R
     // Apply filters
     const conditions = [];
     if (status) {
-      conditions.push(eq(subscriptions.status, status as any));
+      conditions.push(eq(subscriptions.status, status));
     }
     if (tenantId) {
       conditions.push(eq(subscriptions.tenantId, Number(tenantId)));
@@ -765,16 +757,16 @@ router.get('/subscriptions', authenticateToken, requireSuperAdmin, async (req: R
 // ===================== PAYMENT & INVOICE ROUTES =====================
 
 // Get all payments
-router.get('/payments', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/payments', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, tenantId, startDate, endDate } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
     const conditions = [];
-    if (status) conditions.push(eq(payments.status, status as string));
-    if (tenantId) conditions.push(eq(payments.tenantId, tenantId as string));
-    if (startDate) conditions.push(gte(payments.createdAt, new Date(startDate as string)));
-    if (endDate) conditions.push(lte(payments.createdAt, new Date(endDate as string)));
+    if (status) conditions.push(eq(payments.status, status));
+    if (tenantId) conditions.push(eq(payments.tenantId, tenantId));
+    if (startDate) conditions.push(gte(payments.createdAt, new Date(startDate)));
+    if (endDate) conditions.push(lte(payments.createdAt, new Date(endDate)));
 
     const totalResult = await db.select({ count: count() })
       .from(payments)
@@ -818,16 +810,16 @@ router.get('/payments', authenticateToken, requireSuperAdmin, async (req: Reques
 });
 
 // Get all invoices
-router.get('/invoices', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/invoices', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, tenantId, startDate, endDate } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
     const conditions = [];
-    if (status) conditions.push(eq(invoices.status, status as string));
-    if (tenantId) conditions.push(eq(invoices.tenantId, tenantId as string));
-    if (startDate) conditions.push(gte(invoices.createdAt, new Date(startDate as string)));
-    if (endDate) conditions.push(lte(invoices.createdAt, new Date(endDate as string)));
+    if (status) conditions.push(eq(invoices.status, status));
+    if (tenantId) conditions.push(eq(invoices.tenantId, tenantId));
+    if (startDate) conditions.push(gte(invoices.createdAt, new Date(startDate)));
+    if (endDate) conditions.push(lte(invoices.createdAt, new Date(endDate)));
 
     const totalResult = await db.select({ count: count() })
       .from(invoices)
@@ -871,7 +863,7 @@ router.get('/invoices', authenticateToken, requireSuperAdmin, async (req: Reques
 });
 
 // Generate invoice
-router.post('/invoices/generate', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/invoices/generate', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { tenantId, subscriptionId, amount, dueDate } = req.body;
 
@@ -912,7 +904,7 @@ router.post('/invoices/generate', authenticateToken, requireSuperAdmin, async (r
 // ===================== ACTIVITY LOGS ROUTES =====================
 
 // Get activity logs with pagination
-router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, tenantId, userId, action, level, startDate, endDate } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -947,19 +939,19 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: R
       conditions.push(eq(activityLogs.tenantId, Number(tenantId)));
     }
     if (userId) {
-      conditions.push(eq(activityLogs.userId, userId as string));
+      conditions.push(eq(activityLogs.userId, userId));
     }
     if (action) {
-      conditions.push(eq(activityLogs.action, action as string));
+      conditions.push(eq(activityLogs.action, action));
     }
     if (level) {
-      conditions.push(eq(activityLogs.level, level as any));
+      conditions.push(eq(activityLogs.level, level));
     }
     if (startDate) {
-      conditions.push(gte(activityLogs.createdAt, new Date(startDate as string)));
+      conditions.push(gte(activityLogs.createdAt, new Date(startDate)));
     }
     if (endDate) {
-      conditions.push(lte(activityLogs.createdAt, new Date(endDate as string)));
+      conditions.push(lte(activityLogs.createdAt, new Date(endDate)));
     }
 
     if (conditions.length > 0) {
@@ -994,7 +986,7 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: R
 });
 
 // Export activity logs as CSV
-router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { tenantId, userId, action, level, startDate, endDate } = req.body;
 
@@ -1027,19 +1019,19 @@ router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async
       conditions.push(eq(activityLogs.tenantId, Number(tenantId)));
     }
     if (userId) {
-      conditions.push(eq(activityLogs.userId, userId as string));
+      conditions.push(eq(activityLogs.userId, userId));
     }
     if (action) {
-      conditions.push(eq(activityLogs.action, action as string));
+      conditions.push(eq(activityLogs.action, action));
     }
     if (level) {
-      conditions.push(eq(activityLogs.level, level as any));
+      conditions.push(eq(activityLogs.level, level));
     }
     if (startDate) {
-      conditions.push(gte(activityLogs.createdAt, new Date(startDate as string)));
+      conditions.push(gte(activityLogs.createdAt, new Date(startDate)));
     }
     if (endDate) {
-      conditions.push(lte(activityLogs.createdAt, new Date(endDate as string)));
+      conditions.push(lte(activityLogs.createdAt, new Date(endDate)));
     }
 
     if (conditions.length > 0) {
@@ -1052,7 +1044,7 @@ router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async
 
     // Convert to CSV format
     const csvHeaders = [
-      'ID', 'Date', 'Time', 'Tenant', 'User', 'Action', 'Resource', 
+      'ID', 'Date', 'Time', 'Tenant', 'User', 'Action', 'Resource',
       'Resource ID', 'Level', 'IP Address', 'Details'
     ];
 
@@ -1088,7 +1080,7 @@ router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async
 // ===================== DELETED DOCUMENTS ROUTES =====================
 
 // Get deleted documents with pagination
-router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, tenantId, deletedBy } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -1113,8 +1105,8 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
         email: users.email
       },
       deletedByUser: {
-        username: sql<string>`deleted_by_user.username`,
-        email: sql<string>`deleted_by_user.email`
+        username: sql`deleted_by_user.username`,
+        email: sql`deleted_by_user.email`
       }
     })
     .from(documents)
@@ -1129,7 +1121,7 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
       conditions.push(eq(documents.tenantId, Number(tenantId)));
     }
     if (deletedBy) {
-      conditions.push(eq(documents.deletedBy, deletedBy as string));
+      conditions.push(eq(documents.deletedBy, deletedBy));
     }
 
     if (conditions.length > 0) {
@@ -1164,7 +1156,7 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
 });
 
 // Restore deleted document
-router.post('/deleted-documents/:id/restore', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/deleted-documents/:id/restore', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const documentId = req.params.id;
 
@@ -1203,7 +1195,7 @@ router.post('/deleted-documents/:id/restore', authenticateToken, requireSuperAdm
 // ===================== SYSTEM CONFIGURATION ROUTES =====================
 
 // Get system configuration
-router.get('/system-config', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/system-config', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const configs = await db.select().from(systemConfig).where(eq(systemConfig.isActive, true));
     res.json(configs);
@@ -1214,7 +1206,7 @@ router.get('/system-config', authenticateToken, requireSuperAdmin, async (req: R
 });
 
 // Update system configuration
-router.put('/system-config/:key', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.put('/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const configKey = req.params.key;
     const { value, description } = req.body;
@@ -1261,7 +1253,7 @@ router.put('/system-config/:key', authenticateToken, requireSuperAdmin, async (r
 // ===================== TENANT STATE MANAGEMENT ROUTES =====================
 
 // Get tenant states with pagination
-router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 5, search, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -1286,7 +1278,7 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req: R
       conditions.push(like(tenants.name, `%${search}%`));
     }
     if (status) {
-      conditions.push(eq(tenants.status, status as any));
+      conditions.push(eq(tenants.status, status));
     }
 
     if (conditions.length > 0) {
@@ -1295,9 +1287,9 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req: R
 
     // Apply sorting
     if (sortOrder === 'asc') {
-      query = query.orderBy(asc(tenants[sortBy as keyof typeof tenants]));
+      query = query.orderBy(asc(tenants[sortBy]));
     } else {
-      query = query.orderBy(desc(tenants[sortBy as keyof typeof tenants]));
+      query = query.orderBy(desc(tenants[sortBy]));
     }
 
     // Apply pagination
@@ -1327,7 +1319,7 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req: R
 });
 
 // Update tenant state
-router.put('/tenant-states/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.put('/tenant-states/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const tenantId = parseInt(req.params.id);
     const { status, trialEndsAt, isTrialActive } = req.body;
@@ -1367,7 +1359,7 @@ router.put('/tenant-states/:id', authenticateToken, requireSuperAdmin, async (re
 // ===================== USERS MANAGEMENT ROUTES =====================
 
 // Get users with pagination and filters
-router.get('/users', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/users', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, role, tenantId, isActive } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -1400,7 +1392,7 @@ router.get('/users', authenticateToken, requireSuperAdmin, async (req: Request, 
       );
     }
     if (role) {
-      conditions.push(eq(users.role, role as any));
+      conditions.push(eq(users.role, role));
     }
     if (tenantId) {
       conditions.push(eq(users.tenantId, Number(tenantId)));
@@ -1441,7 +1433,7 @@ router.get('/users', authenticateToken, requireSuperAdmin, async (req: Request, 
 });
 
 // Create new user
-router.post('/users', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/users', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { username, email, password, role, tenantId } = req.body;
 
@@ -1488,7 +1480,7 @@ router.post('/users', authenticateToken, requireSuperAdmin, async (req: Request,
 });
 
 // Update user
-router.put('/users/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.put('/users/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
     const { username, email, role, tenantId, isActive } = req.body;
@@ -1529,7 +1521,7 @@ router.put('/users/:id', authenticateToken, requireSuperAdmin, async (req: Reque
 });
 
 // Delete user
-router.delete('/users/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.delete('/users/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -1563,7 +1555,7 @@ router.delete('/users/:id', authenticateToken, requireSuperAdmin, async (req: Re
 // ===================== SUBSCRIPTION PLAN MANAGEMENT ROUTES =====================
 
 // Update subscription plan
-router.put('/subscription-plans/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.put('/subscription-plans/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const planId = parseInt(req.params.id);
     const { name, description, price, billingCycle, features, maxUsers, storageLimit, isActive } = req.body;
@@ -1596,7 +1588,7 @@ router.put('/subscription-plans/:id', authenticateToken, requireSuperAdmin, asyn
 });
 
 // Delete subscription plan
-router.delete('/subscription-plans/:id', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.delete('/subscription-plans/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const planId = parseInt(req.params.id);
 
@@ -1633,7 +1625,7 @@ router.delete('/subscription-plans/:id', authenticateToken, requireSuperAdmin, a
 // ===================== ANALYTICS ROUTES =====================
 
 // Get system metrics
-router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     // Get various system metrics
     const [
@@ -1665,14 +1657,14 @@ router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req: 
         )
       ),
       // Total payments
-      db.select({ 
+      db.select({
         count: count(),
-        sum: sql<string>`COALESCE(SUM(${payments.amount}), 0)`
+        sum: sql`COALESCE(SUM(${payments.amount}), 0)`
       }).from(payments),
       // Recent payments (last 30 days)
-      db.select({ 
+      db.select({
         count: count(),
-        sum: sql<string>`COALESCE(SUM(${payments.amount}), 0)`
+        sum: sql`COALESCE(SUM(${payments.amount}), 0)`
       }).from(payments).where(gte(payments.createdAt, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))),
       // Error logs count (last 24 hours)
       db.select({ count: count() }).from(activityLogs).where(
@@ -1802,18 +1794,18 @@ router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req: 
 });
 
 // Get analytics data with date ranges
-router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get('/analytics', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { startDate, endDate, metric } = req.query;
-    const start = startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
 
     let data = {};
 
     switch (metric) {
       case 'user-growth':
         data = await db.select({
-          date: sql<string>`DATE(${users.createdAt})`,
+          date: sql`DATE(${users.createdAt})`,
           count: count()
         })
         .from(users)
@@ -1824,7 +1816,7 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Reque
 
       case 'document-uploads':
         data = await db.select({
-          date: sql<string>`DATE(${documents.createdAt})`,
+          date: sql`DATE(${documents.createdAt})`,
           count: count()
         })
         .from(documents)
@@ -1835,13 +1827,13 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Reque
 
       case 'revenue':
         data = await db.select({
-          date: sql<string>`DATE(${payments.paymentDate})`,
-          amount: sql<string>`SUM(${payments.amount})`
+          date: sql`DATE(${payments.paymentDate})`,
+          amount: sql`SUM(${payments.amount})`
         })
         .from(payments)
         .where(and(
           eq(payments.status, 'completed'),
-          gte(payments.paymentDate, start), 
+          gte(payments.paymentDate, start),
           lte(payments.paymentDate, end)
         ))
         .groupBy(sql`DATE(${payments.paymentDate})`)
@@ -1852,7 +1844,7 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Reque
         // Return general analytics
         data = {
           userGrowth: await db.select({
-            date: sql<string>`DATE(${users.createdAt})`,
+            date: sql`DATE(${users.createdAt})`,
             count: count()
           })
           .from(users)
@@ -1861,7 +1853,7 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Reque
           .orderBy(sql`DATE(${users.createdAt})`),
 
           documentUploads: await db.select({
-            date: sql<string>`DATE(${documents.createdAt})`,
+            date: sql`DATE(${documents.createdAt})`,
             count: count()
           })
           .from(documents)
@@ -1870,13 +1862,13 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Reque
           .orderBy(sql`DATE(${documents.createdAt})`),
 
           revenue: await db.select({
-            date: sql<string>`DATE(${payments.paymentDate})`,
-            amount: sql<string>`SUM(${payments.amount})`
+            date: sql`DATE(${payments.paymentDate})`,
+            amount: sql`SUM(${payments.amount})`
           })
           .from(payments)
           .where(and(
             eq(payments.status, 'completed'),
-            gte(payments.paymentDate, start), 
+            gte(payments.paymentDate, start),
             lte(payments.paymentDate, end)
           ))
           .groupBy(sql`DATE(${payments.paymentDate})`)
@@ -1892,4 +1884,4 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req: Reque
   }
 });
 
-export default router;
+module.exports = router;

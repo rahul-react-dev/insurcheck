@@ -89,15 +89,18 @@ export const login = async (req, res) => {
         .where(eq(users.id, user.id));
 
       res.status(200).json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          username: user.username,
-          tenantId: user.tenantId,
-          isActive: user.isActive,
-          lastLoginAt: new Date().toISOString()
+        success: true,
+        message: 'Login successful',
+        data: {
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            tenantId: user.tenant_id,
+            isActive: user.is_active
+          },
+          token
         }
       });
 

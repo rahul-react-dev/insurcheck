@@ -292,36 +292,36 @@ export const superAdminAPI = {
   cancelSubscription: (id) => api.patch(`/subscriptions/${id}/cancel`),
 
   // Payments & Invoices
-  getPayments: (params) => api.get('/payments', { params }),
-  getInvoices: (params) => api.get('/invoices', { params }),
-  generateInvoice: (data) => api.post('/invoices/generate', data),
+  getPayments: (params) => api.get('/super-admin/payments', { params }),
+  getInvoices: (params) => api.get('/super-admin/invoices', { params }),
+  generateInvoice: (data) => api.post('/super-admin/invoices/generate', data),
   updateInvoiceStatus: (id, status) => api.patch(`/invoices/${id}/status`, { status }),
   downloadInvoice: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
 
   // Activity Logs
-  getActivityLogs: (params) => api.get('/activity-logs', { params }),
-  exportActivityLogs: (params) => api.post('/activity-logs/export', params),
+  getActivityLogs: (params) => api.get('/super-admin/activity-logs', { params }),
+  exportActivityLogs: (params) => api.post('/super-admin/activity-logs/export', params),
 
   // Deleted Documents
-  getDeletedDocuments: (params) => api.get('/deleted-documents', { params }),
-  restoreDocument: (id) => api.post(`/deleted-documents/${id}/restore`),
-  permanentlyDeleteDocument: (id) => api.delete(`/deleted-documents/${id}/permanent`),
+  getDeletedDocuments: (params) => api.get('/super-admin/deleted-documents', { params }),
+  restoreDocument: (id) => api.post(`/super-admin/deleted-documents/${id}/restore`),
+  permanentlyDeleteDocument: (id) => api.delete(`/super-admin/deleted-documents/${id}/permanent`),
 
   // System Configuration
-  getSystemConfig: () => api.get('/system-config'),
-  updateSystemConfig: (key, data) => api.put(`/system-config/${key}`, data),
-  createSystemConfig: (data) => api.post('/system-config', data),
+  getSystemConfig: () => api.get('/super-admin/system-config'),
+  updateSystemConfig: (key, value) => api.put(`/super-admin/system-config/${key}`, { value }),
 
   // Analytics
-  getAnalytics: (params) => api.get('/analytics', { params }),
-  getDashboardStats: () => api.get('/analytics/dashboard'),
-  getTenantAnalytics: (tenantId, params) => api.get(`/analytics/tenant/${tenantId}`, { params }),
+  getAnalytics: (params) => api.get('/super-admin/analytics', { params }),
+  getDashboardStats: () => api.get('/super-admin/dashboard-stats'),
+  getTenantAnalytics: (tenantId, params) => api.get(`/super-admin/tenants/${tenantId}/analytics`, { params }),
+  exportAnalytics: (params) => api.post('/super-admin/analytics/export', params),
 
   // Users
-  getUsers: (params) => api.get('/users', { params }),
-  createUser: (data) => api.post('/users', data),
-  updateUser: (id, data) => api.put(`/users/${id}`, data),
-  deleteUser: (id) => api.delete(`/users/${id}`),
+  getUsers: (params) => api.get('/super-admin/users', { params }),
+  createUser: (data) => api.post('/super-admin/users', data),
+  updateUser: (id, data) => api.put(`/super-admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/super-admin/users/${id}`),
 
   // Tenant State Management
   getTenantStates: (params) => api.get('/tenant-states', { params }),

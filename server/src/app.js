@@ -42,9 +42,17 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// API Routes
+// Import routes
+const tenantRoutes = require('./routes/tenants');
+
+// Import super admin routes
+const superAdminRoutes = require('../routes.js');
+
+// Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/health', healthRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api', healthRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

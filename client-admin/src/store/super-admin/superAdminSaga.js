@@ -21,23 +21,25 @@ import {
 // Saga workers
 function* loginSaga(action) {
   try {
+    // Make API call
     const response = yield call(superAdminAPI.login, action.payload);
+    console.log('✅ Login API response received:', response);
 
-    if (response && response.token && response.user) {
-      // Store token and user data
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      localStorage.setItem('isAuthenticated', 'true');
+    // Extract data from response
+    const responseData = response.data || response;
 
-      yield put(loginSuccess({ 
-        token: response.token, 
-        user: response.user 
-      }));
-
-      console.log('✅ Super Admin login successful');
-    } else {
-      throw new Error('Invalid response structure from server');
+    // Validate response structure
+    if (!responseData.user || !responseData.token) {
+      throw new Error('Invalid response format from server');
     }
+
+    // Dispatch success action with user and token
+    yield put(loginSuccess({
+      user: responseData.user,
+      token: responseData.token
+    }));
+
+    console.log('✅ Super Admin login successful');
   } catch (error) {
     console.error('❌ Super Admin login error:', error);
 
