@@ -1,10 +1,9 @@
-
-const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { db } = require('./db.js');
-const { users, tenants, subscriptions, subscriptionPlans, payments, invoices, documents, activityLogs } = require('../shared/schema.js');
-const { eq, and, gte, desc, count, sql, like, or, isNull, isNotNull } = require('drizzle-orm');
+import express from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { db } from './db.js';
+import { users, tenants, subscriptions, subscriptionPlans, payments, invoices, documents, activityLogs } from '../shared/schema.js';
+import { eq, and, gte, desc, count, sql, like, or, isNull, isNotNull } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -139,30 +138,30 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
     } = req.query;
 
     const offset = (Number(page) - 1) * Number(limit);
-    
+
     // Build where conditions
     let whereConditions = [];
-    
+
     if (level) {
       whereConditions.push(eq(activityLogs.level, level));
     }
-    
+
     if (tenantId) {
       whereConditions.push(eq(activityLogs.tenantId, Number(tenantId)));
     }
-    
+
     if (userId) {
       whereConditions.push(eq(activityLogs.userId, userId));
     }
-    
+
     if (action) {
       whereConditions.push(like(activityLogs.action, `%${action}%`));
     }
-    
+
     if (startDate) {
       whereConditions.push(gte(activityLogs.createdAt, new Date(startDate)));
     }
-    
+
     if (endDate) {
       whereConditions.push(gte(new Date(endDate), activityLogs.createdAt));
     }
@@ -207,22 +206,22 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
 router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { filters = {} } = req.body;
-    
+
     // Build where conditions based on filters
     let whereConditions = [];
-    
+
     if (filters.level) {
       whereConditions.push(eq(activityLogs.level, filters.level));
     }
-    
+
     if (filters.tenantId) {
       whereConditions.push(eq(activityLogs.tenantId, Number(filters.tenantId)));
     }
-    
+
     if (filters.startDate) {
       whereConditions.push(gte(activityLogs.createdAt, new Date(filters.startDate)));
     }
-    
+
     if (filters.endDate) {
       whereConditions.push(gte(new Date(filters.endDate), activityLogs.createdAt));
     }
@@ -254,4 +253,4 @@ router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async
   }
 });
 
-module.exports = router;
+export default router;

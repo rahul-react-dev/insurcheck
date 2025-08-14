@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { body } from 'express-validator';
 import * as tenantController from '../controllers/tenantController.js';

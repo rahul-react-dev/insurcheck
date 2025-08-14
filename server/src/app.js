@@ -43,10 +43,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Import routes
-const tenantRoutes = require('./routes/tenants');
+import tenantRoutes from './routes/tenants.js';
 
 // Import super admin routes
-const superAdminRoutes = require('../routes.js');
+import superAdminRoutes from '../routes.js';
 
 // Routes
 app.use('/api/auth', authRoutes);
