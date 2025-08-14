@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   configuration: null,
@@ -11,12 +11,12 @@ const initialState = {
   updateSuccess: false,
   lastFetch: null,
   selectedConfig: null, // Added for new details fetching
-  updateError: null,    // Added for update errors
-  backupError: null     // Added for backup errors
+  updateError: null, // Added for update errors
+  backupError: null, // Added for backup errors
 };
 
 const systemConfigSlice = createSlice({
-  name: 'systemConfig',
+  name: "systemConfig",
   initialState,
   reducers: {
     // Fetch Configuration
@@ -33,7 +33,8 @@ const systemConfigSlice = createSlice({
     },
     fetchSystemConfigFailure: (state, action) => {
       state.isLoading = false;
-      state.error = action.payload.message || 'Failed to fetch system configuration';
+      state.error =
+        action.payload.message || "Failed to fetch system configuration";
     },
 
     // Update Configuration
@@ -55,7 +56,8 @@ const systemConfigSlice = createSlice({
     },
     updateSystemConfigFailure: (state, action) => {
       state.isUpdating = false;
-      state.error = action.payload.message || 'Failed to update system configuration';
+      state.error =
+        action.payload.message || "Failed to update system configuration";
       state.updateSuccess = false;
     },
 
@@ -71,7 +73,7 @@ const systemConfigSlice = createSlice({
     },
     fetchAuditLogsFailure: (state, action) => {
       state.isLoading = false;
-      state.error = action.payload.message || 'Failed to fetch audit logs';
+      state.error = action.payload.message || "Failed to fetch audit logs";
     },
 
     // Fetch Tenant Configuration
@@ -87,7 +89,8 @@ const systemConfigSlice = createSlice({
     },
     fetchTenantConfigFailure: (state, action) => {
       state.isLoading = false;
-      state.error = action.payload.message || 'Failed to fetch tenant configuration';
+      state.error =
+        action.payload.message || "Failed to fetch tenant configuration";
     },
 
     // Update Tenant Configuration
@@ -109,7 +112,8 @@ const systemConfigSlice = createSlice({
     },
     updateTenantConfigFailure: (state, action) => {
       state.isUpdating = false;
-      state.error = action.payload.message || 'Failed to update tenant configuration';
+      state.error =
+        action.payload.message || "Failed to update tenant configuration";
       state.updateSuccess = false;
     },
 
@@ -150,7 +154,7 @@ const systemConfigSlice = createSlice({
       state.isUpdating = false;
       state.updateSuccess = true;
       state.error = null;
-      
+
       // Add the new config to the configuration object
       if (state.configuration) {
         state.configuration = { ...state.configuration, ...action.payload };
@@ -167,14 +171,16 @@ const systemConfigSlice = createSlice({
     // Clear configuration errors
     clearConfigurationErrors: (state) => {
       state.error = null;
+      state.backupError = null;
+      state.updateSuccess = false;
       state.updateSuccess = false;
     },
 
     // Reset state
     resetConfigurationState: (state) => {
       return { ...initialState };
-    }
-  }
+    },
+  },
 });
 
 export const {
@@ -190,7 +196,14 @@ export const {
   createSystemConfigRequest,
   createSystemConfigSuccess,
   createSystemConfigFailure,
+  createBackupRequest,
+  createBackupSuccess,
+  createBackupFailure,
+  setSelectedConfig,
+  updateLocalConfig,
+  resetLocalConfig,
   clearErrors,
+  clearConfigurationErrors,
   setAvailableTenants,
   fetchAuditLogsRequest,
   fetchAuditLogsSuccess,
@@ -201,8 +214,7 @@ export const {
   updateTenantConfigRequest,
   updateTenantConfigSuccess,
   updateTenantConfigFailure,
-  clearConfigurationErrors,
-  resetConfigurationState
+  resetConfigurationState,
 } = systemConfigSlice.actions;
 
 export default systemConfigSlice.reducer;

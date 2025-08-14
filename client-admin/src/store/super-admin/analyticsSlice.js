@@ -47,6 +47,51 @@ const analyticsSlice = createSlice({
   name: 'analytics',
   initialState,
   reducers: {
+    // Basic analytics actions
+    fetchAnalyticsRequest: (state) => {
+      state.isLoadingMetrics = true;
+      state.metricsError = null;
+    },
+    fetchAnalyticsSuccess: (state, action) => {
+      state.isLoadingMetrics = false;
+      state.dashboardMetrics = action.payload;
+      state.metricsError = null;
+    },
+    fetchAnalyticsFailure: (state, action) => {
+      state.isLoadingMetrics = false;
+      state.metricsError = action.payload;
+    },
+
+    // Dashboard stats actions
+    fetchDashboardStatsRequest: (state) => {
+      state.isLoadingMetrics = true;
+      state.metricsError = null;
+    },
+    fetchDashboardStatsSuccess: (state, action) => {
+      state.isLoadingMetrics = false;
+      state.dashboardMetrics = action.payload;
+      state.metricsError = null;
+    },
+    fetchDashboardStatsFailure: (state, action) => {
+      state.isLoadingMetrics = false;
+      state.metricsError = action.payload;
+    },
+
+    // Tenant analytics actions
+    fetchTenantAnalyticsRequest: (state) => {
+      state.isLoadingDetailed = true;
+      state.detailedError = null;
+    },
+    fetchTenantAnalyticsSuccess: (state, action) => {
+      state.isLoadingDetailed = false;
+      state.detailedAnalytics = action.payload;
+      state.detailedError = null;
+    },
+    fetchTenantAnalyticsFailure: (state, action) => {
+      state.isLoadingDetailed = false;
+      state.detailedError = action.payload;
+    },
+
     // Dashboard metrics actions
     fetchDashboardMetricsRequest: (state) => {
       state.isLoadingMetrics = true;
@@ -173,6 +218,15 @@ const analyticsSlice = createSlice({
 });
 
 export const {
+  fetchAnalyticsRequest,
+  fetchAnalyticsSuccess,
+  fetchAnalyticsFailure,
+  fetchDashboardStatsRequest,
+  fetchDashboardStatsSuccess,
+  fetchDashboardStatsFailure,
+  fetchTenantAnalyticsRequest,
+  fetchTenantAnalyticsSuccess,
+  fetchTenantAnalyticsFailure,
   fetchDashboardMetricsRequest,
   fetchDashboardMetricsSuccess,
   fetchDashboardMetricsFailure,
