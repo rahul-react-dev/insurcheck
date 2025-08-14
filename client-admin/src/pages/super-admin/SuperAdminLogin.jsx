@@ -34,6 +34,11 @@ const SuperAdminLogin = () => {
     dispatch(clearErrors());
     dispatch(resetLoadingState());
 
+    // Clear any potentially invalid cached tokens
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+
     // Dispatch hydrateAuth to check for existing authentication
     dispatch(hydrateAuth());
   }, [dispatch]); // Only dispatch dependency to avoid infinite loop

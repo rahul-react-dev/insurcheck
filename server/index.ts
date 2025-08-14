@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { db } from './db';
 import routes from './routes.js';
+import authRoutes from './src/routes/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +32,9 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0'
   });
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // API routes
 app.use('/api', routes);

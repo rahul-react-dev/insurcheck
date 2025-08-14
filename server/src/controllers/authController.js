@@ -198,17 +198,15 @@ export const superAdminLogin = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Super Admin login successful',
-      data: {
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          tenantId: user.tenantId,
-          isActive: user.isActive
-        },
-        token
-      }
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+        isActive: user.isActive
+      },
+      token
     });
 
   } catch (error) {
