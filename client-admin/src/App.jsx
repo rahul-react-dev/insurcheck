@@ -62,8 +62,8 @@ const NotificationContainer = () => {
         <div
           key={notification.id}
           className={`max-w-md p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
-            notification.type === 'success' 
-              ? 'bg-green-500 text-white' 
+            notification.type === 'success'
+              ? 'bg-green-500 text-white'
               : notification.type === 'error'
               ? 'bg-red-500 text-white'
               : notification.type === 'warning'
@@ -74,8 +74,8 @@ const NotificationContainer = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <i className={`fas ${
-                notification.type === 'success' 
-                  ? 'fa-check-circle' 
+                notification.type === 'success'
+                  ? 'fa-check-circle'
                   : notification.type === 'error'
                   ? 'fa-exclamation-circle'
                   : notification.type === 'warning'
@@ -99,6 +99,17 @@ const NotificationContainer = () => {
 
 
 function App() {
+  const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Hydrate auth state from localStorage on app startup
+  useEffect(() => {
+    console.log('🔄 Hydrating authentication state...');
+    dispatch(hydrateAuth());
+    setIsLoading(false);
+  }, [dispatch]);
+
+
   // Debug store configuration
   React.useEffect(() => {
     const state = store.getState();
@@ -106,6 +117,10 @@ function App() {
     console.log("💳 App: Payment state exists:", !!state.payment);
     console.log("🔍 App: Initial payment state:", state.payment);
   }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a proper loading spinner
+  }
 
   return (
     <PersistGate loading={null} persistor={persistor}>

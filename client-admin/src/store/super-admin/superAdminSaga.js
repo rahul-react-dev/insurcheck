@@ -30,14 +30,22 @@ function* loginSaga(action) {
     const response = yield call(superAdminAPI.login, action.payload);
 
     if (response?.data) {
-      yield put(loginSuccess(response.data));
+      // Store user data and token
+      const userData = {
+        user: response.data.user,
+        token: response.data.token
+      };
 
-      // Store token in localStorage
+      yield put(loginSuccess(userData));
+
+      // Store token and user data in localStorage
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('isAuthenticated', 'true');
       }
 
-      // Navigation will be handled by the component's useEffect
+      console.log('✅ Login successful, user data stored');
     } else {
       yield put(loginFailure('Invalid response from server'));
     }

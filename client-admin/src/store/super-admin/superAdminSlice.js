@@ -81,6 +81,35 @@ const superAdminSlice = createSlice({
       state.metricsError = null;
       state.logsError = null;
       state.exportError = null;
+      state.error = null;
+      state.isLoading = false;
+      
+      // Clear localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
+    },
+
+    // Hydrate from localStorage
+    hydrateAuth: (state) => {
+      try {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+
+        if (token && user && isAuthenticated === 'true') {
+          state.token = token;
+          state.user = JSON.parse(user);
+          state.isAuthenticated = true;
+          state.error = null;
+        }
+      } catch (error) {
+        console.error('Error hydrating auth state:', error);
+        // Clear invalid data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+      }
     },
 
     // Dashboard actions
@@ -204,6 +233,7 @@ export const {
   loginSuccess,
   loginFailure,
   logout,
+  hydrateAuth,
 
   // System metrics actions
   fetchSystemMetricsRequest,

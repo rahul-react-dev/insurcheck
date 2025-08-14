@@ -4,7 +4,7 @@ const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
+
   if (import.meta.env.DEV) {
     const hostname = window.location.hostname;
     if (hostname.includes('replit.dev')) {
@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
     }
     return 'http://localhost:5000/api';
   }
-  
+
   return `${window.location.protocol}//${window.location.hostname}:5000/api`;
 };
 
@@ -45,7 +45,17 @@ api.interceptors.request.use(
 // Response interceptor for handling responses and errors
 api.interceptors.response.use(
   (response) => {
-    return response.data;
+    // If the response data contains user info and token, update local storage
+    if (response.data && response.data.user && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('isAuthenticated', 'true'); // Mark as authenticated
+    }
+    // If the response data contains just the token (e.g., refresh token), update it
+    else if (response.data && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data; // Return only the data part
   },
   (error) => {
     console.error('API Error:', error);
@@ -70,6 +80,7 @@ api.interceptors.response.use(
           // Unauthorized - clear local storage and redirect to login
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated'); // Remove authentication status
 
           // Only redirect if not already on login page
           const currentPath = window.location.pathname;
@@ -77,7 +88,7 @@ api.interceptors.response.use(
             if (currentPath.includes('/admin/')) {
               window.location.href = '/admin/login';
             } else {
-              window.location.href = '/super-admin/login';
+              window.location.href = '/super-admin/login'; // Redirect to super-admin login
             }
           }
           break;

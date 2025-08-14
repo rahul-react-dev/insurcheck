@@ -79,18 +79,27 @@ export const login = async (req, res) => {
 
     console.log(`Login successful for user: ${email}`);
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        tenantId: user.tenantId
-      }
-    });
+    // Update last login
+      await db.update(users)
+        .set({ 
+          last_login_at: new Date(),
+          failed_login_attempts: 0,
+          account_locked_until: null 
+        })
+        .where(eq(users.id, user.id));
+
+      res.status(200).json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          username: user.username,
+          tenantId: user.tenantId,
+          isActive: user.isActive,
+          lastLoginAt: new Date().toISOString()
+        }
+      });
 
   } catch (error) {
     console.error('Login error details:', error);
