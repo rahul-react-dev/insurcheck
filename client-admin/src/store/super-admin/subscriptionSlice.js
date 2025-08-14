@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   plans: [],
+  subscriptions: [],
   tenants: [],
   isLoading: false,
   isLoadingPlans: false,
@@ -139,6 +140,139 @@ const subscriptionSlice = createSlice({
       state.editingPlan = null;
     },
 
+    // Fetch subscriptions
+    fetchSubscriptionsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchSubscriptionsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.subscriptions = action.payload.subscriptions || [];
+      if (action.payload.pagination) {
+        state.pagination = { ...state.pagination, ...action.payload.pagination };
+      }
+      state.error = null;
+    },
+    fetchSubscriptionsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Create subscription
+    createSubscriptionRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    createSubscriptionSuccess: (state, action) => {
+      state.isLoading = false;
+      state.subscriptions = state.subscriptions || [];
+      state.subscriptions.push(action.payload);
+      state.error = null;
+    },
+    createSubscriptionFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Update subscription
+    updateSubscriptionRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    updateSubscriptionSuccess: (state, action) => {
+      state.isLoading = false;
+      const index = state.subscriptions?.findIndex(sub => sub.id === action.payload.id);
+      if (index !== -1) {
+        state.subscriptions[index] = action.payload;
+      }
+      state.error = null;
+    },
+    updateSubscriptionFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Cancel subscription
+    cancelSubscriptionRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    cancelSubscriptionSuccess: (state, action) => {
+      state.isLoading = false;
+      const index = state.subscriptions?.findIndex(sub => sub.id === action.payload.id);
+      if (index !== -1) {
+        state.subscriptions[index] = { ...state.subscriptions[index], status: 'cancelled' };
+      }
+      state.error = null;
+    },
+    cancelSubscriptionFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Fetch subscription plans
+    fetchSubscriptionPlansRequest: (state) => {
+      state.isLoadingPlans = true;
+      state.planError = null;
+    },
+    fetchSubscriptionPlansSuccess: (state, action) => {
+      state.isLoadingPlans = false;
+      state.plans = action.payload;
+      state.planError = null;
+    },
+    fetchSubscriptionPlansFailure: (state, action) => {
+      state.isLoadingPlans = false;
+      state.planError = action.payload;
+    },
+
+    // Create subscription plan
+    createSubscriptionPlanRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    createSubscriptionPlanSuccess: (state, action) => {
+      state.isLoading = false;
+      state.plans.push(action.payload);
+      state.error = null;
+    },
+    createSubscriptionPlanFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Update subscription plan
+    updateSubscriptionPlanRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    updateSubscriptionPlanSuccess: (state, action) => {
+      state.isLoading = false;
+      const index = state.plans.findIndex(plan => plan.id === action.payload.id);
+      if (index !== -1) {
+        state.plans[index] = action.payload;
+      }
+      state.error = null;
+    },
+    updateSubscriptionPlanFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Delete subscription plan
+    deleteSubscriptionPlanRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    deleteSubscriptionPlanSuccess: (state, action) => {
+      state.isLoading = false;
+      state.plans = state.plans.filter(plan => plan.id !== action.payload);
+      state.error = null;
+    },
+    deleteSubscriptionPlanFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
     // Clear errors
     clearError: (state) => {
       state.error = null;
@@ -172,6 +306,30 @@ export const {
   assignPlanToTenantRequest,
   assignPlanToTenantSuccess,
   assignPlanToTenantFailure,
+  fetchSubscriptionsRequest,
+  fetchSubscriptionsSuccess,
+  fetchSubscriptionsFailure,
+  createSubscriptionRequest,
+  createSubscriptionSuccess,
+  createSubscriptionFailure,
+  updateSubscriptionRequest,
+  updateSubscriptionSuccess,
+  updateSubscriptionFailure,
+  cancelSubscriptionRequest,
+  cancelSubscriptionSuccess,
+  cancelSubscriptionFailure,
+  fetchSubscriptionPlansRequest,
+  fetchSubscriptionPlansSuccess,
+  fetchSubscriptionPlansFailure,
+  createSubscriptionPlanRequest,
+  createSubscriptionPlanSuccess,
+  createSubscriptionPlanFailure,
+  updateSubscriptionPlanRequest,
+  updateSubscriptionPlanSuccess,
+  updateSubscriptionPlanFailure,
+  deleteSubscriptionPlanRequest,
+  deleteSubscriptionPlanSuccess,
+  deleteSubscriptionPlanFailure,
   showCreatePlanModal,
   showEditPlanModal,
   hidePlanModal,
