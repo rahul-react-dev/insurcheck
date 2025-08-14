@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -109,6 +108,21 @@ const analyticsSlice = createSlice({
       state.detailedError = action.payload;
     },
 
+    // Fetch analytics details
+    fetchAnalyticsDetailsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchAnalyticsDetailsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.selectedAnalytic = action.payload;
+      state.error = null;
+    },
+    fetchAnalyticsDetailsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
     // Filter actions
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
@@ -143,7 +157,7 @@ const analyticsSlice = createSlice({
       state.exportSuccess = false;
     },
 
-    // Clear actions
+    // Clear errors
     clearErrors: (state) => {
       state.metricsError = null;
       state.chartsError = null;
@@ -171,6 +185,9 @@ export const {
   fetchDetailedAnalyticsRequest,
   fetchDetailedAnalyticsSuccess,
   fetchDetailedAnalyticsFailure,
+  fetchAnalyticsDetailsRequest,
+  fetchAnalyticsDetailsSuccess,
+  fetchAnalyticsDetailsFailure,
   setFilters,
   clearFilters,
   setPage,

@@ -125,6 +125,21 @@ const activityLogSlice = createSlice({
       state.isDetailModalOpen = false;
     },
     
+    // Fetch activity log details
+    fetchActivityLogDetailsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchActivityLogDetailsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.selectedLog = action.payload;
+      state.error = null;
+    },
+    fetchActivityLogDetailsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
     // Export logs
     exportActivityLogsRequest: (state) => {
       state.isExporting = true;
@@ -150,6 +165,9 @@ export const {
   fetchActivityLogsRequest,
   fetchActivityLogsSuccess,
   fetchActivityLogsFailure,
+  fetchActivityLogDetailsRequest,
+  fetchActivityLogDetailsSuccess,
+  fetchActivityLogDetailsFailure,
   setFilters,
   clearFilters,
   setSorting,

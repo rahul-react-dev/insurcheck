@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -10,7 +9,10 @@ const initialState = {
   isUpdating: false,
   error: null,
   updateSuccess: false,
-  lastFetch: null
+  lastFetch: null,
+  selectedConfig: null, // Added for new details fetching
+  updateError: null,    // Added for update errors
+  backupError: null     // Added for backup errors
 };
 
 const systemConfigSlice = createSlice({
@@ -45,7 +47,7 @@ const systemConfigSlice = createSlice({
       state.configuration = action.payload.configuration;
       state.updateSuccess = true;
       state.error = null;
-      
+
       // Add new audit log entry
       if (action.payload.auditLog) {
         state.auditLogs.unshift(action.payload.auditLog);
@@ -100,7 +102,7 @@ const systemConfigSlice = createSlice({
       state.tenantConfigurations[tenantId] = configuration;
       state.updateSuccess = true;
       state.error = null;
-      
+
       if (auditLog) {
         state.auditLogs.unshift(auditLog);
       }
@@ -116,7 +118,29 @@ const systemConfigSlice = createSlice({
       state.availableTenants = action.payload;
     },
 
-    // Clear errors and success states
+    // Fetch system config details
+    fetchSystemConfigDetailsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchSystemConfigDetailsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.selectedConfig = action.payload;
+      state.error = null;
+    },
+    fetchSystemConfigDetailsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Clear errors
+    clearErrors: (state) => {
+      state.error = null;
+      state.updateError = null;
+      state.backupError = null;
+    },
+
+    // Clear configuration errors
     clearConfigurationErrors: (state) => {
       state.error = null;
       state.updateSuccess = false;
@@ -133,19 +157,29 @@ export const {
   fetchSystemConfigRequest,
   fetchSystemConfigSuccess,
   fetchSystemConfigFailure,
+  fetchSystemConfigDetailsRequest,
+  fetchSystemConfigDetailsSuccess,
+  fetchSystemConfigDetailsFailure,
   updateSystemConfigRequest,
   updateSystemConfigSuccess,
   updateSystemConfigFailure,
+  createBackupRequest,
+  createBackupSuccess,
+  createBackupFailure,
+  setSelectedConfig,
+  updateLocalConfig,
+  resetLocalConfig,
+  clearErrors,
+  setAvailableTenants,
+  fetchAuditLogsRequest,
+  fetchAuditLogsSuccess,
+  fetchAuditLogsFailure,
   fetchTenantConfigRequest,
   fetchTenantConfigSuccess,
   fetchTenantConfigFailure,
   updateTenantConfigRequest,
   updateTenantConfigSuccess,
   updateTenantConfigFailure,
-  setAvailableTenants,
-  fetchAuditLogsRequest,
-  fetchAuditLogsSuccess,
-  fetchAuditLogsFailure,
   clearConfigurationErrors,
   resetConfigurationState
 } = systemConfigSlice.actions;

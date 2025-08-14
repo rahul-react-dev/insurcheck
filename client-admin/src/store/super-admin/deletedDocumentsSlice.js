@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -40,7 +39,7 @@ const deletedDocumentsSlice = createSlice({
       state.loading = false;
       state.deletedDocuments = action.payload.documents;
       state.totalCount = action.payload.totalCount;
-      
+
       // Update pagination metadata if provided
       if (action.payload.pagination) {
         state.pagination = {
@@ -52,12 +51,12 @@ const deletedDocumentsSlice = createSlice({
           hasPreviousPage: action.payload.pagination.hasPreviousPage
         };
       }
-      
+
       // Update applied filters if provided
       if (action.payload.appliedFilters) {
         state.appliedFilters = action.payload.appliedFilters;
       }
-      
+
       state.error = null;
     },
     fetchDeletedDocumentsFailure: (state, action) => {
@@ -101,6 +100,28 @@ const deletedDocumentsSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Fetch deleted document details
+    fetchDeletedDocumentDetailsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchDeletedDocumentDetailsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.selectedDocument = action.payload;
+      state.error = null;
+    },
+    fetchDeletedDocumentDetailsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Clear errors
+    clearErrors: (state) => {
+      state.error = null;
+      state.restoreError = null;
+      state.permanentDeleteError = null;
+    },
+
     // Filters
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
@@ -133,17 +154,21 @@ export const {
   fetchDeletedDocumentsStart,
   fetchDeletedDocumentsSuccess,
   fetchDeletedDocumentsFailure,
-  exportDeletedDocumentsStart,
-  exportDeletedDocumentsSuccess,
-  exportDeletedDocumentsFailure,
-  documentActionStart,
-  documentActionSuccess,
-  documentActionFailure,
+  fetchDeletedDocumentDetailsRequest,
+  fetchDeletedDocumentDetailsSuccess,
+  fetchDeletedDocumentDetailsFailure,
+  restoreDocumentRequest,
+  restoreDocumentSuccess,
+  restoreDocumentFailure,
+  permanentlyDeleteDocumentRequest,
+  permanentlyDeleteDocumentSuccess,
+  permanentlyDeleteDocumentFailure,
   setFilters,
   clearFilters,
   setPagination,
-  clearError,
-  setDocumentViewError
+  setSelectedDocument,
+  closeDocumentModal,
+  clearErrors
 } = deletedDocumentsSlice.actions;
 
 // Action creators for saga

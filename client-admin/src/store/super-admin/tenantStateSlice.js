@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -27,7 +26,9 @@ const initialState = {
     limit: 5,
     total: 0,
     totalPages: 0
-  }
+  },
+  selectedTenantState: null, // Added for selected tenant state
+  updateError: null // Added for update errors
 };
 
 const tenantStateSlice = createSlice({
@@ -38,15 +39,15 @@ const tenantStateSlice = createSlice({
     fetchTenantStatesRequest: (state, action) => {
       state.isLoading = true;
       state.error = null;
-      
+
       // Update filters and pagination if provided
       if (action.payload) {
         const { page, limit, ...filters } = action.payload;
-        
+
         if (filters && Object.keys(filters).length > 0) {
           state.filters = { ...state.filters, ...filters };
         }
-        
+
         if (page !== undefined || limit !== undefined) {
           state.pagination = {
             ...state.pagination,
@@ -60,11 +61,11 @@ const tenantStateSlice = createSlice({
       state.isLoading = false;
       state.tenantStates = action.payload.tenantStates || [];
       state.summary = action.payload.summary || state.summary;
-      
+
       if (action.payload.pagination) {
         state.pagination = { ...state.pagination, ...action.payload.pagination };
       }
-      
+
       state.error = null;
     },
     fetchTenantStatesFailure: (state, action) => {
@@ -72,10 +73,25 @@ const tenantStateSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Fetch tenant state details
+    fetchTenantStateDetailsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchTenantStateDetailsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.selectedTenantState = action.payload;
+      state.error = null;
+    },
+    fetchTenantStateDetailsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
     // Update tenant state
     updateTenantStateRequest: (state, action) => {
       state.isLoading = true;
-      state.error = null;
+      state.updateError = null; // Clear previous update error
     },
     updateTenantStateSuccess: (state, action) => {
       state.isLoading = false;
@@ -88,17 +104,17 @@ const tenantStateSlice = createSlice({
       if (action.payload.summary) {
         state.summary = { ...state.summary, ...action.payload.summary };
       }
-      state.error = null;
+      state.updateError = null;
     },
     updateTenantStateFailure: (state, action) => {
       state.isLoading = false;
-      state.error = action.payload;
+      state.updateError = action.payload; // Set update error
     },
 
     // Update trial status
     updateTrialStatusRequest: (state, action) => {
       state.isLoading = true;
-      state.error = null;
+      state.updateError = null; // Clear previous update error
     },
     updateTrialStatusSuccess: (state, action) => {
       state.isLoading = false;
@@ -111,17 +127,17 @@ const tenantStateSlice = createSlice({
       if (action.payload.summary) {
         state.summary = { ...state.summary, ...action.payload.summary };
       }
-      state.error = null;
+      state.updateError = null;
     },
     updateTrialStatusFailure: (state, action) => {
       state.isLoading = false;
-      state.error = action.payload;
+      state.updateError = action.payload; // Set update error
     },
 
     // Cancel subscription
     cancelSubscriptionRequest: (state, action) => {
       state.isLoading = true;
-      state.error = null;
+      state.updateError = null; // Clear previous update error
     },
     cancelSubscriptionSuccess: (state, action) => {
       state.isLoading = false;
@@ -134,11 +150,11 @@ const tenantStateSlice = createSlice({
       if (action.payload.summary) {
         state.summary = { ...state.summary, ...action.payload.summary };
       }
-      state.error = null;
+      state.updateError = null;
     },
     cancelSubscriptionFailure: (state, action) => {
       state.isLoading = false;
-      state.error = action.payload;
+      state.updateError = action.payload; // Set update error
     },
 
     // Update filters
@@ -160,14 +176,10 @@ const tenantStateSlice = createSlice({
       };
     },
 
-    // Clear error
-    clearError: (state) => {
+    // Clear errors
+    clearErrors: (state) => {
       state.error = null;
-    },
-
-    // Clear data
-    clearTenantStateData: (state) => {
-      return initialState;
+      state.updateError = null;
     }
   }
 });
@@ -176,6 +188,9 @@ export const {
   fetchTenantStatesRequest,
   fetchTenantStatesSuccess,
   fetchTenantStatesFailure,
+  fetchTenantStateDetailsRequest,
+  fetchTenantStateDetailsSuccess,
+  fetchTenantStateDetailsFailure,
   updateTenantStateRequest,
   updateTenantStateSuccess,
   updateTenantStateFailure,
@@ -187,8 +202,7 @@ export const {
   cancelSubscriptionFailure,
   updateFilters,
   clearFilters,
-  clearError,
-  clearTenantStateData
+  clearErrors
 } = tenantStateSlice.actions;
 
 export default tenantStateSlice.reducer;
