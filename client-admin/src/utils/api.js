@@ -1,10 +1,24 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (
-  import.meta.env.DEV 
-    ? `${window.location.protocol}//${window.location.hostname.includes('replit.dev') ? window.location.hostname.replace('-3000', '-5000') : 'localhost:5000'}/api`
-    : `${window.location.protocol}//${window.location.hostname}:5000/api`
-);
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  if (import.meta.env.DEV) {
+    const hostname = window.location.hostname;
+    if (hostname.includes('replit.dev')) {
+      // Replace the port in the Replit URL
+      const serverUrl = hostname.replace('-3000-', '-5000-');
+      return `${window.location.protocol}//${serverUrl}/api`;
+    }
+    return 'http://localhost:5000/api';
+  }
+  
+  return `${window.location.protocol}//${window.location.hostname}:5000/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
@@ -35,6 +49,17 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error);
+
+    // Handle network/connection errors first
+    if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      const networkError = {
+        status: 0,
+        message: 'Unable to connect to server. Please check if the server is running.',
+        errors: [],
+        timestamp: new Date().toISOString()
+      };
+      return Promise.reject(networkError);
+    }
 
     // Handle different types of errors
     if (error.response) {

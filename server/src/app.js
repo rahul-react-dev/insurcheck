@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
@@ -14,8 +15,13 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy for Replit environment
+app.set('trust proxy', true);
+
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+}));
 
 // Rate limiting
 const limiter = rateLimit({

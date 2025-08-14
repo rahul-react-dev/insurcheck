@@ -24,17 +24,13 @@ const SuperAdminLogin = () => {
   useEffect(() => {
     // Clear any existing errors and reset loading state when component mounts
     dispatch(clearErrors());
-
-    // Reset any persisting loading state
-    if (isLoading) {
-      dispatch(resetLoadingState());
-    }
+    dispatch(resetLoadingState());
 
     // Redirect if already authenticated
     if (isAuthenticated && user?.role === 'super-admin') {
       navigate('/super-admin/dashboard', { replace: true });
     }
-  }, [dispatch, isAuthenticated, user, navigate, isLoading]);
+  }, [dispatch, isAuthenticated, user, navigate]);
 
   // Additional useEffect to handle navigation after login success
   useEffect(() => {
@@ -194,12 +190,12 @@ const SuperAdminLogin = () => {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
-              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || isLocked}
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin"></i>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   <span>Signing In...</span>
                 </>
               ) : (

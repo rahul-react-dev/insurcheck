@@ -5,12 +5,22 @@ export const corsOptions = {
     // Allow requests with no origin (mobile apps, curl requests, etc.)
     if (!origin) return callback(null, true);
     
-    if (config.clientUrls.includes(origin)) {
+    // Allow Replit dev origins
+    if (origin && origin.includes('.replit.dev')) {
+      return callback(null, true);
+    }
+    
+    if (config.clientUrls && config.clientUrls.includes(origin)) {
       return callback(null, true);
     }
     
     // Allow any localhost origin in development
-    if (config.nodeEnv === 'development' && origin.includes('localhost')) {
+    if (config.nodeEnv === 'development' && origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
+    }
+    
+    // For development, be more permissive
+    if (config.nodeEnv === 'development') {
       return callback(null, true);
     }
     

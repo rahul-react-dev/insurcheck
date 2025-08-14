@@ -164,14 +164,16 @@ const superAdminSlice = createSlice({
     },
 
     clearErrors: (state) => {
+      state.error = null;
       state.metricsError = null;
       state.logsError = null;
       state.exportError = null;
-      state.authError = null;
     },
-
     resetLoadingState: (state) => {
       state.isLoading = false;
+      state.isLoadingMetrics = false;
+      state.isLoadingLogs = false;
+      state.isExporting = false;
     },
 
     // Additional dashboard actions
@@ -225,9 +227,7 @@ export const {
 
   // Clear errors
   clearErrors,
-  
-  // Reset loading state
-  resetLoadingState
+  resetLoadingState,
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;
