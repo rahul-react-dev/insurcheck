@@ -1,6 +1,5 @@
-
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, pgEnum, boolean, decimal, jsonb, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, pgEnum, boolean, decimal, jsonb, uuid, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -70,19 +69,21 @@ export const subscriptions = pgTable("subscriptions", {
 });
 
 // Enhanced users table with multi-tenant support
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  role: roleEnum("role").notNull().default('user'),
-  tenantId: integer("tenant_id").references(() => tenants.id),
-  isActive: boolean("is_active").default(true),
-  lastLoginAt: timestamp("last_login_at"),
-  failedLoginAttempts: integer("failed_login_attempts").default(0),
-  accountLockedUntil: timestamp("account_locked_until"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: varchar('username', { length: 255 }),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  password: varchar('password', { length: 255 }).notNull(),
+  role: varchar('role', { length: 50 }).notNull().default('user'),
+  tenantId: integer('tenant_id').references(() => tenants.id),
+  isActive: boolean('is_active').default(true),
+  lastLoginAt: timestamp('last_login_at'),
+  failedLoginAttempts: integer('failed_login_attempts').default(0),
+  accountLockedUntil: timestamp('account_locked_until'),
+  passwordResetToken: varchar('password_reset_token', { length: 255 }),
+  passwordResetExpires: timestamp('password_reset_expires'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
 });
 
 // Documents table

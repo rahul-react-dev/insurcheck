@@ -19,6 +19,8 @@ export const login = async (req, res) => {
 
     const { email, password, role } = req.body;
 
+    console.log(`Login attempt - Email: ${email}, Role: ${role}`);
+
     // Find user by email
     const userResult = await db.select()
       .from(users)
@@ -26,6 +28,7 @@ export const login = async (req, res) => {
       .limit(1);
 
     if (userResult.length === 0) {
+      console.log(`User not found: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -33,10 +36,20 @@ export const login = async (req, res) => {
     }
 
     const user = userResult[0];
+    console.log(`Found user - ID: ${user.id}, Role: ${user.role}, Active: ${user.isActive}`);
+
+    // Check if user is active
+    if (user.isActive === false) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated'
+      });
+    }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log(`Invalid password for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -44,8 +57,8 @@ export const login = async (req, res) => {
     }
 
     // Check role matches
-    console.log(`Login attempt - User role: ${user.role}, Requested role: ${role}`);
     if (user.role !== role) {
+      console.log(`Role mismatch - User role: ${user.role}, Requested role: ${role}`);
       return res.status(401).json({
         success: false,
         message: `Invalid role for this user. User has role '${user.role}' but requested '${role}'`
@@ -64,6 +77,8 @@ export const login = async (req, res) => {
       { expiresIn: config.jwtExpiresIn }
     );
 
+    console.log(`Login successful for user: ${email}`);
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -78,7 +93,7 @@ export const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error details:', error);
     res.status(500).json({
       success: false,
       message: 'Server error during login'
