@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -20,7 +20,7 @@ import ForgotPassword from "./pages/super-admin/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
 import store from "./store";
-import TenantManagement from "./pages/super-admin/TenantManagement"; // Import the new TenantManagement component
+import TenantManagement from './pages/super-admin/TenantManagement'; // Import the new TenantManagement component
 import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsManagement';
 import SystemConfiguration from './pages/super-admin/SystemConfiguration';
 // Import the new AnalyticsDashboard component
@@ -28,6 +28,75 @@ import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+
+// Notification Component
+const NotificationContainer = () => {
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    // Global notification function
+    window.showNotification = (message, type = 'info', duration = 5000) => {
+      const id = Date.now() + Math.random();
+      const notification = { id, message, type, duration };
+
+      setNotifications(prev => [...prev, notification]);
+
+      // Auto remove notification
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+      }, duration);
+    };
+
+    return () => {
+      delete window.showNotification;
+    };
+  }, []);
+
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  return (
+    <div className="fixed top-4 right-4 z-50 space-y-2">
+      {notifications.map(notification => (
+        <div
+          key={notification.id}
+          className={`max-w-md p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+            notification.type === 'success' 
+              ? 'bg-green-500 text-white' 
+              : notification.type === 'error'
+              ? 'bg-red-500 text-white'
+              : notification.type === 'warning'
+              ? 'bg-yellow-500 text-white'
+              : 'bg-blue-500 text-white'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <i className={`fas ${
+                notification.type === 'success' 
+                  ? 'fa-check-circle' 
+                  : notification.type === 'error'
+                  ? 'fa-exclamation-circle'
+                  : notification.type === 'warning'
+                  ? 'fa-exclamation-triangle'
+                  : 'fa-info-circle'
+              }`}></i>
+              <span className="text-sm font-medium">{notification.message}</span>
+            </div>
+            <button
+              onClick={() => removeNotification(notification.id)}
+              className="ml-4 text-white hover:text-gray-200 focus:outline-none"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 
 function App() {
   // Debug store configuration
@@ -42,6 +111,7 @@ function App() {
     <PersistGate loading={null} persistor={persistor}>
       <Router>
         <div className="App">
+          <NotificationContainer />
           <Routes>
             {/* Regular Admin/Tenant routes */}
             <Route path="/login" element={<Login />} />

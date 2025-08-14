@@ -1,5 +1,5 @@
 import { call, put, takeLatest, takeEvery, all } from 'redux-saga/effects';
-import api from '../../utils/api';
+import { superAdminAPI } from '../../utils/api';
 import {
   loginRequest,
   loginSuccess,
@@ -15,72 +15,12 @@ import {
   exportErrorLogsFailure
 } from './superAdminSlice';
 
-// API calls
-const loginApi = (credentials) => {
-  return api.post('/auth/login', {
-    ...credentials,
-    role: 'super-admin'
-  });
-};
-
-const fetchSystemMetricsApi = () => {
-  // Mock API call - replace with real endpoint when backend is ready
-  return Promise.resolve({
-    data: [
-      {
-        id: 1,
-        icon: '⏱️',
-        value: '99.9%',
-        label: 'System Uptime',
-        trend: 'up',
-        trendValue: '+0.1%',
-        color: 'green'
-      },
-      {
-        id: 2,
-        icon: '🏢',
-        value: '15',
-        label: 'Active Tenants',
-        trend: 'up',
-        trendValue: '+2',
-        color: 'blue'
-      },
-      {
-        id: 3,
-        icon: '👥',
-        value: '247',
-        label: 'Active Users',
-        trend: 'up',
-        trendValue: '+12',
-        color: 'purple'
-      },
-      {
-        id: 4,
-        icon: '📄',
-        value: '1,854',
-        label: 'Document Uploads',
-        trend: 'up',
-        trendValue: '+156',
-        color: 'orange'
-      }
-    ]
-  });
-};
-
-const fetchErrorLogsApi = (filters) => {
-  return api.get('/activity-logs', { 
-    params: { 
-      ...filters, 
-      level: 'error',
-      limit: 10
-    } 
-  });
-};
+// API calls (removed as they are now part of superAdminAPI)
 
 // Saga workers
 function* loginSaga(action) {
   try {
-    const response = yield call(loginApi, action.payload);
+    const response = yield call(superAdminAPI.login, action.payload);
 
     if (response?.data) {
       yield put(loginSuccess(response.data));
@@ -117,10 +57,12 @@ function* loginSaga(action) {
 
 function* fetchSystemMetricsSaga() {
   try {
-    const response = yield call(fetchSystemMetricsApi);
-    yield put(fetchSystemMetricsSuccess(response.data));
+    const response = yield call(superAdminAPI.getSystemMetrics);
+    const metrics = response.data || response; // Assuming API returns data in .data or directly
+    yield put(fetchSystemMetricsSuccess(metrics));
   } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Failed to fetch system metrics';
+    console.error('❌ Error in fetchSystemMetricsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch system metrics';
     yield put(fetchSystemMetricsFailure(errorMessage));
   }
 }
@@ -128,63 +70,39 @@ function* fetchSystemMetricsSaga() {
 function* fetchErrorLogsSaga(action) {
   try {
     const filters = action.payload || {};
-    const response = yield call(fetchErrorLogsApi, filters);
-
-    // Apply filters to the response data
-    let filteredLogs = response.data;
-
-    if (filters.tenantName) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.affectedTenant && log.affectedTenant.toLowerCase().includes(filters.tenantName.toLowerCase())
-      );
-    }
-
-    if (filters.errorType) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.errorType && log.errorType.toLowerCase().includes(filters.errorType.toLowerCase())
-      );
-    }
-
-    if (filters.dateRange && filters.dateRange.start) {
-      filteredLogs = filteredLogs.filter(log => {
-        const logDate = new Date(log.timestamp);
-        const startDate = new Date(filters.dateRange.start);
-        return logDate >= startDate;
-      });
-    }
-
-    if (filters.dateRange && filters.dateRange.end) {
-      filteredLogs = filteredLogs.filter(log => {
-        const logDate = new Date(log.timestamp);
-        const endDate = new Date(filters.dateRange.end);
-        endDate.setHours(23, 59, 59, 999); // Include the entire end date
-        return logDate <= endDate;
-      });
-    }
-
-    yield put(fetchErrorLogsSuccess(filteredLogs));
+    const response = yield call(superAdminAPI.getErrorLogs, filters);
+    const logs = response.data || response; // Assuming API returns data in .data or directly
+    yield put(fetchErrorLogsSuccess(logs));
   } catch (error) {
-    yield put(fetchErrorLogsFailure(error.message || 'Failed to fetch error logs'));
+    console.error('❌ Error in fetchErrorLogsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch error logs';
+    yield put(fetchErrorLogsFailure(errorMessage));
   }
 }
 
 function* exportErrorLogsSaga(action) {
   try {
-    const logs = action.payload || [];
+    const logs = action.payload;
+
+    if (!logs || logs.length === 0) {
+      yield put(exportErrorLogsFailure('No logs available to export'));
+      return;
+    }
 
     // Create CSV content
-    const headers = ['Error ID', 'Timestamp', 'Type', 'Description', 'Tenant', 'User'];
-    const csvContent = [
+    const headers = ['Timestamp', 'Error Type', 'Affected Tenant', 'Message', 'Severity'];
+    const csvRows = [
       headers.join(','),
       ...logs.map(log => [
-        `"${log.id || ''}"`,
-        `"${new Date(log.timestamp).toLocaleString()}"`,
-        `"${log.errorType || ''}"`,
-        `"${(log.description || '').replace(/"/g, '""')}"`,
-        `"${log.affectedTenant || 'N/A'}"`,
-        `"${log.affectedUser || 'N/A'}"`
+        log.timestamp || '',
+        log.errorType || '',
+        log.affectedTenant || '',
+        `"${(log.message || '').replace(/"/g, '""')}"`, // Ensure message is properly quoted and escaped
+        log.severity || ''
       ].join(','))
-    ].join('\n');
+    ];
+
+    const csvContent = csvRows.join('\n');
 
     // Create and download the file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -198,28 +116,42 @@ function* exportErrorLogsSaga(action) {
     document.body.removeChild(link);
 
     yield put(exportErrorLogsSuccess());
+
+    if (window.showNotification) {
+      window.showNotification('Error logs exported successfully', 'success');
+    }
   } catch (error) {
-    yield put(exportErrorLogsFailure(error.message || 'Failed to export error logs'));
+    console.error('❌ Error in exportErrorLogsSaga:', error);
+    const errorMessage = error?.message || 'Failed to export error logs';
+    yield put(exportErrorLogsFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to export logs. Please try again.', 'error');
+    }
   }
 }
 
-
 // Saga watchers
+function* watchLogin() {
+  yield takeLatest(loginRequest.type, loginSaga);
+}
+
 function* watchFetchSystemMetrics() {
   yield takeLatest(fetchSystemMetricsRequest.type, fetchSystemMetricsSaga);
 }
 
 function* watchFetchErrorLogs() {
-  yield takeEvery('superAdmin/fetchErrorLogsRequest', fetchErrorLogsSaga);
+  yield takeEvery(fetchErrorLogsRequest.type, fetchErrorLogsSaga);
 }
 
 function* watchExportErrorLogs() {
-  yield takeEvery('superAdmin/exportErrorLogsRequest', exportErrorLogsSaga);
+  yield takeEvery(exportErrorLogsRequest.type, exportErrorLogsSaga);
 }
 
 // Root saga
 export default function* superAdminSaga() {
   yield all([
+    watchLogin(),
     watchFetchSystemMetrics(),
     watchFetchErrorLogs(),
     watchExportErrorLogs()

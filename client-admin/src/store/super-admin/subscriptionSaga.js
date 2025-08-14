@@ -1,318 +1,243 @@
-import { call, put, takeLatest, delay } from 'redux-saga/effects';
-import api from '../../utils/api';
+
+import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
+import { superAdminAPI } from '../../utils/api';
 import {
-  fetchPlansRequest,
-  fetchPlansSuccess,
-  fetchPlansFailure,
-  createPlanRequest,
-  createPlanSuccess,
-  createPlanFailure,
-  updatePlanRequest,
-  updatePlanSuccess,
-  updatePlanFailure,
-  deletePlanRequest,
-  deletePlanSuccess,
-  deletePlanFailure,
-  fetchTenantsRequest,
-  fetchTenantsSuccess,
-  fetchTenantsFailure,
-  assignPlanToTenantRequest,
-  assignPlanToTenantSuccess,
-  assignPlanToTenantFailure,
-  hidePlanModal,
+  fetchSubscriptionPlansRequest,
+  fetchSubscriptionPlansSuccess,
+  fetchSubscriptionPlansFailure,
+  createSubscriptionPlanRequest,
+  createSubscriptionPlanSuccess,
+  createSubscriptionPlanFailure,
+  updateSubscriptionPlanRequest,
+  updateSubscriptionPlanSuccess,
+  updateSubscriptionPlanFailure,
+  deleteSubscriptionPlanRequest,
+  deleteSubscriptionPlanSuccess,
+  deleteSubscriptionPlanFailure,
+  fetchSubscriptionsRequest,
+  fetchSubscriptionsSuccess,
+  fetchSubscriptionsFailure,
+  createSubscriptionRequest,
+  createSubscriptionSuccess,
+  createSubscriptionFailure,
+  updateSubscriptionRequest,
+  updateSubscriptionSuccess,
+  updateSubscriptionFailure,
+  cancelSubscriptionRequest,
+  cancelSubscriptionSuccess,
+  cancelSubscriptionFailure
 } from './subscriptionSlice';
 
-// Mock data
-let mockPlans = [
-  {
-    id: '1',
-    planId: 'BASIC_001',
-    name: 'Basic Plan',
-    description: 'Perfect for small businesses getting started with compliance management',
-    price: 29.99,
-    billingCycle: 'Monthly',
-    features: {
-      maxUsers: 5,
-      maxDocuments: 100,
-      maxComplianceChecks: 50,
-      storage: '1GB',
-      support: 'Email'
-    },
-    isActive: true,
-    createdAt: '2024-01-15T00:00:00Z',
-    updatedAt: '2024-01-15T00:00:00Z',
-    tenantCount: 12
-  },
-  {
-    id: '2',
-    planId: 'PRO_001',
-    name: 'Professional Plan',
-    description: 'Advanced features for growing organizations with enhanced compliance needs',
-    price: 99.99,
-    billingCycle: 'Monthly',
-    features: {
-      maxUsers: 25,
-      maxDocuments: 1000,
-      maxComplianceChecks: 500,
-      storage: '10GB',
-      support: 'Priority Email + Phone'
-    },
-    isActive: true,
-    createdAt: '2024-01-15T00:00:00Z',
-    updatedAt: '2024-01-15T00:00:00Z',
-    tenantCount: 8
-  },
-  {
-    id: '3',
-    planId: 'ENT_001',
-    name: 'Enterprise Plan',
-    description: 'Unlimited access with dedicated support for large organizations',
-    price: 299.99,
-    billingCycle: 'Monthly',
-    features: {
-      maxUsers: 'Unlimited',
-      maxDocuments: 'Unlimited',
-      maxComplianceChecks: 'Unlimited',
-      storage: '100GB',
-      support: 'Dedicated Account Manager'
-    },
-    isActive: true,
-    createdAt: '2024-01-15T00:00:00Z',
-    updatedAt: '2024-01-15T00:00:00Z',
-    tenantCount: 3
-  }
-];
-
-let mockTenants = [
-  {
-    id: '1',
-    name: 'TechCorp Solutions',
-    email: 'admin@techcorp.com',
-    status: 'Active',
-    planId: '1',
-    plan: {
-      id: '1',
-      name: 'Basic Plan',
-      price: 29.99
-    },
-    createdAt: '2024-01-20T00:00:00Z',
-    userCount: 3,
-    documentCount: 45
-  },
-  {
-    id: '2',
-    name: 'Healthcare Inc',
-    email: 'admin@healthcare.com',
-    status: 'Active',
-    planId: '2',
-    plan: {
-      id: '2',
-      name: 'Professional Plan',
-      price: 99.99
-    },
-    createdAt: '2024-01-18T00:00:00Z',
-    userCount: 15,
-    documentCount: 340
-  }
-];
-
-// Mock API functions
-const mockFetchPlans = () => {
-  // Simulate network delay
-  return new Promise(resolve => setTimeout(() => resolve(mockPlans), 500));
-};
-
-const mockCreatePlan = (planData) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Validation
-      if (!planData.name || !planData.price || !planData.billingCycle) {
-        return reject(new Error('Missing required fields: name, price, and billingCycle are required'));
-      }
-      if (planData.price <= 0) {
-        return reject(new Error('Price must be greater than 0'));
-      }
-      const existingPlan = mockPlans.find(plan =>
-        plan.name.toLowerCase() === planData.name.toLowerCase()
-      );
-      if (existingPlan) {
-        return reject(new Error('A plan with this name already exists'));
-      }
-
-      const newPlan = {
-        id: Date.now().toString(),
-        planId: planData.planId || `PLAN_${Date.now()}`,
-        ...planData,
-        features: planData.features || {}, // Ensure features is an object
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        tenantCount: 0
-      };
-      mockPlans.push(newPlan);
-      resolve(newPlan);
-    }, 1000);
-  });
-};
-
-const mockUpdatePlan = (planData) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Validation
-      if (!planData.id) {
-        return reject(new Error('Plan ID is required for update'));
-      }
-      if (!planData.name || !planData.price || !planData.billingCycle) {
-        return reject(new Error('Missing required fields: name, price, and billingCycle are required'));
-      }
-      if (planData.price <= 0) {
-        return reject(new Error('Price must be greater than 0'));
-      }
-
-      const index = mockPlans.findIndex(plan => plan.id === planData.id);
-      if (index === -1) {
-        return reject(new Error('Plan not found'));
-      }
-
-      const duplicatePlan = mockPlans.find(plan =>
-        plan.name.toLowerCase() === planData.name.toLowerCase() && plan.id !== planData.id
-      );
-      if (duplicatePlan) {
-        return reject(new Error('A plan with this name already exists'));
-      }
-
-      const updatedPlan = {
-        ...mockPlans[index],
-        ...planData,
-        features: planData.features || mockPlans[index].features, // Preserve existing features if not provided
-        updatedAt: new Date().toISOString()
-      };
-      mockPlans[index] = updatedPlan;
-      resolve(updatedPlan);
-    }, 1000);
-  });
-};
-
-const mockDeletePlan = (planId) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const index = mockPlans.findIndex(plan => plan.id === planId);
-      if (index === -1) {
-        return reject(new Error('Plan not found'));
-      }
-
-      const assignedTenants = mockTenants.filter(tenant => tenant.planId === planId);
-      if (assignedTenants.length > 0) {
-        return reject(new Error(`Cannot delete plan. It is currently assigned to ${assignedTenants.length} tenant(s)`));
-      }
-
-      mockPlans.splice(index, 1);
-      resolve(planId);
-    }, 500);
-  });
-};
-
-const mockFetchTenants = () => {
-  // Simulate network delay
-  return new Promise(resolve => setTimeout(() => resolve(mockTenants), 500));
-};
-
-const mockAssignPlanToTenant = (tenantId, planId) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const tenantIndex = mockTenants.findIndex(tenant => tenant.id === tenantId);
-      if (tenantIndex === -1) {
-        return reject(new Error('Tenant not found'));
-      }
-
-      const plan = mockPlans.find(p => p.id === planId);
-      if (!plan) {
-        return reject(new Error('Plan not found'));
-      }
-      if (!plan.isActive) {
-        return reject(new Error('Cannot assign an inactive plan'));
-      }
-
-      mockTenants[tenantIndex] = {
-        ...mockTenants[tenantIndex],
-        planId: planId,
-        plan: { id: plan.id, name: plan.name, price: plan.price }
-      };
-      resolve({ tenantId, planId });
-    }, 1000);
-  });
-};
-
-// Saga functions
-function* fetchPlansSaga() {
+// Saga functions for subscription plans
+function* fetchSubscriptionPlansSaga(action) {
   try {
-    const plans = yield call(mockFetchPlans);
-    yield put(fetchPlansSuccess(plans));
+    const params = action.payload || {};
+    const response = yield call(superAdminAPI.getSubscriptionPlans, params);
+    const plans = response.data || response;
+    yield put(fetchSubscriptionPlansSuccess(plans));
   } catch (error) {
-    const errorMessage = error.message || 'Failed to fetch subscription plans';
-    yield put(fetchPlansFailure(errorMessage));
+    console.error('❌ Error in fetchSubscriptionPlansSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch subscription plans';
+    yield put(fetchSubscriptionPlansFailure(errorMessage));
   }
 }
 
-function* createPlanSaga(action) {
+function* createSubscriptionPlanSaga(action) {
   try {
-    const newPlan = yield call(mockCreatePlan, action.payload);
-    yield put(createPlanSuccess(newPlan));
-    yield put(hidePlanModal());
-    // Show success message here if needed
+    const response = yield call(superAdminAPI.createSubscriptionPlan, action.payload);
+    const newPlan = response.data || response;
+    yield put(createSubscriptionPlanSuccess(newPlan));
+
+    if (window.showNotification) {
+      window.showNotification('Subscription plan created successfully', 'success');
+    }
+
+    // Refresh plans list
+    yield put(fetchSubscriptionPlansRequest());
   } catch (error) {
-    yield put(createPlanFailure(error.message || 'Failed to create plan'));
+    console.error('❌ Error in createSubscriptionPlanSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to create subscription plan';
+    yield put(createSubscriptionPlanFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to create subscription plan', 'error');
+    }
   }
 }
 
-function* updatePlanSaga(action) {
+function* updateSubscriptionPlanSaga(action) {
   try {
-    const updatedPlan = yield call(mockUpdatePlan, action.payload);
-    yield put(updatePlanSuccess(updatedPlan));
-    yield put(hidePlanModal());
-    // Show success message here if needed
+    const { id, ...planData } = action.payload;
+    const response = yield call(superAdminAPI.updateSubscriptionPlan, id, planData);
+    const updatedPlan = response.data || response;
+    yield put(updateSubscriptionPlanSuccess(updatedPlan));
+
+    if (window.showNotification) {
+      window.showNotification('Subscription plan updated successfully', 'success');
+    }
   } catch (error) {
-    yield put(updatePlanFailure(error.message || 'Failed to update plan'));
+    console.error('❌ Error in updateSubscriptionPlanSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update subscription plan';
+    yield put(updateSubscriptionPlanFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to update subscription plan', 'error');
+    }
   }
 }
 
-function* deletePlanSaga(action) {
+function* deleteSubscriptionPlanSaga(action) {
   try {
-    yield call(mockDeletePlan, action.payload);
-    yield put(deletePlanSuccess(action.payload));
+    const planId = action.payload;
+    yield call(superAdminAPI.deleteSubscriptionPlan, planId);
+    yield put(deleteSubscriptionPlanSuccess(planId));
+
+    if (window.showNotification) {
+      window.showNotification('Subscription plan deleted successfully', 'success');
+    }
   } catch (error) {
-    const errorMessage = error.message || 'Cannot delete plan in use by tenants';
-    yield put(deletePlanFailure(errorMessage));
+    console.error('❌ Error in deleteSubscriptionPlanSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to delete subscription plan';
+    yield put(deleteSubscriptionPlanFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to delete subscription plan', 'error');
+    }
   }
 }
 
-function* fetchTenantsSaga() {
+// Saga functions for subscriptions
+function* fetchSubscriptionsSaga(action) {
   try {
-    const response = yield call(mockFetchTenants);
-    yield put(fetchTenantsSuccess(response));
+    const params = action.payload || { page: 1, limit: 10 };
+    const response = yield call(superAdminAPI.getSubscriptions, params);
+    
+    const validatedResponse = {
+      subscriptions: response.subscriptions || response.data || [],
+      pagination: response.pagination || {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        total: response.total || 0,
+        totalPages: Math.ceil((response.total || 0) / (params.limit || 10))
+      }
+    };
+
+    yield put(fetchSubscriptionsSuccess(validatedResponse));
   } catch (error) {
-    const errorMessage = error.message || 'Failed to fetch tenants';
-    yield put(fetchTenantsFailure(errorMessage));
+    console.error('❌ Error in fetchSubscriptionsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch subscriptions';
+    yield put(fetchSubscriptionsFailure(errorMessage));
   }
 }
 
-function* assignPlanToTenantSaga(action) {
+function* createSubscriptionSaga(action) {
   try {
-    const { tenantId, planId } = action.payload;
-    const response = yield call(mockAssignPlanToTenant, tenantId, planId);
-    yield put(assignPlanToTenantSuccess(response));
+    const response = yield call(superAdminAPI.createSubscription, action.payload);
+    const newSubscription = response.data || response;
+    yield put(createSubscriptionSuccess(newSubscription));
+
+    if (window.showNotification) {
+      window.showNotification('Subscription created successfully', 'success');
+    }
+
+    // Refresh subscriptions list
+    yield put(fetchSubscriptionsRequest({ page: 1, limit: 10 }));
   } catch (error) {
-    const errorMessage = error.message || 'Failed to assign plan. Please try again.';
-    yield put(assignPlanToTenantFailure(errorMessage));
+    console.error('❌ Error in createSubscriptionSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to create subscription';
+    yield put(createSubscriptionFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to create subscription', 'error');
+    }
   }
+}
+
+function* updateSubscriptionSaga(action) {
+  try {
+    const { id, ...subscriptionData } = action.payload;
+    const response = yield call(superAdminAPI.updateSubscription, id, subscriptionData);
+    const updatedSubscription = response.data || response;
+    yield put(updateSubscriptionSuccess(updatedSubscription));
+
+    if (window.showNotification) {
+      window.showNotification('Subscription updated successfully', 'success');
+    }
+  } catch (error) {
+    console.error('❌ Error in updateSubscriptionSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update subscription';
+    yield put(updateSubscriptionFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to update subscription', 'error');
+    }
+  }
+}
+
+function* cancelSubscriptionSaga(action) {
+  try {
+    const subscriptionId = action.payload;
+    const response = yield call(superAdminAPI.cancelSubscription, subscriptionId);
+    const cancelledSubscription = response.data || response;
+    yield put(cancelSubscriptionSuccess(cancelledSubscription));
+
+    if (window.showNotification) {
+      window.showNotification('Subscription cancelled successfully', 'success');
+    }
+  } catch (error) {
+    console.error('❌ Error in cancelSubscriptionSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to cancel subscription';
+    yield put(cancelSubscriptionFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to cancel subscription', 'error');
+    }
+  }
+}
+
+// Watcher sagas
+function* watchFetchSubscriptionPlans() {
+  yield takeLatest(fetchSubscriptionPlansRequest.type, fetchSubscriptionPlansSaga);
+}
+
+function* watchCreateSubscriptionPlan() {
+  yield takeEvery(createSubscriptionPlanRequest.type, createSubscriptionPlanSaga);
+}
+
+function* watchUpdateSubscriptionPlan() {
+  yield takeEvery(updateSubscriptionPlanRequest.type, updateSubscriptionPlanSaga);
+}
+
+function* watchDeleteSubscriptionPlan() {
+  yield takeEvery(deleteSubscriptionPlanRequest.type, deleteSubscriptionPlanSaga);
+}
+
+function* watchFetchSubscriptions() {
+  yield takeLatest(fetchSubscriptionsRequest.type, fetchSubscriptionsSaga);
+}
+
+function* watchCreateSubscription() {
+  yield takeEvery(createSubscriptionRequest.type, createSubscriptionSaga);
+}
+
+function* watchUpdateSubscription() {
+  yield takeEvery(updateSubscriptionRequest.type, updateSubscriptionSaga);
+}
+
+function* watchCancelSubscription() {
+  yield takeEvery(cancelSubscriptionRequest.type, cancelSubscriptionSaga);
 }
 
 // Root saga
 export default function* subscriptionSaga() {
-  yield takeLatest(fetchPlansRequest.type, fetchPlansSaga);
-  yield takeLatest(createPlanRequest.type, createPlanSaga);
-  yield takeLatest(updatePlanRequest.type, updatePlanSaga);
-  yield takeLatest(deletePlanRequest.type, deletePlanSaga);
-  yield takeLatest(fetchTenantsRequest.type, fetchTenantsSaga);
-  yield takeLatest(assignPlanToTenantRequest.type, assignPlanToTenantSaga);
+  yield all([
+    fork(watchFetchSubscriptionPlans),
+    fork(watchCreateSubscriptionPlan),
+    fork(watchUpdateSubscriptionPlan),
+    fork(watchDeleteSubscriptionPlan),
+    fork(watchFetchSubscriptions),
+    fork(watchCreateSubscription),
+    fork(watchUpdateSubscription),
+    fork(watchCancelSubscription)
+  ]);
 }
