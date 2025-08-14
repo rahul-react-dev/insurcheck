@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { loginRequest, clearErrors } from '../../store/super-admin/superAdminSlice';
+import { loginRequest, clearErrors, resetLoadingState } from '../../store/super-admin/superAdminSlice';
 import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
 
 const SuperAdminLogin = () => {
@@ -21,14 +21,19 @@ const SuperAdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Clear any existing errors when component mounts
+    // Clear any existing errors and reset loading state when component mounts
     dispatch(clearErrors());
+    
+    // Reset any persisting loading state
+    if (isLoading) {
+      dispatch(resetLoadingState());
+    }
     
     // Redirect if already authenticated
     if (isAuthenticated && user?.role === 'super-admin') {
       navigate('/super-admin/dashboard', { replace: true });
     }
-  }, [dispatch, isAuthenticated, user, navigate]);
+  }, [dispatch, isAuthenticated, user, navigate, isLoading]);
 
   // Additional useEffect to handle navigation after login success
   useEffect(() => {

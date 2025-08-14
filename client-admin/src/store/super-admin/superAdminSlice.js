@@ -170,6 +170,10 @@ const superAdminSlice = createSlice({
       state.authError = null;
     },
 
+    resetLoadingState: (state) => {
+      state.isLoading = false;
+    },
+
     // Additional dashboard actions
     fetchDashboardDataRequest: (state) => {
       state.isLoadingMetrics = true;
@@ -220,7 +224,10 @@ export const {
   fetchDashboardDataFailure,
 
   // Clear errors
-  clearErrors
+  clearErrors,
+  
+  // Reset loading state
+  resetLoadingState
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;
