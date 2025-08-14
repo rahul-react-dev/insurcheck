@@ -194,13 +194,20 @@ const SuperAdminLogin = () => {
 
             <Button
               type="submit"
-              disabled={isLoading || !formData.email || !formData.password}
-              loading={isLoading}
-              fullWidth
-              size="large"
-              className="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
+              disabled={isLoading}
             >
-              {SUPER_ADMIN_MESSAGES.LOGIN.LOGIN_BUTTON}
+              {isLoading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  <span>Signing In...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-sign-in-alt"></i>
+                  <span>Sign In</span>
+                </>
+              )}
             </Button>
           </form>
         </div>

@@ -42,20 +42,20 @@ function* loginSaga(action) {
       yield put(loginFailure('Invalid response from server'));
     }
   } catch (error) {
-    console.error('Super admin login error:', error);
+    console.error('Login error:', error);
 
-    let errorMessage = 'Login failed';
+    let errorMessage = 'Login failed. Please try again.';
 
-    if (error?.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error?.response?.data?.error) {
-      errorMessage = error.response.data.error;
+    if (error?.status === 0) {
+      errorMessage = 'Unable to connect to server. Please check if the server is running.';
+    } else if (error?.status === 401) {
+      errorMessage = 'Invalid email or password';
+    } else if (error?.status === 429) {
+      errorMessage = 'Too many login attempts. Please try again later.';
+    } else if (error?.message?.includes('Network Error') || error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+      errorMessage = 'Server connection failed. Please ensure the server is running on port 5000.';
     } else if (error?.message) {
       errorMessage = error.message;
-    } else if (error?.response?.status === 401) {
-      errorMessage = 'Invalid credentials';
-    } else if (error?.response?.status === 500) {
-      errorMessage = 'Server error. Please try again later.';
     }
 
     yield put(loginFailure(errorMessage));
