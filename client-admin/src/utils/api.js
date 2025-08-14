@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.DEV 
-    ? 'http://localhost:5000/api' 
+    ? `${window.location.protocol}//${window.location.hostname.includes('replit.dev') ? window.location.hostname.replace('-3000', '-5000') : 'localhost:5000'}/api`
     : `${window.location.protocol}//${window.location.hostname}:5000/api`
 );
 
@@ -123,8 +123,8 @@ api.interceptors.response.use(
 
 // Auth APIs
 export const authAPI = {
-  superAdminLogin: (credentials) => api.post('/auth/super-admin/login', credentials),
-  adminLogin: (credentials) => api.post('/auth/admin/login', credentials),
+  superAdminLogin: (credentials) => api.post('/auth/login', { ...credentials, role: 'super-admin' }),
+  adminLogin: (credentials) => api.post('/auth/login', { ...credentials, role: 'tenant-admin' }),
   logout: () => api.post('/auth/logout'),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email })
 };
@@ -227,7 +227,7 @@ export const userAPI = {
 // Super Admin APIs
 export const superAdminAPI = {
   // Authentication
-  login: (credentials) => api.post('/auth/super-admin/login', credentials),
+  login: (credentials) => api.post('/auth/login', { ...credentials, role: 'super-admin' }),
 
   // Dashboard & Metrics
   getSystemMetrics: () => api.get('/system-metrics'),
