@@ -20,53 +20,39 @@ import {
 // Saga workers
 function* loginSaga(action) {
   try {
-    // Validate that the API method exists
-    if (!superAdminAPI || typeof superAdminAPI.login !== 'function') {
-      console.error('superAdminAPI.login is not available');
-      yield put(loginFailure('API configuration error. Please refresh the page.'));
-      return;
-    }
-
     const response = yield call(superAdminAPI.login, action.payload);
 
-    if (response?.data) {
-      // Store user data and token
-      const userData = {
-        user: response.data.user,
-        token: response.data.token
-      };
+    if (response && response.token && response.user) {
+      // Store token and user data
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('isAuthenticated', 'true');
 
-      yield put(loginSuccess(userData));
+      yield put(loginSuccess({ 
+        token: response.token, 
+        user: response.user 
+      }));
 
-      // Store token and user data in localStorage
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('isAuthenticated', 'true');
-      }
-
-      console.log('✅ Login successful, user data stored');
+      console.log('✅ Super Admin login successful');
     } else {
-      yield put(loginFailure('Invalid response from server'));
+      throw new Error('Invalid response structure from server');
     }
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Super Admin login error:', error);
 
     let errorMessage = 'Login failed. Please try again.';
 
-    if (error?.status === 0) {
+    // Handle network errors
+    if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
       errorMessage = 'Unable to connect to server. Please check if the server is running.';
-    } else if (error?.status === 401) {
-      errorMessage = 'Invalid email or password';
-    } else if (error?.status === 429) {
-      errorMessage = 'Too many login attempts. Please try again later.';
-    } else if (error?.message?.includes('Network Error') || error?.message?.includes('ERR_CONNECTION_REFUSED')) {
-      errorMessage = 'Server connection failed. Please ensure the server is running on port 5000.';
-    } else if (error?.message) {
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
       errorMessage = error.message;
     }
 
     yield put(loginFailure(errorMessage));
+    yield put(incrementLoginAttempts());
   }
 }
 

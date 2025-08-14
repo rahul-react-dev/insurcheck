@@ -243,30 +243,20 @@ export const {
   loginFailure,
   logout,
   hydrateAuth,
-
+  clearErrors,
+  resetLoadingState,
   // System metrics actions
   fetchSystemMetricsRequest,
   fetchSystemMetricsSuccess,
   fetchSystemMetricsFailure,
-
   // Error logs actions
   fetchErrorLogsRequest,
   fetchErrorLogsSuccess,
   fetchErrorLogsFailure,
-
   // Export actions
-  exportErrorLogsRequest,
-  exportErrorLogsSuccess,
-  exportErrorLogsFailure,
-
-  // Dashboard actions
-  fetchDashboardDataRequest,
-  fetchDashboardDataSuccess,
-  fetchDashboardDataFailure,
-
-  // Clear errors
-  clearErrors,
-  resetLoadingState,
+  exportSystemDataRequest,
+  exportSystemDataSuccess,
+  exportSystemDataFailure,
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;

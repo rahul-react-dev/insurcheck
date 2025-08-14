@@ -82,9 +82,9 @@ export const login = async (req, res) => {
     // Update last login
       await db.update(users)
         .set({ 
-          last_login_at: new Date(),
-          failed_login_attempts: 0,
-          account_locked_until: null 
+          lastLoginAt: new Date(),
+          failedLoginAttempts: 0,
+          accountLockedUntil: null 
         })
         .where(eq(users.id, user.id));
 

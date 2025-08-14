@@ -263,7 +263,11 @@ export const userAPI = {
 // Super Admin APIs
 export const superAdminAPI = {
   // Authentication
-  login: (credentials) => api.post('/auth/login', { ...credentials, role: 'super-admin' }),
+  login: (credentials) => api.post('/auth/login', {
+    email: credentials.email,
+    password: credentials.password,
+    role: 'super-admin'
+  }),
 
   // Dashboard & Metrics
   getSystemMetrics: () => api.get('/system-metrics'),
