@@ -291,6 +291,46 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
         ipAddress: '45.123.67.89',
         userAgent: 'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36',
         createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000)
+      },
+      {
+        id: '9',
+        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        level: 'error',
+        action: 'api_rate_limit_exceeded',
+        resource: 'api',
+        resourceId: 'rate_limit_789',
+        userId: 'user_333',
+        tenantId: 3,
+        tenantName: 'AutoProtect Ltd',
+        errorType: 'rate_limit_error',
+        message: 'API rate limit exceeded - 1000 requests per hour',
+        details: 'User exceeded API rate limit with 1001 requests in the last hour',
+        description: 'API rate limit exceeded - temporary access restriction applied',
+        tenant: 'AutoProtect Ltd',
+        user: 'api@autoprotect.com',
+        ipAddress: '172.16.0.30',
+        userAgent: 'PostmanRuntime/7.32.3',
+        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000)
+      },
+      {
+        id: '10',
+        timestamp: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
+        level: 'warning',
+        action: 'disk_space_warning',
+        resource: 'system',
+        resourceId: 'disk_monitor_456',
+        userId: null,
+        tenantId: null,
+        tenantName: 'System',
+        errorType: 'storage_warning',
+        message: 'Low disk space warning - 85% capacity reached',
+        details: 'Server disk usage has reached 85% of total capacity (42.5GB of 50GB used)',
+        description: 'System disk space warning - cleanup recommended',
+        tenant: 'System Internal',
+        user: 'System Monitor',
+        ipAddress: 'internal',
+        userAgent: 'System',
+        createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000)
       }
     ];
 
@@ -315,12 +355,13 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
 
     if (startDate) {
       const start = new Date(startDate);
-      filteredLogs = filteredLogs.filter(log => log.createdAt >= start);
+      filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) >= start);
     }
 
     if (endDate) {
       const end = new Date(endDate);
-      filteredLogs = filteredLogs.filter(log => log.createdAt <= end);
+      end.setHours(23, 59, 59, 999); // Include the entire end date
+      filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) <= end);
     }
 
     // Apply pagination
