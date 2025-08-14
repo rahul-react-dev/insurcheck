@@ -177,7 +177,7 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => 
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                      {log.errorId}
+                      {log?.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(log.timestamp).toLocaleString()}
@@ -195,10 +195,10 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => 
                       {log.description}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.affectedTenant || 'N/A'}
+                      {log.tenant || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.affectedUser || 'N/A'}
+                      {log.user || 'N/A'}
                     </td>
                   </tr>
                 ))}
