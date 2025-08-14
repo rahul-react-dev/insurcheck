@@ -113,6 +113,113 @@ export const login = async (req, res) => {
   }
 };
 
+export const superAdminLogin = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { email, password } = req.body;
+
+    console.log(`Super Admin login attempt - Email: ${email}`);
+
+    // Find user by email
+    const userResult = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      console.log(`User not found: ${email}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    const user = userResult[0];
+    console.log(`Found user - ID: ${user.id}, Role: ${user.role}, Active: ${user.isActive}`);
+
+    // Check if user is active
+    if (user.isActive === false) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated'
+      });
+    }
+
+    // Check if user is super admin
+    if (user.role !== 'super-admin') {
+      console.log(`Access denied - User role: ${user.role}, Required: super-admin`);
+      return res.status(403).json({
+        success: false,
+        message: 'Super admin access required'
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      console.log(`Invalid password for user: ${email}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId 
+      },
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn }
+    );
+
+    console.log(`Super Admin login successful for user: ${email}`);
+
+    // Update last login
+    await db.update(users)
+      .set({ 
+        lastLoginAt: new Date(),
+        failedLoginAttempts: 0,
+        accountLockedUntil: null 
+      })
+      .where(eq(users.id, user.id));
+
+    res.status(200).json({
+      success: true,
+      message: 'Super Admin login successful',
+      data: {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          tenantId: user.tenantId,
+          isActive: user.isActive
+        },
+        token
+      }
+    });
+
+  } catch (error) {
+    console.error('Super Admin login error details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during super admin login'
+    });
+  }
+};
+
 export const register = async (req, res) => {
   try {
     const errors = validationResult(req);

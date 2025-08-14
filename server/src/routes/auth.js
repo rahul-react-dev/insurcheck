@@ -22,6 +22,10 @@ const registerValidation = [
 
 // Routes
 router.post('/login', loginValidation, authController.login);
+router.post('/super-admin/login', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], authController.superAdminLogin);
 router.post('/register', registerValidation, authController.register);
 router.post('/logout', authController.logout);
 router.get('/me', authMiddleware, authController.getCurrentUser);
