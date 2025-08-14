@@ -130,13 +130,13 @@ const superAdminSlice = createSlice({
       let filtered = state.errorLogs;
 
       if (state.filters.tenantName) {
-        filtered = filtered.filter(log => 
+        filtered = filtered.filter(log =>
           log.affectedTenant?.toLowerCase().includes(state.filters.tenantName.toLowerCase())
         );
       }
 
       if (state.filters.errorType) {
-        filtered = filtered.filter(log => 
+        filtered = filtered.filter(log =>
           log.errorType === state.filters.errorType
         );
       }
@@ -164,29 +164,63 @@ const superAdminSlice = createSlice({
     },
 
     clearErrors: (state) => {
-      state.error = null;
       state.metricsError = null;
       state.logsError = null;
       state.exportError = null;
+      state.authError = null;
     },
-  },
+
+    // Additional dashboard actions
+    fetchDashboardDataRequest: (state) => {
+      state.isLoadingMetrics = true;
+      state.error = null;
+    },
+    fetchDashboardDataSuccess: (state, action) => {
+      state.isLoadingMetrics = false;
+      if (action.payload.metrics) {
+        state.systemMetrics = action.payload.metrics;
+      }
+      if (action.payload.logs) {
+        state.errorLogs = action.payload.logs;
+      }
+      state.error = null;
+    },
+    fetchDashboardDataFailure: (state, action) => {
+      state.isLoadingMetrics = false;
+      state.error = action.payload;
+    }
+  }
 });
 
 export const {
+  // Auth actions
   loginRequest,
   loginSuccess,
   loginFailure,
+  logout,
+
+  // System metrics actions
   fetchSystemMetricsRequest,
   fetchSystemMetricsSuccess,
   fetchSystemMetricsFailure,
+
+  // Error logs actions
   fetchErrorLogsRequest,
   fetchErrorLogsSuccess,
   fetchErrorLogsFailure,
+
+  // Export actions
   exportErrorLogsRequest,
   exportErrorLogsSuccess,
   exportErrorLogsFailure,
-  clearErrors,
-  logout
+
+  // Dashboard actions
+  fetchDashboardDataRequest,
+  fetchDashboardDataSuccess,
+  fetchDashboardDataFailure,
+
+  // Clear errors
+  clearErrors
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;

@@ -222,21 +222,26 @@ const tenantSlice = createSlice({
       state.error = action.payload;
     },
 
-    // Export tenants
-    exportTenantsRequest: (state) => {
-      state.isExporting = true;
+    // Update tenant state
+    updateTenantStateRequest: (state) => {
+      state.isLoading = true;
       state.error = null;
     },
-    exportTenantsSuccess: (state) => {
-      state.isExporting = false;
+    updateTenantStateSuccess: (state, action) => {
+      state.isLoading = false;
+      const updatedTenant = action.payload;
+      const index = state.tenants.findIndex(t => t.id === updatedTenant.id);
+      if (index !== -1) {
+        state.tenants[index] = updatedTenant;
+      }
       state.error = null;
     },
-    exportTenantsFailure: (state, action) => {
-      state.isExporting = false;
+    updateTenantStateFailure: (state, action) => {
+      state.isLoading = false;
       state.error = action.payload;
     },
 
-    // Fetch tenant details
+    // Tenant details
     fetchTenantDetailsRequest: (state) => {
       state.isLoading = true;
       state.error = null;
@@ -251,26 +256,21 @@ const tenantSlice = createSlice({
       state.error = action.payload;
     },
 
-
-    // Update filters
-    updateFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
+    // Export tenants
+    exportTenantsRequest: (state) => {
+      state.isExporting = true;
+      state.error = null;
+    },
+    exportTenantsSuccess: (state) => {
+      state.isExporting = false;
+      state.error = null;
+    },
+    exportTenantsFailure: (state, action) => {
+      state.isExporting = false;
+      state.error = action.payload;
     },
 
-    // Clear filters
-    clearFilters: (state) => {
-      state.filters = {
-        tenantName: '',
-        status: '',
-        subscriptionPlan: '',
-        dateRange: {
-          start: '',
-          end: ''
-        }
-      };
-    },
-
-    // Clear error
+    // Clear errors
     clearError: (state) => {
       state.error = null;
     },
@@ -323,15 +323,18 @@ export const {
   resendWelcomeEmailRequest,
   resendWelcomeEmailSuccess,
   resendWelcomeEmailFailure,
-  exportTenantsRequest,
-  exportTenantsSuccess,
-  exportTenantsFailure,
   fetchTenantDetailsRequest,
   fetchTenantDetailsSuccess,
   fetchTenantDetailsFailure,
+  exportTenantsRequest,
+  exportTenantsSuccess,
+  exportTenantsFailure,
+  updateTenantStateRequest,
+  updateTenantStateSuccess,
+  updateTenantStateFailure,
+  clearError,
   updateFilters,
   clearFilters,
-  clearError,
   fetchTenantUsersRequest,
   fetchTenantUsersSuccess,
   fetchTenantUsersFailure,

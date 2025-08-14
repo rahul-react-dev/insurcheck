@@ -31,6 +31,10 @@ const deletedDocumentsSlice = createSlice({
   initialState,
   reducers: {
     // Fetch deleted documents
+    fetchDeletedDocumentsRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
     fetchDeletedDocumentsStart: (state) => {
       state.loading = true;
       state.error = null;
@@ -223,6 +227,7 @@ const deletedDocumentsSlice = createSlice({
 });
 
 export const {
+  fetchDeletedDocumentsRequest,
   fetchDeletedDocumentsStart,
   fetchDeletedDocumentsSuccess,
   fetchDeletedDocumentsFailure,
