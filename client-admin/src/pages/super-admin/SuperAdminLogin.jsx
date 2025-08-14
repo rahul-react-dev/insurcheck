@@ -1,20 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import { loginRequest, clearErrors, resetLoadingState, hydrateAuth } from '../../store/super-admin/superAdminSlice';
-import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import Button from "../../components/ui/Button";
+import Input from "../../components/ui/Input";
+import {
+  loginRequest,
+  clearErrors,
+  resetLoadingState,
+  hydrateAuth,
+} from "../../store/super-admin/superAdminSlice";
+import { SUPER_ADMIN_MESSAGES } from "../../constants/superAdmin";
 
 const SuperAdminLogin = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { isLoading, error, isAuthenticated, user } = useSelector(state => state.superAdmin);
+  const { isLoading, error, isAuthenticated, user } = useSelector(
+    (state) => state.superAdmin,
+  );
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -30,31 +37,31 @@ const SuperAdminLogin = () => {
     dispatch(hydrateAuth());
 
     // Redirect if already authenticated
-    if (isAuthenticated && user?.role === 'super-admin') {
-      console.log('✅ User already authenticated, redirecting to dashboard');
-      navigate('/super-admin/dashboard', { replace: true });
+    if (isAuthenticated && user?.role === "super-admin") {
+      console.log("✅ User already authenticated, redirecting to dashboard");
+      navigate("/super-admin/dashboard", { replace: true });
     }
   }, [dispatch, isAuthenticated, user, navigate]);
 
   // Additional useEffect to handle navigation after login success
-  useEffect(() => {
-    if (isAuthenticated && user?.role === 'super-admin' && !isLoading) {
-      console.log('✅ Login successful, redirecting to dashboard');
-      navigate('/super-admin/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, user, isLoading, navigate]);
+  // useEffect(() => {
+  //   if (isAuthenticated && user?.role === 'super-admin' && !isLoading) {
+  //     console.log('✅ Login successful, redirecting to dashboard');
+  //     navigate('/super-admin/dashboard', { replace: true });
+  //   }
+  // }, [isAuthenticated, user, isLoading, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear specific error when user starts typing in the field
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
@@ -69,15 +76,15 @@ const SuperAdminLogin = () => {
     // Validate form
     const newErrors = {};
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = "Please enter a valid email";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -88,10 +95,12 @@ const SuperAdminLogin = () => {
     setErrors({});
 
     // Dispatch login with proper payload structure
-    dispatch(loginRequest({
-      email: formData.email.trim(),
-      password: formData.password
-    }));
+    dispatch(
+      loginRequest({
+        email: formData.email.trim(),
+        password: formData.password,
+      }),
+    );
   };
 
   return (
@@ -149,7 +158,7 @@ const SuperAdminLogin = () => {
 
             <Input
               label={SUPER_ADMIN_MESSAGES.LOGIN.PASSWORD_LABEL}
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -161,7 +170,9 @@ const SuperAdminLogin = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="text-gray-400 hover:text-gray-600 focus:outline-none"
                 >
-                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  <i
+                    className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
+                  ></i>
                 </button>
               }
               placeholder="Enter your password"
@@ -177,7 +188,10 @@ const SuperAdminLogin = () => {
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-sm text-gray-900"
+                >
                   Remember me
                 </label>
               </div>
@@ -185,7 +199,7 @@ const SuperAdminLogin = () => {
               <div className="text-sm">
                 <button
                   type="button"
-                  onClick={() => navigate('/super-admin/forgot-password')}
+                  onClick={() => navigate("/super-admin/forgot-password")}
                   className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   {SUPER_ADMIN_MESSAGES.LOGIN.FORGOT_PASSWORD}

@@ -80,6 +80,13 @@ const superAdminSlice = createSlice({
         }
       }
     },
+    incrementLoginAttempts: (state) => {
+      state.loginAttempts += 1;
+      if (state.loginAttempts >= 5) {
+        state.isLocked = true;
+        state.lockoutTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      }
+    },
     // Logout action
     logout: (state) => {
       state.user = null;
@@ -243,6 +250,9 @@ export const {
   loginFailure,
   logout,
   hydrateAuth,
+  clearLoginError,
+  checkLockout,
+  incrementLoginAttempts,
   clearErrors,
   resetLoadingState,
   // System metrics actions
@@ -254,9 +264,16 @@ export const {
   fetchErrorLogsSuccess,
   fetchErrorLogsFailure,
   // Export actions
-  exportSystemDataRequest,
-  exportSystemDataSuccess,
-  exportSystemDataFailure,
+  exportErrorLogsRequest,
+  exportErrorLogsSuccess,
+  exportErrorLogsFailure,
+  // Filter actions
+  setFilters,
+  clearFilters,
+  // Dashboard actions
+  fetchDashboardDataRequest,
+  fetchDashboardDataSuccess,
+  fetchDashboardDataFailure
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;
