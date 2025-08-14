@@ -29,8 +29,78 @@ const initialState = {
 
 const paymentSlice = createSlice({
   name: 'payment',
-  initialState,
+  initialState: {
+    ...initialState,
+    // Add payment-specific state
+    payments: [],
+    isLoadingPayments: false,
+    isExporting: false,
+    paymentsSummary: {
+      totalPayments: 0,
+      totalAmount: 0,
+      successfulPayments: 0,
+      failedPayments: 0,
+      pendingRefunds: 0
+    }
+  },
   reducers: {
+    // Fetch payments
+    fetchPaymentsRequest: (state, action) => {
+      state.isLoadingPayments = true;
+      state.error = null;
+    },
+    fetchPaymentsSuccess: (state, action) => {
+      state.isLoadingPayments = false;
+      state.payments = action.payload.payments || [];
+      state.paymentsSummary = action.payload.summary || state.paymentsSummary;
+      if (action.payload.pagination) {
+        state.pagination = { ...state.pagination, ...action.payload.pagination };
+      }
+      state.error = null;
+    },
+    fetchPaymentsFailure: (state, action) => {
+      state.isLoadingPayments = false;
+      state.error = action.payload;
+    },
+
+    // Export payments
+    exportPaymentsRequest: (state) => {
+      state.isExporting = true;
+      state.error = null;
+    },
+    exportPaymentsSuccess: (state) => {
+      state.isExporting = false;
+      state.error = null;
+    },
+    exportPaymentsFailure: (state, action) => {
+      state.isExporting = false;
+      state.error = action.payload;
+    },
+
+    // Process refund
+    processRefundRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    processRefundSuccess: (state, action) => {
+      state.isLoading = false;
+      const { paymentId, refundResult } = action.payload;
+      const paymentIndex = state.payments.findIndex(p => p.id === paymentId);
+      if (paymentIndex !== -1) {
+        state.payments[paymentIndex] = {
+          ...state.payments[paymentIndex],
+          status: 'refunded',
+          refundAmount: refundResult.amount,
+          refundDate: refundResult.refundDate
+        };
+      }
+      state.error = null;
+    },
+    processRefundFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
     // Fetch invoices
     fetchInvoicesRequest: (state, action) => {
       console.log('📦 REDUCER: fetchInvoicesRequest called');
@@ -161,6 +231,15 @@ const paymentSlice = createSlice({
 });
 
 export const {
+  fetchPaymentsRequest,
+  fetchPaymentsSuccess,
+  fetchPaymentsFailure,
+  exportPaymentsRequest,
+  exportPaymentsSuccess,
+  exportPaymentsFailure,
+  processRefundRequest,
+  processRefundSuccess,
+  processRefundFailure,
   fetchInvoicesRequest,
   fetchInvoicesSuccess,
   fetchInvoicesFailure,
