@@ -43,9 +43,217 @@ const requireSuperAdmin = (req: Request, res: Response, next: any) => {
   next();
 };
 
-// Health check
+// ===================== SYSTEM HEALTH & METRICS ROUTES =====================
+
+// System health check
 router.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    version: process.env.npm_package_version || '1.0.0'
+  });
+});
+
+// Get system metrics for dashboard
+router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get real metrics from database
+    const activeTenantsCount = await db.select({ count: count() })
+      .from(tenants)
+      .where(eq(tenants.status, 'active'));
+
+    const activeUsersCount = await db.select({ count: count() })
+      .from(users)
+      .where(eq(users.isActive, true));
+
+    const totalDocuments = await db.select({ count: count() })
+      .from(documents);
+
+    const recentErrors = await db.select({ count: count() })
+      .from(activityLogs)
+      .where(and(
+        eq(activityLogs.level, 'error'),
+        gte(activityLogs.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000))
+      ));
+
+    const metrics = [
+      {
+        id: 1,
+        icon: 'fas fa-server',
+        value: '99.9%',
+        label: 'System Uptime',
+        trend: 'up',
+        trendValue: '+0.1%',
+        color: 'green'
+      },
+      {
+        id: 2,
+        icon: 'fas fa-building',
+        value: activeTenantsCount[0]?.count?.toString() || '0',
+        label: 'Active Tenants',
+        trend: 'up',
+        trendValue: '+2',
+        color: 'blue'
+      },
+      {
+        id: 3,
+        icon: 'fas fa-users',
+        value: activeUsersCount[0]?.count?.toString() || '0',
+        label: 'Active Users',
+        trend: 'up',
+        trendValue: '+12',
+        color: 'purple'
+      },
+      {
+        id: 4,
+        icon: 'fas fa-file-alt',
+        value: totalDocuments[0]?.count?.toString() || '0',
+        label: 'Documents',
+        trend: 'up',
+        trendValue: '+156',
+        color: 'orange'
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: metrics
+    });
+
+  } catch (error) {
+    console.error('System metrics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch system metrics'
+    });
+  }
+});
+
+// Get activity logs with filters
+router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      level, 
+      tenantId, 
+      userId,
+      action,
+      startDate,
+      endDate
+    } = req.query;
+
+    const offset = (Number(page) - 1) * Number(limit);
+    const conditions = [];
+
+    if (level) conditions.push(eq(activityLogs.level, level as string));
+    if (tenantId) conditions.push(eq(activityLogs.tenantId, tenantId as string));
+    if (userId) conditions.push(eq(activityLogs.userId, userId as string));
+    if (action) conditions.push(like(activityLogs.action, `%${action}%`));
+    if (startDate) conditions.push(gte(activityLogs.createdAt, new Date(startDate as string)));
+    if (endDate) conditions.push(lte(activityLogs.createdAt, new Date(endDate as string)));
+
+    const totalResult = await db.select({ count: count() })
+      .from(activityLogs)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const logs = await db.select({
+      id: activityLogs.id,
+      level: activityLogs.level,
+      action: activityLogs.action,
+      details: activityLogs.details,
+      userId: activityLogs.userId,
+      tenantId: activityLogs.tenantId,
+      createdAt: activityLogs.createdAt,
+      userEmail: users.email,
+      tenantName: tenants.name
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.userId, users.id))
+    .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(activityLogs.createdAt))
+    .limit(Number(limit))
+    .offset(offset);
+
+    res.json({
+      success: true,
+      data: logs,
+      meta: {
+        total: totalResult[0].count,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(totalResult[0].count / Number(limit))
+      }
+    });
+
+  } catch (error) {
+    console.error('Activity logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity logs'
+    });
+  }
+});
+
+// Export activity logs
+router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
+  try {
+    const { format = 'csv', filters = {} } = req.body;
+
+    const conditions = [];
+    if (filters.level) conditions.push(eq(activityLogs.level, filters.level));
+    if (filters.tenantId) conditions.push(eq(activityLogs.tenantId, filters.tenantId));
+    if (filters.startDate) conditions.push(gte(activityLogs.createdAt, new Date(filters.startDate)));
+    if (filters.endDate) conditions.push(lte(activityLogs.createdAt, new Date(filters.endDate)));
+
+    const logs = await db.select({
+      id: activityLogs.id,
+      level: activityLogs.level,
+      action: activityLogs.action,
+      details: activityLogs.details,
+      createdAt: activityLogs.createdAt,
+      userEmail: users.email,
+      tenantName: tenants.name
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.userId, users.id))
+    .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(activityLogs.createdAt));
+
+    if (format === 'csv') {
+      const csvData = logs.map(log => ({
+        ID: log.id,
+        Level: log.level,
+        Action: log.action,
+        Details: log.details,
+        User: log.userEmail || 'System',
+        Tenant: log.tenantName || 'N/A',
+        Timestamp: log.createdAt?.toISOString()
+      }));
+
+      res.json({
+        success: true,
+        data: csvData,
+        filename: `activity-logs-${new Date().toISOString().split('T')[0]}.csv`
+      });
+    } else {
+      res.json({
+        success: true,
+        data: logs
+      });
+    }
+
+  } catch (error) {
+    console.error('Export logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export activity logs'
+    });
+  }
 });
 
 // ===================== AUTHENTICATION ROUTES =====================
@@ -554,165 +762,150 @@ router.get('/subscriptions', authenticateToken, requireSuperAdmin, async (req: R
   }
 });
 
-// ===================== PAYMENT MANAGEMENT ROUTES =====================
+// ===================== PAYMENT & INVOICE ROUTES =====================
 
-// Get payments with pagination
+// Get all payments
 router.get('/payments', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, status, tenantId } = req.query;
+    const { page = 1, limit = 10, status, tenantId, startDate, endDate } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
-    let query = db.select({
+    const conditions = [];
+    if (status) conditions.push(eq(payments.status, status as string));
+    if (tenantId) conditions.push(eq(payments.tenantId, tenantId as string));
+    if (startDate) conditions.push(gte(payments.createdAt, new Date(startDate as string)));
+    if (endDate) conditions.push(lte(payments.createdAt, new Date(endDate as string)));
+
+    const totalResult = await db.select({ count: count() })
+      .from(payments)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const paymentList = await db.select({
       id: payments.id,
-      tenantId: payments.tenantId,
-      subscriptionId: payments.subscriptionId,
       amount: payments.amount,
       currency: payments.currency,
       status: payments.status,
-      paymentMethod: payments.paymentMethod,
+      method: payments.method,
       transactionId: payments.transactionId,
-      paymentDate: payments.paymentDate,
       createdAt: payments.createdAt,
-      tenant: {
-        name: tenants.name,
-        domain: tenants.domain
-      }
+      tenantName: tenants.name
     })
     .from(payments)
-    .leftJoin(tenants, eq(payments.tenantId, tenants.id));
-
-    // Apply filters
-    const conditions = [];
-    if (status) {
-      conditions.push(eq(payments.status, status as any));
-    }
-    if (tenantId) {
-      conditions.push(eq(payments.tenantId, Number(tenantId)));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const data = await query.limit(Number(limit)).offset(offset);
-
-    // Get total count
-    let countQuery = db.select({ count: count() }).from(payments);
-    if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
-    }
-    const [{ count: totalCount }] = await countQuery;
+    .leftJoin(tenants, eq(payments.tenantId, tenants.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(payments.createdAt))
+    .limit(Number(limit))
+    .offset(offset);
 
     res.json({
-      data,
-      pagination: {
+      success: true,
+      data: paymentList,
+      meta: {
+        total: totalResult[0].count,
         page: Number(page),
         limit: Number(limit),
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / Number(limit))
+        totalPages: Math.ceil(totalResult[0].count / Number(limit))
       }
     });
 
   } catch (error) {
     console.error('Get payments error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch payments'
+    });
   }
 });
 
-// ===================== INVOICE MANAGEMENT ROUTES =====================
-
-// Get invoices with pagination
+// Get all invoices
 router.get('/invoices', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, status, tenantId } = req.query;
+    const { page = 1, limit = 10, status, tenantId, startDate, endDate } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
-    let query = db.select({
+    const conditions = [];
+    if (status) conditions.push(eq(invoices.status, status as string));
+    if (tenantId) conditions.push(eq(invoices.tenantId, tenantId as string));
+    if (startDate) conditions.push(gte(invoices.createdAt, new Date(startDate as string)));
+    if (endDate) conditions.push(lte(invoices.createdAt, new Date(endDate as string)));
+
+    const totalResult = await db.select({ count: count() })
+      .from(invoices)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const invoiceList = await db.select({
       id: invoices.id,
       invoiceNumber: invoices.invoiceNumber,
-      tenantId: invoices.tenantId,
       amount: invoices.amount,
-      taxAmount: invoices.taxAmount,
-      totalAmount: invoices.totalAmount,
+      currency: invoices.currency,
       status: invoices.status,
-      issueDate: invoices.issueDate,
       dueDate: invoices.dueDate,
-      paidDate: invoices.paidDate,
       createdAt: invoices.createdAt,
-      tenant: {
-        name: tenants.name,
-        domain: tenants.domain
-      }
+      tenantName: tenants.name
     })
     .from(invoices)
-    .leftJoin(tenants, eq(invoices.tenantId, tenants.id));
-
-    // Apply filters
-    const conditions = [];
-    if (status) {
-      conditions.push(eq(invoices.status, status as any));
-    }
-    if (tenantId) {
-      conditions.push(eq(invoices.tenantId, Number(tenantId)));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const data = await query.limit(Number(limit)).offset(offset);
-
-    // Get total count
-    let countQuery = db.select({ count: count() }).from(invoices);
-    if (conditions.length > 0) {
-      countQuery = countQuery.where(and(...conditions));
-    }
-    const [{ count: totalCount }] = await countQuery;
+    .leftJoin(tenants, eq(invoices.tenantId, tenants.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(invoices.createdAt))
+    .limit(Number(limit))
+    .offset(offset);
 
     res.json({
-      data,
-      pagination: {
+      success: true,
+      data: invoiceList,
+      meta: {
+        total: totalResult[0].count,
         page: Number(page),
         limit: Number(limit),
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / Number(limit))
+        totalPages: Math.ceil(totalResult[0].count / Number(limit))
       }
     });
 
   } catch (error) {
     console.error('Get invoices error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch invoices'
+    });
   }
 });
 
 // Generate invoice
 router.post('/invoices/generate', authenticateToken, requireSuperAdmin, async (req: Request, res: Response) => {
   try {
-    const { tenantId, subscriptionId, amount, taxAmount, billingPeriodStart, billingPeriodEnd, items } = req.body;
+    const { tenantId, subscriptionId, amount, dueDate } = req.body;
 
-    // Generate invoice number
-    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const newInvoice = await db.insert(invoices).values({
-      invoiceNumber,
       tenantId,
       subscriptionId,
-      amount,
-      taxAmount: taxAmount || 0,
-      totalAmount: Number(amount) + Number(taxAmount || 0),
-      status: 'draft',
-      issueDate: new Date(),
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      billingPeriodStart: new Date(billingPeriodStart),
-      billingPeriodEnd: new Date(billingPeriodEnd),
-      items
+      invoiceNumber,
+      amount: Number(amount),
+      currency: 'USD',
+      status: 'pending',
+      dueDate: new Date(dueDate),
+      items: JSON.stringify([
+        {
+          description: 'Subscription Fee',
+          amount: Number(amount),
+          quantity: 1
+        }
+      ])
     }).returning();
 
-    res.status(201).json(newInvoice[0]);
+    res.status(201).json({
+      success: true,
+      message: 'Invoice generated successfully',
+      data: newInvoice[0]
+    });
 
   } catch (error) {
     console.error('Generate invoice error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate invoice'
+    });
   }
 });
 

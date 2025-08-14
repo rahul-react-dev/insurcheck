@@ -24,17 +24,96 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor for handling responses and errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response.data;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/super-admin/login';
+    console.error('API Error:', error);
+
+    // Handle different types of errors
+    if (error.response) {
+      const { status, data } = error.response;
+
+      switch (status) {
+        case 401:
+          // Unauthorized - clear local storage and redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+
+          // Only redirect if not already on login page
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes('/login')) {
+            if (currentPath.includes('/admin/')) {
+              window.location.href = '/admin/login';
+            } else {
+              window.location.href = '/super-admin/login';
+            }
+          }
+          break;
+
+        case 403:
+          // Forbidden - insufficient permissions
+          console.error('Access forbidden - insufficient permissions');
+          break;
+
+        case 404:
+          // Not found
+          console.error('Resource not found');
+          break;
+
+        case 422:
+          // Validation error
+          console.error('Validation error:', data);
+          break;
+
+        case 429:
+          // Rate limit exceeded
+          console.error('Rate limit exceeded');
+          break;
+
+        case 500:
+          // Server error
+          console.error('Server error:', data?.message || 'Internal server error');
+          break;
+
+        default:
+          console.error('API error:', data?.message || error.message);
+      }
+
+      // Create a standardized error object
+      const apiError = {
+        status,
+        message: data?.message || error.message || 'An error occurred',
+        errors: data?.errors || [],
+        timestamp: new Date().toISOString()
+      };
+
+      return Promise.reject(apiError);
+    } else if (error.request) {
+      // Network error
+      const networkError = {
+        status: 0,
+        message: 'Network error - please check your connection',
+        errors: [],
+        timestamp: new Date().toISOString()
+      };
+
+      console.error('Network error:', error.request);
+      return Promise.reject(networkError);
+    } else {
+      // Something else happened
+      const unknownError = {
+        status: 0,
+        message: error.message || 'An unknown error occurred',
+        errors: [],
+        timestamp: new Date().toISOString()
+      };
+
+      console.error('Unknown error:', error.message);
+      return Promise.reject(unknownError);
     }
-    return Promise.reject(error);
   }
 );
 
