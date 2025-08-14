@@ -21,11 +21,6 @@ const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) =
     <Card className={`p-4 sm:p-6 hover:shadow-lg transition-shadow duration-200 ${currentColorClass}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-          <div className={`p-2 sm:p-3 rounded-lg ${iconBgClass} flex-shrink-0`}>
-            <div className={`w-5 h-5 sm:w-6 sm:h-6 ${textColorClass} flex items-center justify-center`}>
-              {icon}
-            </div>
-          </div>
           <div className="min-w-0 flex-1">
             <p className={`text-lg sm:text-2xl font-bold ${textColorClass} truncate`}>
               {value || '---'}
