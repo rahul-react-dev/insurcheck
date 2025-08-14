@@ -28,6 +28,7 @@ const SuperAdminLogin = () => {
   const [errors, setErrors] = useState({}); // State to manage form errors
   const [isLocked, setIsLocked] = useState(false); // State to handle potential future lockouts
 
+  // Initial setup - runs only once on component mount
   useEffect(() => {
     // Clear any existing errors and reset loading state when component mounts
     dispatch(clearErrors());
@@ -35,21 +36,15 @@ const SuperAdminLogin = () => {
 
     // Dispatch hydrateAuth to check for existing authentication
     dispatch(hydrateAuth());
+  }, [dispatch]); // Only dispatch dependency to avoid infinite loop
 
-    // Redirect if already authenticated
+  // Separate useEffect to handle navigation when auth state changes
+  useEffect(() => {
     if (isAuthenticated && user?.role === "super-admin") {
-      console.log("✅ User already authenticated, redirecting to dashboard");
+      console.log("✅ User authenticated, redirecting to dashboard");
       navigate("/super-admin/dashboard", { replace: true });
     }
-  }, [dispatch, isAuthenticated, user, navigate]);
-
-  // Additional useEffect to handle navigation after login success
-  // useEffect(() => {
-  //   if (isAuthenticated && user?.role === 'super-admin' && !isLoading) {
-  //     console.log('✅ Login successful, redirecting to dashboard');
-  //     navigate('/super-admin/dashboard', { replace: true });
-  //   }
-  // }, [isAuthenticated, user, isLoading, navigate]);
+  }, [isAuthenticated, user, navigate]); // This runs when auth state changes
 
   const handleChange = (e) => {
     const { name, value } = e.target;
