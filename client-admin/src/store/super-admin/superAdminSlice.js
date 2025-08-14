@@ -71,11 +71,16 @@ const superAdminSlice = createSlice({
         }
       }
     },
+    // Logout action
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      state.error = null;
+      state.systemMetrics = [];
+      state.errorLogs = [];
+      state.metricsError = null;
+      state.logsError = null;
+      state.exportError = null;
     },
 
     // Dashboard actions
@@ -162,16 +167,7 @@ const superAdminSlice = createSlice({
       state.error = null;
       state.metricsError = null;
       state.logsError = null;
-      state.exportError = null; // Clear export error as well
-    },
-
-    // Logout action to clear token from localStorage
-    logout: (state) => {
-      state.user = null;
-      state.isAuthenticated = false;
-      state.error = null;
-      state.isLoading = false;
-      localStorage.removeItem('token');
+      state.exportError = null;
     },
   },
 });
@@ -180,19 +176,17 @@ export const {
   loginRequest,
   loginSuccess,
   loginFailure,
-  logout,
   fetchSystemMetricsRequest,
   fetchSystemMetricsSuccess,
   fetchSystemMetricsFailure,
   fetchErrorLogsRequest,
   fetchErrorLogsSuccess,
   fetchErrorLogsFailure,
-  exportErrorLogsRequest, // Export new actions
+  exportErrorLogsRequest,
   exportErrorLogsSuccess,
   exportErrorLogsFailure,
-  setFilters,
-  clearFilters,
-  clearErrors
+  clearErrors,
+  logout
 } = superAdminSlice.actions;
 
 export default superAdminSlice.reducer;

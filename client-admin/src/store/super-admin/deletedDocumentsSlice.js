@@ -100,6 +100,78 @@ const deletedDocumentsSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Restore document
+    restoreDocumentRequest: (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    },
+    restoreDocumentSuccess: (state, action) => {
+      state.actionLoading = false;
+      const { documentId } = action.payload;
+      state.deletedDocuments = state.deletedDocuments.filter(doc => doc.id !== documentId);
+      state.totalCount -= 1;
+      state.error = null;
+    },
+    restoreDocumentFailure: (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload;
+    },
+
+    // Permanently delete document
+    permanentlyDeleteDocumentRequest: (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    },
+    permanentlyDeleteDocumentSuccess: (state, action) => {
+      state.actionLoading = false;
+      const documentId = action.payload;
+      state.deletedDocuments = state.deletedDocuments.filter(doc => doc.id !== documentId);
+      state.totalCount -= 1;
+      state.error = null;
+    },
+    permanentlyDeleteDocumentFailure: (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload;
+    },
+
+    // Bulk restore documents
+    bulkRestoreDocumentsRequest: (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    },
+    bulkRestoreDocumentsSuccess: (state, action) => {
+      state.actionLoading = false;
+      const documentIds = action.payload;
+      state.deletedDocuments = state.deletedDocuments.filter(
+        doc => !documentIds.includes(doc.id)
+      );
+      state.totalCount -= documentIds.length;
+      state.error = null;
+    },
+    bulkRestoreDocumentsFailure: (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload;
+    },
+
+    // Bulk delete documents
+    bulkDeleteDocumentsRequest: (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    },
+    bulkDeleteDocumentsSuccess: (state, action) => {
+      state.actionLoading = false;
+      const documentIds = action.payload;
+      state.deletedDocuments = state.deletedDocuments.filter(
+        doc => !documentIds.includes(doc.id)
+      );
+      state.totalCount -= documentIds.length;
+      state.error = null;
+    },
+    bulkDeleteDocumentsFailure: (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload;
+    },
+
     // Fetch deleted document details
     fetchDeletedDocumentDetailsRequest: (state) => {
       state.isLoading = true;
@@ -163,12 +235,24 @@ export const {
   permanentlyDeleteDocumentRequest,
   permanentlyDeleteDocumentSuccess,
   permanentlyDeleteDocumentFailure,
+  bulkRestoreDocumentsRequest,
+  bulkRestoreDocumentsSuccess,
+  bulkRestoreDocumentsFailure,
+  bulkDeleteDocumentsRequest,
+  bulkDeleteDocumentsSuccess,
+  bulkDeleteDocumentsFailure,
+  documentActionStart,
+  documentActionSuccess,
+  documentActionFailure,
+  exportDeletedDocumentsStart,
+  exportDeletedDocumentsSuccess,
+  exportDeletedDocumentsFailure,
   setFilters,
   clearFilters,
   setPagination,
-  setSelectedDocument,
-  closeDocumentModal,
-  clearErrors
+  clearError,
+  clearErrors,
+  setDocumentViewError
 } = deletedDocumentsSlice.actions;
 
 // Action creators for saga

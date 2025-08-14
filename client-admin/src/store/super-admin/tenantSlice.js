@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -45,16 +44,16 @@ const tenantSlice = createSlice({
       console.log('📦 Action payload:', action.payload);
       state.isLoading = true;
       state.error = null;
-      
+
       // Update pagination and filters from action payload
       if (action.payload) {
         const { page, limit, total, ...filters } = action.payload;
-        
+
         // Update filters if provided
         if (filters && Object.keys(filters).length > 0) {
           state.filters = { ...state.filters, ...filters };
         }
-        
+
         // Update pagination if provided
         if (page !== undefined || limit !== undefined || total !== undefined) {
           state.pagination = {
@@ -74,12 +73,12 @@ const tenantSlice = createSlice({
       state.tenants = action.payload.tenants || [];
       state.totalTenants = action.payload.summary?.totalTenants || 0;
       state.statusCounts = action.payload.summary?.statusCounts || state.statusCounts;
-      
+
       // Update pagination with response data
       if (action.payload.pagination) {
         state.pagination = { ...state.pagination, ...action.payload.pagination };
       }
-      
+
       state.error = null;
     },
     fetchTenantsFailure: (state, action) => {
@@ -156,7 +155,7 @@ const tenantSlice = createSlice({
       if (index !== -1) {
         const oldStatus = state.tenants[index].status;
         state.tenants[index].status = newStatus;
-        
+
         // Update status counts
         state.statusCounts[oldStatus] = Math.max(0, (state.statusCounts[oldStatus] || 0) - 1);
         state.statusCounts[newStatus] = (state.statusCounts[newStatus] || 0) + 1;
@@ -189,6 +188,69 @@ const tenantSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
     },
+
+    // Update tenant status
+    updateTenantStatusRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    updateTenantStatusSuccess: (state, action) => {
+      state.isLoading = false;
+      const { tenantId, status } = action.payload;
+      const tenantIndex = state.tenants.findIndex(t => t.id === tenantId);
+      if (tenantIndex !== -1) {
+        state.tenants[tenantIndex].status = status;
+      }
+      state.error = null;
+    },
+    updateTenantStatusFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Resend welcome email
+    resendWelcomeEmailRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    resendWelcomeEmailSuccess: (state, action) => {
+      state.isLoading = false;
+      state.error = null;
+    },
+    resendWelcomeEmailFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // Export tenants
+    exportTenantsRequest: (state) => {
+      state.isExporting = true;
+      state.error = null;
+    },
+    exportTenantsSuccess: (state) => {
+      state.isExporting = false;
+      state.error = null;
+    },
+    exportTenantsFailure: (state, action) => {
+      state.isExporting = false;
+      state.error = action.payload;
+    },
+
+    // Fetch tenant details
+    fetchTenantDetailsRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    fetchTenantDetailsSuccess: (state, action) => {
+      state.isLoading = false;
+      state.selectedTenant = action.payload;
+      state.error = null;
+    },
+    fetchTenantDetailsFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
 
     // Update filters
     updateFilters: (state, action) => {
@@ -255,12 +317,24 @@ export const {
   deleteTenantRequest,
   deleteTenantSuccess,
   deleteTenantFailure,
-  fetchTenantUsersRequest,
-  fetchTenantUsersSuccess,
-  fetchTenantUsersFailure,
+  updateTenantStatusRequest,
+  updateTenantStatusSuccess,
+  updateTenantStatusFailure,
+  resendWelcomeEmailRequest,
+  resendWelcomeEmailSuccess,
+  resendWelcomeEmailFailure,
+  exportTenantsRequest,
+  exportTenantsSuccess,
+  exportTenantsFailure,
+  fetchTenantDetailsRequest,
+  fetchTenantDetailsSuccess,
+  fetchTenantDetailsFailure,
   updateFilters,
   clearFilters,
   clearError,
+  fetchTenantUsersRequest,
+  fetchTenantUsersSuccess,
+  fetchTenantUsersFailure,
   clearTenantData
 } = tenantSlice.actions;
 

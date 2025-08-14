@@ -35,7 +35,7 @@ const SuperAdminDashboard = () => {
     metricsError: state.superAdmin.metricsError,
     logsError: state.superAdmin.logsError,
     exportError: state.superAdmin.exportError,
-    user: state.auth.user
+    user: state.superAdmin.user
   }));
 
   const [filters, setFilters] = useState({
