@@ -38,14 +38,23 @@ const superAdminSlice = createSlice({
       state.error = null;
     },
     loginSuccess: (state, action) => {
+      console.log('✅ Super Admin login successful:', action.payload);
       state.isLoading = false;
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.error = null;
-      state.loginAttempts = 0;
-      state.isLocked = false;
-      state.lockoutTime = null;
+      state.loginAttempts = 0; // Reset login attempts on successful login
+
+      // Store in localStorage for persistence
+      try {
+        localStorage.setItem('token', action.payload.token);
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        localStorage.setItem('isAuthenticated', 'true');
+        console.log('💾 Auth data saved to localStorage');
+      } catch (error) {
+        console.error('❌ Error saving auth data to localStorage:', error);
+      }
     },
     loginFailure: (state, action) => {
       state.isLoading = false;
@@ -83,7 +92,7 @@ const superAdminSlice = createSlice({
       state.exportError = null;
       state.error = null;
       state.isLoading = false;
-      
+
       // Clear localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('user');

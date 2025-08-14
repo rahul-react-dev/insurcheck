@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { loginRequest, clearErrors, resetLoadingState } from '../../store/super-admin/superAdminSlice';
+import { loginRequest, clearErrors, resetLoadingState, hydrateAuth } from '../../store/super-admin/superAdminSlice';
 import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
 
 const SuperAdminLogin = () => {
@@ -25,6 +25,9 @@ const SuperAdminLogin = () => {
     // Clear any existing errors and reset loading state when component mounts
     dispatch(clearErrors());
     dispatch(resetLoadingState());
+
+    // Dispatch hydrateAuth to check for existing authentication
+    dispatch(hydrateAuth());
 
     // Redirect if already authenticated
     if (isAuthenticated && user?.role === 'super-admin') {
