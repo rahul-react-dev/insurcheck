@@ -52,7 +52,7 @@ import superAdminRoutes from '../routes.js';
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api', healthRoutes);
-app.use('/api/super-admin', superAdminRoutes);
+app.use('/api', superAdminRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

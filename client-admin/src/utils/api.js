@@ -263,13 +263,9 @@ export const userAPI = {
 // Super Admin APIs
 export const superAdminAPI = {
   // Authentication
-  login: (credentials) => api.post('/auth/login', {
-    email: credentials.email,
-    password: credentials.password,
-    role: 'super-admin'
-  }),
+  login: (credentials) => api.post('/auth/super-admin/login', credentials),
 
-  // Dashboard & Metrics
+  // System metrics and dashboard
   getSystemMetrics: () => api.get('/system-metrics'),
   getErrorLogs: (params) => api.get('/activity-logs', { params: { ...params, level: 'error' } }),
   exportErrorLogs: (data) => api.post('/activity-logs/export', data),
