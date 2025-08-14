@@ -156,6 +156,17 @@ const invoiceGenerationSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Download invoice
+    downloadInvoiceRequest: (state) => {
+      state.error = null;
+    },
+    downloadInvoiceSuccess: (state, action) => {
+      state.error = null;
+    },
+    downloadInvoiceFailure: (state, action) => {
+      state.error = action.payload;
+    },
+
     // Update filters
     updateFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
@@ -201,6 +212,9 @@ export const {
   retryInvoiceGenerationRequest,
   retryInvoiceGenerationSuccess,
   retryInvoiceGenerationFailure,
+  downloadInvoiceRequest,
+  downloadInvoiceSuccess,
+  downloadInvoiceFailure,
   updateFilters,
   clearFilters,
   clearError,
