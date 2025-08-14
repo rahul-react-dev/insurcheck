@@ -105,3 +105,5 @@ export const requireSameTenant = (req, res, next) => {
   
   next();
 };
+
+export const superAdminOnly = requireRole('super-admin');

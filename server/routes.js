@@ -203,6 +203,50 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
 });
 
 // Export activity logs
+// GET /api/system-metrics - Get system metrics
+router.get('/system-metrics', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    // Get total tenants
+    const totalTenants = await db.select({ count: count() }).from(tenants);
+    
+    // Get active subscriptions
+    const activeSubscriptions = await db.select({ count: count() })
+      .from(subscriptions)
+      .where(eq(subscriptions.status, 'active'));
+    
+    // Get total users
+    const totalUsers = await db.select({ count: count() }).from(users);
+    
+    // Get recent activity logs count
+    const recentLogs = await db.select({ count: count() })
+      .from(activityLogs)
+      .where(gte(activityLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))); // Last 7 days
+    
+    // Get total revenue (sum of all payments)
+    const totalRevenue = await db.select({ total: sql`COALESCE(SUM(amount), 0)` })
+      .from(payments)
+      .where(eq(payments.status, 'completed'));
+
+    res.json({
+      success: true,
+      data: {
+        totalTenants: totalTenants[0]?.count || 0,
+        activeSubscriptions: activeSubscriptions[0]?.count || 0,
+        totalUsers: totalUsers[0]?.count || 0,
+        recentActivity: recentLogs[0]?.count || 0,
+        totalRevenue: totalRevenue[0]?.total || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching system metrics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch system metrics',
+      error: error.message
+    });
+  }
+});
+
 router.post('/activity-logs/export', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { filters = {} } = req.body;
