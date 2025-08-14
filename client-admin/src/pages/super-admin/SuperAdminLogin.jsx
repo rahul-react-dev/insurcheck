@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -10,25 +9,27 @@ import { SUPER_ADMIN_MESSAGES } from '../../constants/superAdmin';
 const SuperAdminLogin = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const { isLoading, error, isAuthenticated, user } = useSelector(state => state.superAdmin);
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({}); // State to manage form errors
+  const [isLocked, setIsLocked] = useState(false); // State to handle potential future lockouts
 
   useEffect(() => {
     // Clear any existing errors and reset loading state when component mounts
     dispatch(clearErrors());
-    
+
     // Reset any persisting loading state
     if (isLoading) {
       dispatch(resetLoadingState());
     }
-    
+
     // Redirect if already authenticated
     if (isAuthenticated && user?.role === 'super-admin') {
       navigate('/super-admin/dashboard', { replace: true });
@@ -48,13 +49,48 @@ const SuperAdminLogin = () => {
       ...prev,
       [name]: value
     }));
+    // Clear specific error when user starts typing in the field
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.email && formData.password) {
-      dispatch(loginRequest(formData));
+
+    if (isLocked) {
+      return;
     }
+
+    // Validate form
+    const newErrors = {};
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
+    // Dispatch login with proper payload structure
+    dispatch(loginRequest({
+      email: formData.email.trim(),
+      password: formData.password
+    }));
   };
 
   return (
@@ -107,6 +143,7 @@ const SuperAdminLogin = () => {
               leftIcon={<i className="fas fa-envelope"></i>}
               placeholder="Enter your email address"
               disabled={isLoading}
+              error={errors.email}
             />
 
             <Input
@@ -128,6 +165,7 @@ const SuperAdminLogin = () => {
               }
               placeholder="Enter your password"
               disabled={isLoading}
+              error={errors.password}
             />
 
             <div className="flex items-center justify-between">

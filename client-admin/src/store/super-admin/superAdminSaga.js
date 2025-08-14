@@ -20,6 +20,13 @@ import {
 // Saga workers
 function* loginSaga(action) {
   try {
+    // Validate that the API method exists
+    if (!superAdminAPI || typeof superAdminAPI.login !== 'function') {
+      console.error('superAdminAPI.login is not available');
+      yield put(loginFailure('API configuration error. Please refresh the page.'));
+      return;
+    }
+
     const response = yield call(superAdminAPI.login, action.payload);
 
     if (response?.data) {

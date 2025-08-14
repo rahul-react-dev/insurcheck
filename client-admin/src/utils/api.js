@@ -222,6 +222,9 @@ export const userAPI = {
 
 // Super Admin APIs
 export const superAdminAPI = {
+  // Authentication
+  login: (credentials) => api.post('/auth/super-admin/login', credentials),
+
   // Dashboard & Metrics
   getSystemMetrics: () => api.get('/system-metrics'),
   getErrorLogs: (params) => api.get('/activity-logs', { params: { ...params, level: 'error' } }),
@@ -270,7 +273,7 @@ export const superAdminAPI = {
   getDashboardStats: () => api.get('/analytics/dashboard'),
   getTenantAnalytics: (tenantId, params) => api.get(`/analytics/tenant/${tenantId}`, { params }),
 
-  // Users  
+  // Users
   getUsers: (params) => api.get('/users', { params }),
   createUser: (data) => api.post('/users', data),
   updateUser: (id, data) => api.put(`/users/${id}`, data),
