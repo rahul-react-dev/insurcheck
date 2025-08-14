@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "../../components/ui/Button";
@@ -14,7 +13,7 @@ import {
   updateTenantStateRequest,
   updateTrialStatusRequest,
   cancelSubscriptionRequest,
-  clearError,
+  clearErrors,
 } from "../../store/super-admin/tenantStateSlice";
 
 const TenantStateManagement = () => {
@@ -51,9 +50,9 @@ const TenantStateManagement = () => {
   // Sync pagination with store
   useEffect(() => {
     if (storePagination) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
-        ...storePagination
+        ...storePagination,
       }));
     }
   }, [storePagination]);
@@ -70,18 +69,32 @@ const TenantStateManagement = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    setPagination(prev => ({ ...prev, page: 1 }));
-    dispatch(fetchTenantStatesRequest({ ...newFilters, page: 1, limit: pagination.limit }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    dispatch(
+      fetchTenantStatesRequest({
+        ...newFilters,
+        page: 1,
+        limit: pagination.limit,
+      }),
+    );
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-    dispatch(fetchTenantStatesRequest({ ...filters, page: newPage, limit: pagination.limit }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
+    dispatch(
+      fetchTenantStatesRequest({
+        ...filters,
+        page: newPage,
+        limit: pagination.limit,
+      }),
+    );
   };
 
   const handlePageSizeChange = (newLimit) => {
-    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
-    dispatch(fetchTenantStatesRequest({ ...filters, page: 1, limit: newLimit }));
+    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+    dispatch(
+      fetchTenantStatesRequest({ ...filters, page: 1, limit: newLimit }),
+    );
   };
 
   const handleRefresh = () => {
@@ -107,11 +120,11 @@ const TenantStateManagement = () => {
   const handleDeactivateTenant = (tenant) => {
     setSelectedTenant(tenant);
     setConfirmAction({
-      type: 'deactivate',
-      title: 'Deactivate Tenant',
+      type: "deactivate",
+      title: "Deactivate Tenant",
       message: `Are you sure you want to deactivate "${tenant.tenantName}"? This will block all user access and set documents to read-only.`,
-      confirmText: 'Deactivate',
-      confirmClass: 'bg-red-600 hover:bg-red-700',
+      confirmText: "Deactivate",
+      confirmClass: "bg-red-600 hover:bg-red-700",
     });
     setIsConfirmModalOpen(true);
   };
@@ -120,25 +133,25 @@ const TenantStateManagement = () => {
     setSelectedTenant(tenant);
     const actionConfig = {
       activate: {
-        type: 'activate',
-        title: 'Activate Tenant',
+        type: "activate",
+        title: "Activate Tenant",
         message: `Are you sure you want to activate "${tenant.tenantName}"?`,
-        confirmText: 'Activate',
-        confirmClass: 'bg-green-600 hover:bg-green-700',
+        confirmText: "Activate",
+        confirmClass: "bg-green-600 hover:bg-green-700",
       },
       suspend: {
-        type: 'suspend',
-        title: 'Suspend Tenant',
+        type: "suspend",
+        title: "Suspend Tenant",
         message: `Are you sure you want to suspend "${tenant.tenantName}"?`,
-        confirmText: 'Suspend',
-        confirmClass: 'bg-orange-600 hover:bg-orange-700',
+        confirmText: "Suspend",
+        confirmClass: "bg-orange-600 hover:bg-orange-700",
       },
       endTrial: {
-        type: 'endTrial',
-        title: 'End Trial',
+        type: "endTrial",
+        title: "End Trial",
         message: `Are you sure you want to end the trial for "${tenant.tenantName}"?`,
-        confirmText: 'End Trial',
-        confirmClass: 'bg-yellow-600 hover:bg-yellow-700',
+        confirmText: "End Trial",
+        confirmClass: "bg-yellow-600 hover:bg-yellow-700",
       },
     };
 
@@ -150,33 +163,41 @@ const TenantStateManagement = () => {
     if (!confirmAction || !selectedTenant) return;
 
     switch (confirmAction.type) {
-      case 'deactivate':
-        dispatch(updateTenantStateRequest({
-          tenantId: selectedTenant.id,
-          status: 'deactivated',
-          reason: 'Manual deactivation by super admin'
-        }));
+      case "deactivate":
+        dispatch(
+          updateTenantStateRequest({
+            tenantId: selectedTenant.id,
+            status: "deactivated",
+            reason: "Manual deactivation by super admin",
+          }),
+        );
         break;
-      case 'activate':
-        dispatch(updateTenantStateRequest({
-          tenantId: selectedTenant.id,
-          status: 'active',
-          reason: 'Manual activation by super admin'
-        }));
+      case "activate":
+        dispatch(
+          updateTenantStateRequest({
+            tenantId: selectedTenant.id,
+            status: "active",
+            reason: "Manual activation by super admin",
+          }),
+        );
         break;
-      case 'suspend':
-        dispatch(updateTenantStateRequest({
-          tenantId: selectedTenant.id,
-          status: 'suspended',
-          reason: 'Manual suspension by super admin'
-        }));
+      case "suspend":
+        dispatch(
+          updateTenantStateRequest({
+            tenantId: selectedTenant.id,
+            status: "suspended",
+            reason: "Manual suspension by super admin",
+          }),
+        );
         break;
-      case 'endTrial':
-        dispatch(updateTrialStatusRequest({
-          tenantId: selectedTenant.id,
-          endTrial: true,
-          reason: 'Manual trial termination by super admin'
-        }));
+      case "endTrial":
+        dispatch(
+          updateTrialStatusRequest({
+            tenantId: selectedTenant.id,
+            endTrial: true,
+            reason: "Manual trial termination by super admin",
+          }),
+        );
         break;
       default:
         break;
@@ -188,24 +209,30 @@ const TenantStateManagement = () => {
   };
 
   const handleStateModalSubmit = (stateData) => {
-    dispatch(updateTenantStateRequest({
-      tenantId: selectedTenant.id,
-      ...stateData
-    }));
+    dispatch(
+      updateTenantStateRequest({
+        tenantId: selectedTenant.id,
+        ...stateData,
+      }),
+    );
   };
 
   const handleTrialModalSubmit = (trialData) => {
-    dispatch(updateTrialStatusRequest({
-      tenantId: selectedTenant.id,
-      ...trialData
-    }));
+    dispatch(
+      updateTrialStatusRequest({
+        tenantId: selectedTenant.id,
+        ...trialData,
+      }),
+    );
   };
 
   const handleSubscriptionModalSubmit = (subscriptionData) => {
-    dispatch(cancelSubscriptionRequest({
-      tenantId: selectedTenant.id,
-      ...subscriptionData
-    }));
+    dispatch(
+      cancelSubscriptionRequest({
+        tenantId: selectedTenant.id,
+        ...subscriptionData,
+      }),
+    );
   };
 
   return (
@@ -249,7 +276,7 @@ const TenantStateManagement = () => {
               </div>
             </div>
             <button
-              onClick={() => dispatch(clearError())}
+              onClick={() => dispatch(clearErrors())}
               className="text-red-400 hover:text-red-600 text-xl font-bold flex-shrink-0"
             >
               ×
@@ -286,7 +313,9 @@ const TenantStateManagement = () => {
               </div>
             </div>
             <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">On Trial</p>
+              <p className="text-sm font-medium text-gray-500 truncate">
+                On Trial
+              </p>
               <p className="text-2xl font-bold text-yellow-600">
                 {summary?.trialTenants || 0}
               </p>
@@ -341,7 +370,7 @@ const TenantStateManagement = () => {
               onFilterChange={handleFilterChange}
             />
           </div>
-          
+
           {/* Actions Section */}
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <Button
