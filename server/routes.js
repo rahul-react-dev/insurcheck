@@ -204,9 +204,9 @@ router.get(
         conditions.push(eq(activityLogs.tenantId, parseInt(tenantId)));
       }
 
-      // Handle tenantName filter - need to add tenants join for filtering
+      // Handle tenantName filter - case insensitive search
       if (tenantName) {
-        conditions.push(like(tenants.name, `%${tenantName}%`));
+        conditions.push(sql`${tenants.name} ILIKE ${'%' + tenantName + '%'}`);
       }
 
       // Handle errorType filter (maps to action field)
@@ -294,6 +294,9 @@ router.get(
             timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
             errorType: log.action || 'Unknown Error',
             affectedTenant: log.tenantName || 'System',
+            tenantName: log.tenantName || 'System',
+            userEmail: log.userEmail || 'System',
+            user: log.userEmail || 'System',
             message: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action,
             severity: log.level === 'critical' ? 'Critical' : 
                      log.level === 'error' ? 'High' : 
@@ -304,8 +307,11 @@ router.get(
             id: log.id,
             timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
             action: log.action,
-            user: log.userEmail || 'System',
+            user: log.userEmail || log.user || 'System', 
+            userEmail: log.userEmail || log.user || 'System',
             tenant: log.tenantName || 'System',
+            tenantName: log.tenantName || 'System',
+            affectedTenant: log.tenantName || 'System',
             resource: log.resource,
             details: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action
           };

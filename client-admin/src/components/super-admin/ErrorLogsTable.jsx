@@ -257,6 +257,9 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
             ))}
           </div>
 
+          {/* Debug pagination data */}
+          {console.log('🔍 Pagination Debug:', { pagination, hasData: logs && logs.length > 0 })}
+          
           {/* Pagination Controls */}
           {pagination && pagination.total > 0 && (
             <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
