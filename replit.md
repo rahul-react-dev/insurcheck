@@ -79,12 +79,15 @@ The design system implements a professional blue color palette with CSS custom p
   - Real tenant users data (names, emails, phone numbers) from database
 - ✅ **All Critical Tenant Management Issues Fixed (August 18, 2025)**:
   - Phone number display cleaned (removed UUID contamination with regex filtering)
-  - Edit functionality implemented with prefilled modal data
-  - Suspend button confirmation popup added (consistent with delete confirmation)
+  - Edit functionality implemented with prefilled modal data using correct field names (tenant.name, tenant.email)
+  - Suspend button confirmation popup added (consistent with delete confirmation)  
+  - Suspend functionality working properly with full tenant data API calls
   - Delete confirmation shows proper tenant name instead of "undefined"
   - Filtering system fully functional (API confirmed: name, status, plan filters working)
   - Toast notification system implemented for all CRUD operations
   - Tenant users modal header shows correct tenant name
+  - User count accuracy fixed with actualUserCount field updated from API responses
+  - Loading skeleton implemented for table with proper mobile/desktop responsive design
   - Both mobile and desktop views properly handle all actions
 
 ## Database Design

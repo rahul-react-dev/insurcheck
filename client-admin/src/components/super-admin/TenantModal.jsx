@@ -24,8 +24,8 @@ const TenantModal = ({
   useEffect(() => {
     if (tenant && mode === "edit") {
       setFormData({
-        tenantName: tenant.tenantName || "",
-        primaryContactEmail: tenant.primaryContactEmail || "",
+        tenantName: tenant.name || "",
+        primaryContactEmail: tenant.email || "",
         subscriptionPlan: tenant.subscriptionPlan || "",
         description: tenant.description || "",
         status: tenant.status || "active",

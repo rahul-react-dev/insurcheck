@@ -238,7 +238,7 @@ const TenantTable = ({
                   <span className="text-sm text-gray-500">Users:</span>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-bold text-gray-900">
-                      {tenant.userCount || 0}
+                      {tenant.actualUserCount !== undefined ? tenant.actualUserCount : (tenant.userCount || 0)}
                     </span>
                     <button
                       onClick={() => onViewUsers(tenant)}
@@ -352,7 +352,7 @@ const TenantTable = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
                     <span className="text-lg font-bold text-gray-900 min-w-[50px] text-center">
-                      {tenant.userCount || 0}
+                      {tenant.actualUserCount !== undefined ? tenant.actualUserCount : (tenant.userCount || 0)}
                     </span>
                     <button
                       onClick={() => onViewUsers(tenant)}

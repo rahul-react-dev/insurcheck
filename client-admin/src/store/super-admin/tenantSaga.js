@@ -1,5 +1,5 @@
 
-import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
+import { call, put, takeEvery, takeLatest, all, fork, select } from 'redux-saga/effects';
 import { superAdminAPI } from '../../utils/api';
 import {
   fetchTenantsRequest,
@@ -22,7 +22,8 @@ import {
   deleteTenantFailure,
   fetchTenantUsersRequest,
   fetchTenantUsersSuccess,
-  fetchTenantUsersFailure
+  fetchTenantUsersFailure,
+  updateTenantUserCount
 } from './tenantSlice';
 
 // Saga functions
@@ -139,8 +140,21 @@ function* suspendTenantSaga(action) {
   try {
     const { tenantId, suspend } = action.payload;
     
-    // Call appropriate API based on action
-    const updateData = { status: suspend ? 'suspended' : 'active' };
+    // First get the current tenant data to maintain required fields
+    const currentState = yield select(state => state.tenant);
+    const tenant = currentState.tenants.find(t => t.id === tenantId);
+    
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+    
+    // Call API with all required fields (name, email) plus status change
+    const updateData = { 
+      name: tenant.name,
+      email: tenant.email,
+      status: suspend ? 'suspended' : 'active'
+    };
+    
     const response = yield call(superAdminAPI.updateTenant, tenantId, updateData);
     
     yield put(suspendTenantSuccess({
@@ -203,6 +217,12 @@ function* fetchTenantUsersSaga(action) {
       tenantId, 
       users: response.users || response.data || [],
       pagination: response.pagination 
+    }));
+
+    // Update the tenant's actual user count in the tenants list
+    yield put(updateTenantUserCount({
+      tenantId: tenantId,
+      actualUserCount: response.pagination?.total || 0
     }));
   } catch (error) {
     console.error('❌ Error in fetchTenantUsersSaga:', error);

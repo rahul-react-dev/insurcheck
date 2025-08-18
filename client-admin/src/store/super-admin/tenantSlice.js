@@ -270,6 +270,15 @@ const tenantSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Update tenant user count when fetching tenant users
+    updateTenantUserCount: (state, action) => {
+      const { tenantId, actualUserCount } = action.payload;
+      const index = state.tenants.findIndex(tenant => tenant.id === tenantId);
+      if (index !== -1) {
+        state.tenants[index].actualUserCount = actualUserCount;
+      }
+    },
+
     // Clear errors
     clearError: (state) => {
       state.error = null;
@@ -352,6 +361,7 @@ export const {
   fetchTenantUsersRequest,
   fetchTenantUsersSuccess,
   fetchTenantUsersFailure,
+  updateTenantUserCount,
   clearTenantData
 } = tenantSlice.actions;
 
