@@ -43,12 +43,17 @@ The design system implements a professional blue color palette with CSS custom p
 - **Test Credentials**: superadmin@insurcheck.com / admin123
 
 ## Current Status (August 18, 2025)
-- ✅ Database schema deployed with all required tables
-- ✅ Sample data loaded (1 tenant, 3 users, activity logs, documents, payments)
+- ✅ Database schema deployed with all required tables  
+- ✅ Sample data loaded (15 tenants, 8+ users, 15+ activity logs, documents, payments)
 - ✅ All API endpoints working with real database data
 - ✅ Authentication system functional
-- ✅ System metrics API returning real data ($299.98 revenue, 2 error logs)
+- ✅ System metrics API returning real data ($299.98 revenue, 15 error logs)
 - ✅ Backend running independently on port 5000
+- ✅ **Activity Logs Features Fixed**:
+  - Case-insensitive tenant search using ILIKE (works with "insurcheck", "guardian", etc.)
+  - Dynamic user field showing real emails from database (e.g., "user101@demo.com")
+  - Pagination logic improved in Redux saga to properly handle API response structure
+  - Backend properly joins tenant/user tables for filtering and display
 
 ## Database Design
 Uses PostgreSQL with Drizzle ORM providing:

@@ -5,6 +5,14 @@ import Input from '../ui/Input';
 import Button from '../ui/Button';
 
 const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagination, onPageChange }) => {
+  // Debug pagination data
+  console.log('🔍 ErrorLogsTable Props:', { 
+    logsCount: logs?.length, 
+    pagination, 
+    hasLogs: logs && logs.length > 0,
+    paginationExists: !!pagination 
+  });
+
   const [localFilters, setLocalFilters] = useState(filters);
 
   const handleFilterChange = (key, value) => {
@@ -257,11 +265,8 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
             ))}
           </div>
 
-          {/* Debug pagination data */}
-          {console.log('🔍 Pagination Debug:', { pagination, hasData: logs && logs.length > 0 })}
-          
-          {/* Pagination Controls */}
-          {pagination && pagination.total > 0 && (
+          {/* Pagination Controls - Always show when we have logs and pagination data */}
+          {logs && logs.length > 0 && pagination && (
             <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
               <div className="text-sm text-gray-700">
                 Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total logs)

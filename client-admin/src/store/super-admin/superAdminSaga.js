@@ -82,8 +82,15 @@ function* fetchErrorLogsSaga(action) {
   try {
     const filters = action.payload || {};
     const response = yield call(superAdminAPI.getErrorLogs, filters);
-    const logs = response.data || response; // Assuming API returns data in .data or directly
-    yield put(fetchErrorLogsSuccess(logs));
+    
+    // Handle paginated API response structure
+    const responseData = {
+      data: response.data || response || [],
+      pagination: response.pagination || null
+    };
+    
+    console.log('🔍 Saga received response:', { responseData, originalResponse: response });
+    yield put(fetchErrorLogsSuccess(responseData));
   } catch (error) {
     console.error('❌ Error in fetchErrorLogsSaga:', error);
     
