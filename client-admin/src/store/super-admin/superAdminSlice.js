@@ -15,6 +15,7 @@ const initialState = {
   systemMetrics: [],
   errorLogs: [],
   filteredErrorLogs: [],
+  pagination: null,
   isLoadingMetrics: false,
   isLoadingLogs: false,
   isExporting: false, // Added for export functionality
@@ -24,7 +25,7 @@ const initialState = {
   filters: {
     tenantName: '',
     errorType: '',
-    dateRange: null
+    dateRange: { start: '', end: '' }
   }
 };
 
@@ -177,8 +178,11 @@ const superAdminSlice = createSlice({
     },
     fetchErrorLogsSuccess: (state, action) => {
       state.isLoadingLogs = false;
-      state.errorLogs = action.payload;
-      state.filteredErrorLogs = action.payload;
+      // Handle paginated API response structure
+      const logsData = action.payload?.data || action.payload || [];
+      state.errorLogs = logsData;
+      state.filteredErrorLogs = logsData;
+      state.pagination = action.payload?.pagination || null;
     },
     fetchErrorLogsFailure: (state, action) => {
       state.isLoadingLogs = false;

@@ -4,7 +4,7 @@ import Card from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 
-const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => {
+const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagination, onPageChange }) => {
   const [localFilters, setLocalFilters] = useState(filters);
 
   const handleFilterChange = (key, value) => {
@@ -184,21 +184,21 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => 
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        log.errorType === 'critical' ? 'bg-red-100 text-red-800' :
-                        log.errorType === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                        log.errorType === 'critical' || log.action?.includes('CRITICAL') ? 'bg-red-100 text-red-800' :
+                        log.errorType === 'warning' || log.action?.includes('WARNING') ? 'bg-yellow-100 text-yellow-800' :
                         'bg-blue-100 text-blue-800'
                       }`}>
-                        {log.errorType}
+                        {log.errorType || log.action || 'Unknown'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                      {log.description}
+                      {log.message || log.details || log.description || 'No description available'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.tenant || 'N/A'}
+                      {log.affectedTenant || log.tenantName || log.tenant || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.user || 'N/A'}
+                      {log.userEmail || log.user || 'System'}
                     </td>
                   </tr>
                 ))}
@@ -215,14 +215,14 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 mb-1">
                         <span className="text-sm font-mono text-gray-600 truncate">
-                          {log.errorId}
+                          {log.id}
                         </span>
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          log.errorType === 'critical' ? 'bg-red-100 text-red-800' :
-                          log.errorType === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                          log.errorType === 'critical' || log.action?.includes('CRITICAL') ? 'bg-red-100 text-red-800' :
+                          log.errorType === 'warning' || log.action?.includes('WARNING') ? 'bg-yellow-100 text-yellow-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
-                          {log.errorType}
+                          {log.errorType || log.action || 'Unknown'}
                         </span>
                       </div>
                       <p className="text-sm text-gray-500">
@@ -233,24 +233,52 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters }) => 
                   
                   <div>
                     <p className="text-sm text-gray-900 break-words">
-                      {log.description}
+                      {log.message || log.details || log.description || 'No description available'}
                     </p>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
                     <div>
                       <p className="text-xs text-gray-500 font-medium">Tenant</p>
-                      <p className="text-sm text-gray-900 truncate">{log.affectedTenant || 'N/A'}</p>
+                      <p className="text-sm text-gray-900 truncate">{log.affectedTenant || log.tenantName || log.tenant || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 font-medium">User</p>
-                      <p className="text-sm text-gray-900 truncate">{log.affectedUser || 'N/A'}</p>
+                      <p className="text-sm text-gray-900 truncate">{log.userEmail || log.user || 'System'}</p>
                     </div>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
+
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
+              <div className="text-sm text-gray-700">
+                Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total logs)
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => onPageChange && onPageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1}
+                  className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </Button>
+                <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded">
+                  {pagination.page}
+                </span>
+                <Button
+                  onClick={() => onPageChange && onPageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.totalPages}
+                  className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

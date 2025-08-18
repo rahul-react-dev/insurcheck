@@ -12,15 +12,34 @@ const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) =
     cyan: 'text-cyan-600 bg-cyan-50 border-cyan-200'
   };
 
+  // Icon mapping for consistent display
+  const getIconElement = (iconString) => {
+    if (!iconString) return null;
+    
+    // Map different icon formats to consistent display
+    const iconMap = {
+      'fas fa-clock': 'fa-clock',
+      'fas fa-building': 'fa-th-large', // Grid icon like screenshot
+      'fas fa-users': 'fa-user',
+      'fas fa-file-upload': 'fa-file-alt'
+    };
+    
+    const iconClass = iconMap[iconString] || iconString.replace('fas fa-', 'fa-');
+    return <i className={`fas ${iconClass} text-2xl`}></i>;
+  };
+
   // Fallback to blue if color is not found
   const currentColorClass = colorClasses[color] || colorClasses.blue;
   const textColorClass = currentColorClass.split(' ')[0];
-  const iconBgClass = currentColorClass.replace('border-', 'bg-').replace('bg-', 'bg-opacity-20 ');
 
   return (
-    <Card className={`p-4 sm:p-6 hover:shadow-lg transition-shadow duration-200 ${currentColorClass}`}>
+    <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow duration-200 bg-white border border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+          {/* Icon on the left */}
+          <div className={`flex-shrink-0 p-2 rounded-lg ${textColorClass.replace('text-', 'text-')} bg-gray-50`}>
+            {getIconElement(icon)}
+          </div>
           <div className="min-w-0 flex-1">
             <p className={`text-lg sm:text-2xl font-bold ${textColorClass} truncate`}>
               {value || '---'}

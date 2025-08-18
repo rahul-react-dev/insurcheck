@@ -181,10 +181,12 @@ router.get(
       const { 
         page = 1, 
         limit = 10, 
-        level,
+        level = 'error',
         tenantId,
+        tenantName,
         userId,
         action,
+        errorType,
         resource,
         startDate,
         endDate,
@@ -200,6 +202,16 @@ router.get(
 
       if (tenantId) {
         conditions.push(eq(activityLogs.tenantId, parseInt(tenantId)));
+      }
+
+      // Handle tenantName filter
+      if (tenantName) {
+        conditions.push(like(tenants.name, `%${tenantName}%`));
+      }
+
+      // Handle errorType filter (maps to action field)
+      if (errorType) {
+        conditions.push(like(activityLogs.action, `%${errorType}%`));
       }
 
       if (userId) {
@@ -305,7 +317,7 @@ router.get(
       const totalPages = Math.ceil(total / parseInt(limit));
 
       console.log(`✅ Retrieved ${logs.length} activity logs (page ${page}/${totalPages}, total: ${total})`);
-      console.log(`🔍 Applied filters:`, { level, tenantId, userId, action, resource, startDate, endDate, search });
+      console.log(`🔍 Applied filters:`, { level, tenantId, tenantName, userId, action, errorType, resource, startDate, endDate, search });
 
       res.json({
         data: logs,
@@ -318,8 +330,10 @@ router.get(
         filters: {
           level,
           tenantId,
+          tenantName,
           userId,
           action,
+          errorType,
           resource,
           startDate,
           endDate,

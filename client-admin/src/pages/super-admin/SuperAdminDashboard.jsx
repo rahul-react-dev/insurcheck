@@ -19,6 +19,7 @@ const SuperAdminDashboard = () => {
   const {
     systemMetrics,
     errorLogs,
+    pagination,
     isLoadingMetrics,
     isLoadingLogs,
     isExporting,
@@ -29,6 +30,7 @@ const SuperAdminDashboard = () => {
   } = useSelector(state => ({
     systemMetrics: state.superAdmin.systemMetrics,
     errorLogs: state.superAdmin.errorLogs,
+    pagination: state.superAdmin.pagination,
     isLoadingMetrics: state.superAdmin.isLoadingMetrics,
     isLoadingLogs: state.superAdmin.isLoadingLogs,
     isExporting: state.superAdmin.isExporting,
@@ -55,7 +57,27 @@ const SuperAdminDashboard = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-    dispatch(fetchErrorLogsRequest(newFilters));
+    // Build query parameters for the API
+    const queryParams = {
+      page: 1,
+      limit: 10,
+      level: 'error'
+    };
+
+    if (newFilters.tenantName) {
+      queryParams.tenantName = newFilters.tenantName;
+    }
+    if (newFilters.errorType) {
+      queryParams.errorType = newFilters.errorType;
+    }
+    if (newFilters.dateRange?.start) {
+      queryParams.startDate = newFilters.dateRange.start;
+    }
+    if (newFilters.dateRange?.end) {
+      queryParams.endDate = newFilters.dateRange.end;
+    }
+
+    dispatch(fetchErrorLogsRequest(queryParams));
   };
 
   const handleExportLogs = () => {
@@ -68,6 +90,29 @@ const SuperAdminDashboard = () => {
 
   const handleRefreshLogs = () => {
     dispatch(fetchErrorLogsRequest(filters));
+  };
+
+  const handlePageChange = (newPage) => {
+    const queryParams = {
+      page: newPage,
+      limit: 10,
+      level: 'error'
+    };
+
+    if (filters.tenantName) {
+      queryParams.tenantName = filters.tenantName;
+    }
+    if (filters.errorType) {
+      queryParams.errorType = filters.errorType;
+    }
+    if (filters.dateRange?.start) {
+      queryParams.startDate = filters.dateRange.start;
+    }
+    if (filters.dateRange?.end) {
+      queryParams.endDate = filters.dateRange.end;
+    }
+
+    dispatch(fetchErrorLogsRequest(queryParams));
   };
 
   return (
@@ -263,6 +308,8 @@ const SuperAdminDashboard = () => {
             error={logsError}
             onFilterChange={handleFilterChange}
             filters={filters}
+            pagination={pagination}
+            onPageChange={handlePageChange}
           />
         </div>
 
