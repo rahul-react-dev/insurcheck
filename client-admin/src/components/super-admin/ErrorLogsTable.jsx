@@ -265,31 +265,37 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
             ))}
           </div>
 
-          {/* Pagination Controls - Always show when we have logs and pagination data */}
-          {logs && logs.length > 0 && pagination && (
+          {/* Pagination Controls - Show when we have logs */}
+          {logs && logs.length > 0 && (
             <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
               <div className="text-sm text-gray-700">
-                Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total logs)
+                {pagination ? (
+                  `Showing page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total logs)`
+                ) : (
+                  `Showing ${logs.length} logs`
+                )}
               </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={() => onPageChange && onPageChange(pagination.page - 1)}
-                  disabled={pagination.page <= 1}
-                  className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </Button>
-                <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded">
-                  {pagination.page}
-                </span>
-                <Button
-                  onClick={() => onPageChange && onPageChange(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
-                  className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </Button>
-              </div>
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => onPageChange && onPageChange(pagination.page - 1)}
+                    disabled={!pagination || pagination.page <= 1}
+                    className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    Previous
+                  </Button>
+                  <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded font-medium">
+                    {pagination.page}
+                  </span>
+                  <Button
+                    onClick={() => onPageChange && onPageChange(pagination.page + 1)}
+                    disabled={!pagination || pagination.page >= pagination.totalPages}
+                    className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </>
