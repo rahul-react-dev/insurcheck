@@ -9,6 +9,10 @@ const TenantPlanAssignment = () => {
   const dispatch = useDispatch();
   const { tenants, plans, isAssigning, error, isLoadingTenants, isLoadingPlans } = useSelector(state => state.subscription);
   
+  const [selectedTenant, setSelectedTenant] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [showAssignmentSection, setShowAssignmentSection] = useState(false);
+
   // Reset form when assignment succeeds
   useEffect(() => {
     if (!isAssigning && !error && selectedTenant && selectedPlan) {
@@ -17,10 +21,6 @@ const TenantPlanAssignment = () => {
       setShowAssignmentSection(false);
     }
   }, [isAssigning, error, selectedTenant, selectedPlan]);
-  
-  const [selectedTenant, setSelectedTenant] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('');
-  const [showAssignmentSection, setShowAssignmentSection] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
