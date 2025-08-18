@@ -120,54 +120,41 @@ router.get('/system-metrics', async (req, res) => {
     // Calculate uptime percentage (mock)
     const uptime = (99.5 + Math.random() * 0.5).toFixed(1);
 
+    // Get document count for more accurate metrics
+    const documentsCount = await db.select({ count: sql`count(*)` }).from(documents);
+
     const metrics = [
       {
         id: 1,
-        icon: 'fas fa-building',
-        value: tenantsCount[0]?.count?.toString() || '0',
-        label: 'Total Tenants',
-        trend: '+2.1%',
-        color: 'text-blue-600'
+        icon: 'fas fa-clock',
+        value: '99.9%',
+        label: 'System Uptime',
+        trend: '+0.1%',
+        color: 'text-green-600'
       },
       {
         id: 2,
-        icon: 'fas fa-users',
-        value: activeUsersCount[0]?.count?.toString() || '0',
-        label: 'Active Users',
-        trend: '+5.4%',
-        color: 'text-green-600'
+        icon: 'fas fa-building',
+        value: tenantsCount[0]?.count?.toString() || '0',
+        label: 'Active Tenants',
+        trend: '+2',
+        color: 'text-blue-600'
       },
       {
         id: 3,
-        icon: 'fas fa-database',
-        value: `${(storageUsed / 1000).toFixed(1)}TB`,
-        label: 'Storage Used',
-        trend: '+12.3%',
-        color: 'text-orange-600'
+        icon: 'fas fa-users',
+        value: activeUsersCount[0]?.count?.toString() || '0',
+        label: 'Active Users',
+        trend: '+12',
+        color: 'text-green-600'
       },
       {
         id: 4,
-        icon: 'fas fa-dollar-sign',
-        value: `$${Number(recentPayments[0]?.total || 0).toLocaleString()}`,
-        label: 'Monthly Revenue',
-        trend: '+8.7%',
+        icon: 'fas fa-file-upload',
+        value: documentsCount[0]?.count?.toString() || '0',
+        label: 'Document Uploads',
+        trend: '+156',
         color: 'text-purple-600'
-      },
-      {
-        id: 5,
-        icon: 'fas fa-exclamation-triangle',
-        value: errorLogsCount[0]?.count?.toString() || '0',
-        label: 'Error Logs',
-        trend: '-15.2%',
-        color: 'text-red-600'
-      },
-      {
-        id: 6,
-        icon: 'fas fa-chart-line',
-        value: `${uptime}%`,
-        label: 'Uptime',
-        trend: '+0.1%',
-        color: 'text-green-600'
       }
     ];
 
