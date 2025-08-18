@@ -1,61 +1,71 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const Toast = ({ message, type = 'info', onClose, duration = 5000 }) => {
+const Toast = ({ message, type = 'success', duration = 4000, onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 300); // Allow fade-out animation
+      setIsExiting(true);
+      setTimeout(() => {
+        setIsVisible(false);
+        onClose?.();
+      }, 300); // Animation duration
     }, duration);
 
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
+  if (!isVisible) return null;
+
   const getToastStyles = () => {
-    const baseStyles = "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md transition-all duration-300 transform";
+    const baseStyles = 'fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 transition-all duration-300';
     
-    const typeStyles = {
-      success: "bg-green-500 text-white",
-      error: "bg-red-500 text-white",
-      warning: "bg-yellow-500 text-white",
-      info: "bg-blue-500 text-white"
-    };
-
-    const visibilityStyles = isVisible 
-      ? "translate-x-0 opacity-100" 
-      : "translate-x-full opacity-0";
-
-    return `${baseStyles} ${typeStyles[type]} ${visibilityStyles}`;
+    switch (type) {
+      case 'success':
+        return `${baseStyles} bg-green-600 text-white ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`;
+      case 'error':
+        return `${baseStyles} bg-red-600 text-white ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`;
+      case 'warning':
+        return `${baseStyles} bg-yellow-600 text-white ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`;
+      case 'info':
+        return `${baseStyles} bg-blue-600 text-white ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`;
+      default:
+        return `${baseStyles} bg-gray-600 text-white ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`;
+    }
   };
 
   const getIcon = () => {
-    const icons = {
-      success: "fas fa-check-circle",
-      error: "fas fa-exclamation-triangle",
-      warning: "fas fa-exclamation-triangle",
-      info: "fas fa-info-circle"
-    };
-    return icons[type];
+    switch (type) {
+      case 'success':
+        return 'fas fa-check-circle';
+      case 'error':
+        return 'fas fa-exclamation-circle';
+      case 'warning':
+        return 'fas fa-exclamation-triangle';
+      case 'info':
+        return 'fas fa-info-circle';
+      default:
+        return 'fas fa-bell';
+    }
   };
 
   return (
     <div className={getToastStyles()}>
-      <div className="flex items-center space-x-3">
-        <i className={`${getIcon()} text-xl`}></i>
-        <div className="flex-1">
-          <p className="font-medium">{message}</p>
-        </div>
-        <button
-          onClick={() => {
+      <i className={`${getIcon()} text-lg`}></i>
+      <span className="font-medium">{message}</span>
+      <button
+        onClick={() => {
+          setIsExiting(true);
+          setTimeout(() => {
             setIsVisible(false);
-            setTimeout(onClose, 300);
-          }}
-          className="text-white hover:text-gray-200 transition-colors"
-        >
-          <i className="fas fa-times text-lg"></i>
-        </button>
-      </div>
+            onClose?.();
+          }, 300);
+        }}
+        className="ml-2 text-white hover:text-gray-200 transition-colors"
+      >
+        <i className="fas fa-times"></i>
+      </button>
     </div>
   );
 };

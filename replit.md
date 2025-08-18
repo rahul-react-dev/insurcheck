@@ -20,6 +20,8 @@ The project follows a monorepo pattern with clear separation of concerns:
 - Admin Frontend: `cd client-admin && npm run dev` (typically runs on port 3000)
 - User Frontend: `cd client-user && npm run dev` (typically runs on port 3001)
 - Each frontend runs independently and connects to the backend API
+- **Important**: Backend and frontend run separately in development mode
+- Backend serves API endpoints only; frontends must be started independently
 
 ## Frontend Architecture
 All React frontends use a modern stack:
@@ -75,6 +77,15 @@ The design system implements a professional blue color palette with CSS custom p
   - Reusable pagination component consistent with super-admin design
   - All 15 tenants displaying with proper pagination (5 pages, 3 per page)
   - Real tenant users data (names, emails, phone numbers) from database
+- ✅ **All Critical Tenant Management Issues Fixed (August 18, 2025)**:
+  - Phone number display cleaned (removed UUID contamination with regex filtering)
+  - Edit functionality implemented with prefilled modal data
+  - Suspend button confirmation popup added (consistent with delete confirmation)
+  - Delete confirmation shows proper tenant name instead of "undefined"
+  - Filtering system fully functional (API confirmed: name, status, plan filters working)
+  - Toast notification system implemented for all CRUD operations
+  - Tenant users modal header shows correct tenant name
+  - Both mobile and desktop views properly handle all actions
 
 ## Database Design
 Uses PostgreSQL with Drizzle ORM providing:

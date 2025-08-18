@@ -82,7 +82,7 @@ const TenantUsersModal = ({
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Tenant Users</h2>
               <p className="text-sm text-gray-500">
-                {tenant?.tenantName} - {users.length} user{users.length !== 1 ? 's' : ''}
+                {tenant?.name} - {users.length} user{users.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -182,7 +182,7 @@ const TenantUsersModal = ({
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Phone:</span>
-                        <span className="text-gray-900">{user.phoneNumber || 'Not provided'}</span>
+                        <span className="text-gray-900">{user.phoneNumber?.replace(/[a-f0-9-]{36}$/, '') || 'Not provided'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Created:</span>
@@ -235,7 +235,7 @@ const TenantUsersModal = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {user.phoneNumber || 'Not provided'}
+                            {user.phoneNumber?.replace(/[a-f0-9-]{36}$/, '') || 'Not provided'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

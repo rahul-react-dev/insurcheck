@@ -261,7 +261,7 @@ const TenantTable = ({
                     Edit
                   </Button>
                   <Button
-                    onClick={() => onSuspendTenant(tenant.id, tenant.status)}
+                    onClick={() => onSuspendTenant(tenant)}
                     className={`flex-1 text-white text-xs py-2 ${
                       tenant.status === "active"
                         ? "bg-orange-600 hover:bg-orange-700"
@@ -373,7 +373,7 @@ const TenantTable = ({
                       Edit
                     </Button>
                     <Button
-                      onClick={() => onSuspendTenant(tenant.id, tenant.status)}
+                      onClick={() => onSuspendTenant(tenant)}
                       className={`text-white text-xs px-3 py-1 ${
                         tenant.status === "active"
                           ? "bg-orange-600 hover:bg-orange-700"

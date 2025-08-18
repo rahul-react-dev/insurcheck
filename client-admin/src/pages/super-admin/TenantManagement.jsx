@@ -7,6 +7,8 @@ import TenantModal from "../../components/super-admin/TenantModal";
 import TenantFilters from "../../components/super-admin/TenantFilters";
 import TenantUsersModal from "../../components/super-admin/TenantUsersModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import Toast from "../../components/ui/Toast";
+import { useToast } from "../../hooks/useToast";
 import {
   fetchTenantsRequest,
   fetchSubscriptionPlansRequest,
@@ -22,6 +24,7 @@ import {
 
 const TenantManagement = () => {
   const dispatch = useDispatch();
+  const { toasts, showToast, removeToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
@@ -92,7 +95,10 @@ const TenantManagement = () => {
 
     dispatch(fetchTenantsRequest(fetchParams));
     dispatch(fetchSubscriptionPlansRequest());
-  }, [dispatch]);
+    
+    // Make showToast available globally for sagas
+    window.showNotification = showToast;
+  }, [dispatch, showToast]);
 
   const handleCreateTenant = () => {
     setModalMode("create");
@@ -106,13 +112,17 @@ const TenantManagement = () => {
     setIsModalOpen(true);
   };
 
-  const handleSuspendTenant = (tenantId, currentStatus) => {
-    const action = currentStatus === "active" ? "suspend" : "reactivate";
-    if (window.confirm(`Are you sure you want to ${action} this tenant?`)) {
+  const handleSuspendTenant = (tenant) => {
+    const action = tenant.status === "active" ? "suspend" : "reactivate";
+    setSelectedTenant(tenant);
+    setConfirmAction(() => () => {
       dispatch(
-        suspendTenantRequest({ tenantId, suspend: currentStatus === "active" }),
+        suspendTenantRequest({ tenantId: tenant.id, suspend: tenant.status === "active" }),
       );
-    }
+      setIsConfirmModalOpen(false);
+      setSelectedTenant(null);
+    });
+    setIsConfirmModalOpen(true);
   };
 
   const handleDeleteTenant = (tenant) => {
@@ -181,9 +191,13 @@ const TenantManagement = () => {
   const handleModalSubmit = (tenantData) => {
     if (modalMode === "create") {
       dispatch(createTenantRequest(tenantData));
+      showToast('Creating tenant...', 'info');
     } else {
       dispatch(updateTenantRequest({ id: selectedTenant.id, ...tenantData }));
+      showToast('Updating tenant...', 'info');
     }
+    setIsModalOpen(false);
+    setSelectedTenant(null);
   };
 
   return (
@@ -409,8 +423,8 @@ const TenantManagement = () => {
         title="Confirm Action"
         message={
           confirmAction?.toString().includes("deleteTenant")
-            ? `Are you sure you want to delete "${selectedTenant?.tenantName}"? This action cannot be undone.`
-            : `Are you sure you want to ${selectedTenant?.status === "active" ? "suspend" : "reactivate"} "${selectedTenant?.tenantName}"?`
+            ? `Are you sure you want to delete "${selectedTenant?.name}"? This action cannot be undone.`
+            : `Are you sure you want to ${selectedTenant?.status === "active" ? "suspend" : "reactivate"} "${selectedTenant?.name}"?`
         }
         isLoading={isLoading}
       />
@@ -427,6 +441,19 @@ const TenantManagement = () => {
         isLoading={isLoadingUsers}
         onRefresh={handleRefreshUsers}
       />
+
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 space-y-2 z-50">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };
