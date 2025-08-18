@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primary Colors */
+  --color-primary-dark: #0A0A23;
+  --color-primary-base: #1E3A8A;
+  --color-primary-accent: #007BFF;
+  --color-secondary: #00C6FF;
+
+  /* Neutral Colors */
+  --color-neutral-light: #F5F7FA;
+  --color-neutral-medium: #6B7280;
+  --color-neutral-dark: #1F2937;
+
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
+
+:root {
+  --color-primary-dark: #0A0A23;
+  --color-primary-base: #1E3A8A;
+  --color-primary-accent: #007BFF;
+  --color-secondary: #00C6FF;
+  --color-neutral-light: #F5F7FA;
+  --color-neutral-medium: #6B7280;
+  --color-neutral-dark: #1F2937;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
+
+:root {
+  /* Primary Colors */
+  --color-primary-dark: hsl(242, 67%, 9%);
+  --color-primary-base: hsl(218, 70%, 30%);
+  --color-primary-accent: hsl(212, 100%, 50%);
+  --color-secondary: hsl(194, 100%, 50%);
+
+  /* Neutral Colors */
+  --color-neutral-light: hsl(210, 20%, 96%);
+  --color-neutral-medium: hsl(220, 13%, 46%);
+  --color-neutral-dark: hsl(215, 28%, 17%);
+
+  /* Status Colors */
+  --color-success: hsl(158, 64%, 52%);
+  --color-warning: hsl(43, 96%, 56%);
+  --color-error: hsl(0, 84%, 60%);
+
+  /* Font Families */
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Additional CSS variables for Tailwind utilities */
+  --border: hsl(220, 13%, 91%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(220, 13%, 15%);
+}
+
+.dark {
+  /* Dark mode variants if needed */
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-white text-gray-900;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary-base) 50%, var(--color-primary-accent) 100%);
+  }
+  
+  .gradient-secondary {
+    background: linear-gradient(135deg, var(--color-primary-base) 0%, var(--color-primary-accent) 100%);
+  }
+
+  /* Responsive container utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Hide scrollbar for horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Custom responsive breakpoints */
+  @screen xs {
+    /* 475px and up */
+  }
+}

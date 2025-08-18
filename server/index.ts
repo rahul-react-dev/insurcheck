@@ -1,9 +1,11 @@
 
 import express from 'express';
 import cors from 'cors';
+import { createServer } from 'http';
 import { db } from './db';
 import routes from './routes.js';
 import authRoutes from './src/routes/auth.js';
+import { setupVite } from './vite.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -82,18 +84,18 @@ app.use('/api/auth', authRoutes);
 // API routes
 app.use('/api', routes);
 
-// Error handling middleware
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', error);
+// Error handling middleware for API routes
+app.use('/api/*', (error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('API Error:', error);
   res.status(500).json({ 
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// 404 handler for API routes only (frontend routes handled by Vite)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
 });
 
 // Database connection test
@@ -112,13 +114,21 @@ async function startServer() {
   try {
     await testDatabaseConnection();
     
-    app.listen(PORT, '0.0.0.0', () => {
+    const server = createServer(app);
+    
+    // Setup Vite for development frontend serving
+    if (process.env.NODE_ENV !== 'production') {
+      await setupVite(app, server);
+    }
+    
+    server.listen(PORT, '0.0.0.0', () => {
       const timestamp = new Date().toLocaleTimeString();
       console.log(`${timestamp} [express] 🚀 InsurCheck Server running on port ${PORT}`);
       console.log(`${timestamp} [express] 📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`${timestamp} [express] 🏥 Health check: http://0.0.0.0:${PORT}/api/health`);
       console.log(`${timestamp} [express] 🔗 API Base: http://0.0.0.0:${PORT}/api`);
       console.log(`${timestamp} [express] 🎯 Super Admin Login: http://0.0.0.0:${PORT}/api/auth/super-admin/login`);
+      console.log(`${timestamp} [express] 🌐 Frontend available at: http://0.0.0.0:${PORT}`);
     });
     
   } catch (error) {

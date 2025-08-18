@@ -1,12 +1,19 @@
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import ws from "ws";
 import { eq, and, or, desc, asc, count, sum, gte, lte, like, sql, isNull, isNotNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import * as schema from "../shared/schema";
 
-const connection = postgres(process.env.DATABASE_URL!);
-const db = drizzle(connection, { schema });
+neonConfig.webSocketConstructor = ws;
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle({ client: pool, schema });
 
 export const storage = {
   // User management
@@ -15,7 +22,7 @@ export const storage = {
     return users[0];
   },
 
-  async getUserById(id: string) {
+  async getUserById(id: number) {
     const users = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
     return users[0];
   },
@@ -29,30 +36,30 @@ export const storage = {
     return users[0];
   },
 
-  async updateUser(id: string, userData: Partial<schema.User>) {
+  async updateUser(id: number, userData: Partial<typeof schema.users.$inferSelect>) {
     const users = await db.update(schema.users).set(userData).where(eq(schema.users.id, id)).returning();
     return users[0];
   },
 
-  async incrementLoginAttempts(userId: string) {
+  async incrementLoginAttempts(userId: number) {
     const user = await this.getUserById(userId);
-    const newAttempts = (user.loginAttempts || 0) + 1;
+    const newAttempts = (user?.failedLoginAttempts || 0) + 1;
     const lockUntil = newAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
     
     await db.update(schema.users).set({
-      loginAttempts: newAttempts,
-      lockedUntil: lockUntil
+      failedLoginAttempts: newAttempts,
+      accountLockedUntil: lockUntil
     }).where(eq(schema.users.id, userId));
   },
 
-  async resetLoginAttempts(userId: string) {
+  async resetLoginAttempts(userId: number) {
     await db.update(schema.users).set({
-      loginAttempts: 0,
-      lockedUntil: null
+      failedLoginAttempts: 0,
+      accountLockedUntil: null
     }).where(eq(schema.users.id, userId));
   },
 
-  async updateLastLogin(userId: string) {
+  async updateLastLogin(userId: number) {
     await db.update(schema.users).set({
       lastLoginAt: new Date()
     }).where(eq(schema.users.id, userId));
@@ -66,10 +73,10 @@ export const storage = {
       documentCount,
       errorCount
     ] = await Promise.all([
-      db.select({ count: count() }).from(schema.tenants).where(eq(schema.tenants.isActive, true)),
+      db.select({ count: count() }).from(schema.tenants).where(eq(schema.tenants.status, 'active')),
       db.select({ count: count() }).from(schema.users).where(eq(schema.users.isActive, true)),
       db.select({ count: count() }).from(schema.documents).where(eq(schema.documents.status, 'active')),
-      db.select({ count: count() }).from(schema.errorLogs).where(eq(schema.errorLogs.resolved, false))
+      db.select({ count: count() }).from(schema.activityLogs).where(eq(schema.activityLogs.level, 'error'))
     ]);
 
     const uptime = process.uptime();
@@ -124,55 +131,54 @@ export const storage = {
     ];
   },
 
-  // Error logs
+  // Error logs (using activity logs with error level)
   async getErrorLogs(filters: any) {
     let query = db.select({
-      id: schema.errorLogs.id,
-      type: schema.errorLogs.type,
-      message: schema.errorLogs.message,
-      endpoint: schema.errorLogs.endpoint,
-      method: schema.errorLogs.method,
-      resolved: schema.errorLogs.resolved,
-      createdAt: schema.errorLogs.createdAt,
-      tenantName: schema.tenants.name,
+      id: schema.activityLogs.id,
+      errorType: schema.activityLogs.action,
+      message: sql`${schema.activityLogs.action} || ': ' || COALESCE(${schema.activityLogs.details}->>'message', 'No additional details')`.as('message'),
+      affectedTenant: schema.tenants.name,
+      timestamp: schema.activityLogs.createdAt,
+      severity: schema.activityLogs.level,
       userEmail: schema.users.email
     })
-    .from(schema.errorLogs)
-    .leftJoin(schema.tenants, eq(schema.errorLogs.tenantId, schema.tenants.id))
-    .leftJoin(schema.users, eq(schema.errorLogs.userId, schema.users.id));
+    .from(schema.activityLogs)
+    .leftJoin(schema.tenants, eq(schema.activityLogs.tenantId, schema.tenants.id))
+    .leftJoin(schema.users, eq(schema.activityLogs.userId, schema.users.id))
+    .where(eq(schema.activityLogs.level, 'error'));
 
-    const conditions = [];
+    const additionalConditions = [];
 
     if (filters.tenantName) {
-      conditions.push(like(schema.tenants.name, `%${filters.tenantName}%`));
+      additionalConditions.push(like(schema.tenants.name, `%${filters.tenantName}%`));
     }
 
     if (filters.errorType) {
-      conditions.push(eq(schema.errorLogs.type, filters.errorType));
+      additionalConditions.push(like(schema.activityLogs.action, `%${filters.errorType}%`));
     }
 
     if (filters.startDate) {
-      conditions.push(gte(schema.errorLogs.createdAt, new Date(filters.startDate)));
+      additionalConditions.push(gte(schema.activityLogs.createdAt, new Date(filters.startDate)));
     }
 
     if (filters.endDate) {
-      conditions.push(lte(schema.errorLogs.createdAt, new Date(filters.endDate)));
+      additionalConditions.push(lte(schema.activityLogs.createdAt, new Date(filters.endDate)));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+    if (additionalConditions.length > 0) {
+      query = query.where(and(eq(schema.activityLogs.level, 'error'), ...additionalConditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.errorLogs);
-    if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
+    const totalQuery = db.select({ count: count() }).from(schema.activityLogs).where(eq(schema.activityLogs.level, 'error'));
+    if (additionalConditions.length > 0) {
+      totalQuery.where(and(eq(schema.activityLogs.level, 'error'), ...additionalConditions));
     }
 
     const [data, total] = await Promise.all([
       query
-        .orderBy(desc(schema.errorLogs.createdAt))
-        .limit(filters.limit)
-        .offset((filters.page - 1) * filters.limit),
+        .orderBy(desc(schema.activityLogs.createdAt))
+        .limit(filters.limit || 10)
+        .offset(((filters.page || 1) - 1) * (filters.limit || 10)),
       totalQuery
     ]);
 
