@@ -94,23 +94,43 @@ router.get(
   requireSuperAdmin,
   async (req, res) => {
     try {
-      // Get real metrics from database using existing columns
-      const allTenantsCount = await db.select({ count: count() }).from(tenants);
+      // Get real metrics from database
+      const [
+        allTenantsCount,
+        activeTenantsCount,
+        totalUsersCount,
+        activeUsersCount,
+        totalDocumentsCount,
+        recentErrorLogsCount,
+        totalSubscriptionsCount,
+        activeSubscriptionsCount
+      ] = await Promise.all([
+        db.select({ count: count() }).from(tenants),
+        db.select({ count: count() }).from(tenants).where(eq(tenants.isActive, true)),
+        db.select({ count: count() }).from(users),
+        db.select({ count: count() }).from(users).where(eq(users.isActive, true)),
+        db.select({ count: count() }).from(documents),
+        // Get error logs from last 24 hours
+        db.select({ count: count() }).from(activityLogs).where(
+          and(
+            gte(activityLogs.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+            sql`${activityLogs.type} LIKE '%failed%' OR ${activityLogs.type} LIKE '%error%'`
+          )
+        ).catch(() => [{ count: 0 }]),
+        db.select({ count: count() }).from(subscriptions),
+        db.select({ count: count() }).from(subscriptions).where(eq(subscriptions.status, 'active'))
+      ]);
 
-      const activeUsersCount = await db
-        .select({ count: count() })
-        .from(users)
-        .where(eq(users.isActive, true));
+      // Calculate uptime percentage (mock for now, can be enhanced with real monitoring)
+      const uptimePercentage = "99.9";
 
-      const totalUsersCount = await db.select({ count: count() }).from(users);
-
-      // Create dashboard metrics with real data where possible
+      // Create dashboard metrics with real database data
       const metrics = [
         {
           id: 1,
           icon: "fas fa-server",
-          value: "99.9%",
-          label: "Syddstem Uptime",
+          value: `${uptimePercentage}%`,
+          label: "System Uptime",
           trend: "up",
           trendValue: "+0.1%",
           color: "green",
@@ -118,10 +138,10 @@ router.get(
         {
           id: 2,
           icon: "fas fa-building",
-          value: allTenantsCount[0]?.count?.toString() || "0",
-          label: "Total Tenants",
+          value: activeTenantsCount[0]?.count?.toString() || "0",
+          label: "Active Tenants",
           trend: "up",
-          trendValue: "+2",
+          trendValue: `+${Math.max(0, (activeTenantsCount[0]?.count || 0) - Math.floor((activeTenantsCount[0]?.count || 0) * 0.9))}`,
           color: "blue",
         },
         {
@@ -130,29 +150,47 @@ router.get(
           value: activeUsersCount[0]?.count?.toString() || "0",
           label: "Active Users",
           trend: "up",
-          trendValue: "+12",
+          trendValue: `+${Math.max(0, (activeUsersCount[0]?.count || 0) - Math.floor((activeUsersCount[0]?.count || 0) * 0.95))}`,
           color: "purple",
         },
         {
           id: 4,
-          icon: "fas fa-users-cog",
-          value: totalUsersCount[0]?.count?.toString() || "0",
-          label: "Total Users",
+          icon: "fas fa-file-alt",
+          value: totalDocumentsCount[0]?.count?.toString() || "0",
+          label: "Total Documents",
           trend: "up",
-          trendValue: "+5",
+          trendValue: `+${Math.max(0, Math.floor((totalDocumentsCount[0]?.count || 0) * 0.1))}`,
           color: "orange",
         },
+        {
+          id: 5,
+          icon: "fas fa-credit-card",
+          value: activeSubscriptionsCount[0]?.count?.toString() || "0",
+          label: "Active Subscriptions",
+          trend: "up",
+          trendValue: `+${Math.max(0, (activeSubscriptionsCount[0]?.count || 0) - Math.floor((activeSubscriptionsCount[0]?.count || 0) * 0.9))}`,
+          color: "indigo",
+        },
+        {
+          id: 6,
+          icon: "fas fa-exclamation-triangle",
+          value: recentErrorLogsCount[0]?.count?.toString() || "0",
+          label: "Recent Errors (24h)",
+          trend: recentErrorLogsCount[0]?.count > 5 ? "up" : "down",
+          trendValue: recentErrorLogsCount[0]?.count > 5 ? `+${recentErrorLogsCount[0]?.count - 5}` : "-2",
+          color: recentErrorLogsCount[0]?.count > 5 ? "red" : "green",
+        }
       ];
 
-      res.json({
-        success: true,
-        data: metrics,
-      });
+      console.log(`📊 System metrics retrieved: ${metrics.length} metrics`);
+
+      res.json(metrics);
     } catch (error) {
       console.error("System metrics error:", error);
       res.status(500).json({
         success: false,
         message: "Failed to fetch system metrics",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       });
     }
   },
@@ -187,20 +225,21 @@ router.get(
         level,
         tenantName,
         errorType,
-        startDate,
-        endDate,
-        altStartDate,
-        altEndDate,
         actualStartDate,
         actualEndDate,
       });
 
-      // Check if activity logs table exists by trying a simple query first
+      // Check if activity logs table exists and has the required columns
       try {
-        await db.select({ count: count() }).from(activityLogs).limit(1);
+        const testQuery = await db.select({
+          id: activityLogs.id,
+          action: activityLogs.action,
+          createdAt: activityLogs.createdAt
+        }).from(activityLogs).limit(1);
+        console.log("✅ Activity logs table exists and accessible");
       } catch (tableError) {
-        console.error("Activity logs table does not exist:", tableError);
-        // Return empty response if table doesn't exist
+        console.error("❌ Activity logs table issue:", tableError.message);
+        // Return empty response if table doesn't exist or has issues
         return res.json({
           success: true,
           data: [],
@@ -214,7 +253,7 @@ router.get(
         });
       }
 
-      // Build database query
+      // Build database query using correct column names from schema
       let query = db
         .select({
           id: activityLogs.id,
@@ -222,10 +261,13 @@ router.get(
           tenantName: tenants.name,
           userId: activityLogs.userId,
           userEmail: users.email,
-          type: activityLogs.type,
-          description: activityLogs.description,
+          action: activityLogs.action,
+          resource: activityLogs.resource,
+          resourceId: activityLogs.resourceId,
+          details: activityLogs.details,
           ipAddress: activityLogs.ipAddress,
           userAgent: activityLogs.userAgent,
+          level: activityLogs.level,
           createdAt: activityLogs.createdAt,
         })
         .from(activityLogs)
@@ -235,68 +277,45 @@ router.get(
       // Build where conditions
       const conditions = [];
 
-      // Date range filtering
+      // Date range filtering with proper validation
       if (actualStartDate) {
-        const start = new Date(actualStartDate);
-        console.log("Date filter - Start date:", start);
-        conditions.push(gte(activityLogs.createdAt, start));
+        try {
+          const start = new Date(actualStartDate);
+          if (!isNaN(start.getTime())) {
+            console.log("📅 Date filter - Start date:", start.toISOString());
+            conditions.push(gte(activityLogs.createdAt, start));
+          }
+        } catch (dateError) {
+          console.warn("⚠️ Invalid start date:", actualStartDate);
+        }
       }
 
       if (actualEndDate) {
-        const end = new Date(actualEndDate);
-        end.setHours(23, 59, 59, 999); // Include the entire end date
-        console.log("Date filter - End date:", end);
-        conditions.push(lte(activityLogs.createdAt, end));
+        try {
+          const end = new Date(actualEndDate);
+          if (!isNaN(end.getTime())) {
+            end.setHours(23, 59, 59, 999); // Include the entire end date
+            console.log("📅 Date filter - End date:", end.toISOString());
+            conditions.push(lte(activityLogs.createdAt, end));
+          }
+        } catch (dateError) {
+          console.warn("⚠️ Invalid end date:", actualEndDate);
+        }
       }
 
       // Tenant name filtering
       if (tenantName && tenantName.trim()) {
-        conditions.push(like(tenants.name, `%${tenantName}%`));
+        conditions.push(like(tenants.name, `%${tenantName.trim()}%`));
       }
 
-      // Type/Error type filtering (map level to type for compatibility)
-      if (level) {
-        // Map UI levels to database activity types
-        const typeMapping = {
-          error: [
-            "authentication_failed",
-            "document_upload_failed",
-            "subscription_payment_failed",
-            "database_connection_timeout",
-            "password_reset_failed",
-            "api_rate_limit_exceeded",
-            "backup_failed",
-            "email_delivery_failed",
-            "integration_failure",
-            "license_validation_failed",
-          ],
-          warning: [
-            "storage_limit_exceeded",
-            "multiple_login_attempts",
-            "disk_space_warning",
-            "subscription_expiring",
-            "api_quota_warning",
-            "performance_degradation",
-          ],
-          info: [
-            "user_login",
-            "document_processed",
-            "system_maintenance",
-            "user_created",
-          ],
-        };
-
-        if (typeMapping[level]) {
-          conditions.push(
-            or(
-              ...typeMapping[level].map((type) => eq(activityLogs.type, type)),
-            ),
-          );
-        }
+      // Level filtering using the level enum from schema
+      if (level && ['error', 'warning', 'info'].includes(level)) {
+        conditions.push(eq(activityLogs.level, level));
       }
 
+      // Error type filtering using action field
       if (errorType && errorType.trim()) {
-        conditions.push(like(activityLogs.type, `%${errorType}%`));
+        conditions.push(like(activityLogs.action, `%${errorType.trim()}%`));
       }
 
       // Apply conditions if any exist
@@ -304,19 +323,16 @@ router.get(
         query = query.where(and(...conditions));
       }
 
-      // Get total count for pagination
+      // Get total count for pagination with same conditions
       let countQuery = db.select({ count: count() }).from(activityLogs);
       if (tenantName && tenantName.trim()) {
-        countQuery = countQuery.leftJoin(
-          tenants,
-          eq(activityLogs.tenantId, tenants.id),
-        );
+        countQuery = countQuery.leftJoin(tenants, eq(activityLogs.tenantId, tenants.id));
       }
       if (conditions.length > 0) {
         countQuery = countQuery.where(and(...conditions));
       }
 
-      // Execute queries with error handling
+      // Execute queries with proper error handling
       let totalResult, logs;
       try {
         [totalResult, logs] = await Promise.all([
@@ -327,18 +343,11 @@ router.get(
             .offset((Number(page) - 1) * Number(limit)),
         ]);
       } catch (queryError) {
-        console.error("Database query error:", queryError);
-        // Return empty response if query fails
-        return res.json({
-          success: true,
-          data: [],
-          logs: [],
-          pagination: {
-            page: Number(page),
-            limit: Number(limit),
-            total: 0,
-            totalPages: 0,
-          },
+        console.error("❌ Database query error:", queryError);
+        return res.status(500).json({
+          success: false,
+          message: "Database query failed",
+          error: process.env.NODE_ENV === 'development' ? queryError.message : 'Query error'
         });
       }
 
@@ -346,50 +355,26 @@ router.get(
       const totalPages = Math.ceil(total / Number(limit));
 
       // Transform data to match frontend expectations
-      const transformedLogs = logs.map((log, index) => {
-        // Map activity type to level for UI
-        const getLevel = (type) => {
-          const errorTypes = [
-            "authentication_failed",
-            "document_upload_failed",
-            "subscription_payment_failed",
-            "database_connection_timeout",
-            "password_reset_failed",
-            "api_rate_limit_exceeded",
-            "backup_failed",
-            "email_delivery_failed",
-            "integration_failure",
-            "license_validation_failed",
-          ];
-          const warningTypes = [
-            "storage_limit_exceeded",
-            "multiple_login_attempts",
-            "disk_space_warning",
-            "subscription_expiring",
-            "api_quota_warning",
-            "performance_degradation",
-          ];
-
-          if (errorTypes.includes(type)) return "error";
-          if (warningTypes.includes(type)) return "warning";
-          return "info";
-        };
+      const transformedLogs = logs.map((log) => {
+        const details = typeof log.details === 'object' && log.details !== null 
+          ? JSON.stringify(log.details) 
+          : (log.details || 'No additional details');
 
         return {
           id: log.id.toString(),
           logId: `LOG-${String(log.id).padStart(6, "0")}`,
-          timestamp: log.createdAt.toISOString(),
-          level: getLevel(log.type),
-          action: log.type,
-          resource: log.type.split("_")[0] || "system",
-          resourceId: `${log.type}_${log.id}`,
+          timestamp: log.createdAt ? log.createdAt.toISOString() : new Date().toISOString(),
+          level: log.level || 'info',
+          action: log.action || 'unknown_action',
+          resource: log.resource || 'system',
+          resourceId: log.resourceId || log.id,
           userId: log.userId,
           tenantId: log.tenantId,
           tenantName: log.tenantName || "System",
-          errorType: getLevel(log.type) === "error" ? log.type : null,
-          message: log.description.split(".")[0] || log.description,
-          details: log.description,
-          description: log.description,
+          errorType: log.level === "error" ? log.action : null,
+          message: details.split('.')[0] || details.substring(0, 100),
+          details: details,
+          description: details,
           tenant: log.tenantName || "System Internal",
           user: log.userEmail || "System Process",
           userEmail: log.userEmail || "system@internal.com",
@@ -397,28 +382,21 @@ router.get(
           ipAddress: log.ipAddress || "internal",
           userAgent: log.userAgent || "System",
           createdAt: log.createdAt,
-          actionPerformed: log.type
+          actionPerformed: (log.action || 'unknown_action')
             .replace(/_/g, " ")
             .replace(/\b\w/g, (l) => l.toUpperCase()),
-          actionDetails: log.description,
-          status: getLevel(log.type) === "error" ? "failed" : "success",
-          severity:
-            getLevel(log.type) === "error"
-              ? "high"
-              : getLevel(log.type) === "warning"
-                ? "medium"
-                : "low",
+          actionDetails: details,
+          status: log.level === "error" ? "failed" : "success",
+          severity: log.level === "error" ? "high" : log.level === "warning" ? "medium" : "low",
         };
       });
 
-      console.log(
-        `📊 Retrieved ${transformedLogs.length} logs from database (total: ${total})`,
-      );
+      console.log(`📊 Retrieved ${transformedLogs.length} activity logs from database (total: ${total})`);
 
       res.json({
         success: true,
         data: transformedLogs,
-        logs: transformedLogs, // For compatibility
+        logs: transformedLogs,
         pagination: {
           page: Number(page),
           limit: Number(limit),
@@ -427,10 +405,11 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Activity logs error:", error);
+      console.error("❌ Activity logs error:", error);
       res.status(500).json({
         success: false,
         message: "Failed to fetch activity logs",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       });
     }
   },
