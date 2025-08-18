@@ -10,11 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Monorepo Structure
 The project follows a monorepo pattern with clear separation of concerns:
-- **client-admin**: React frontend for Super Admins and Tenant Admins (Port 3000)
-- **client-user**: React frontend for Tenant Users (Port 3001)  
-- **client**: Main React application using shadcn/ui components
-- **server**: Express.js backend API (Port 5000)
+- **client-admin**: React frontend for Super Admins and Tenant Admins (run independently with `npm run dev`)
+- **client-user**: React frontend for Tenant Users (run independently with `npm run dev`)  
+- **server**: Express.js backend API (Port 5000, started via workflow)
 - **shared**: Common schema and type definitions
+
+## Development Workflow
+- Backend: Run via "Start application" workflow (starts Express server on port 5000)
+- Admin Frontend: `cd client-admin && npm run dev` (typically runs on port 3000)
+- User Frontend: `cd client-user && npm run dev` (typically runs on port 3001)
+- Each frontend runs independently and connects to the backend API
 
 ## Frontend Architecture
 All React frontends use a modern stack:
@@ -30,10 +35,20 @@ The design system implements a professional blue color palette with CSS custom p
 ## Backend Architecture
 - **Framework**: Express.js with TypeScript support
 - **Database ORM**: Drizzle ORM for type-safe database operations
+- **Database**: PostgreSQL with real data (tenants, users, activity_logs, documents, payments)
 - **Authentication**: JWT-based authentication with role-based access control
 - **Multi-tenancy**: Single database with tenant isolation via tenant_id fields
 - **API Design**: RESTful endpoints with /api prefix
 - **Middleware**: CORS, helmet for security, rate limiting, and comprehensive error handling
+- **Test Credentials**: superadmin@insurcheck.com / admin123
+
+## Current Status (August 18, 2025)
+- ✅ Database schema deployed with all required tables
+- ✅ Sample data loaded (1 tenant, 3 users, activity logs, documents, payments)
+- ✅ All API endpoints working with real database data
+- ✅ Authentication system functional
+- ✅ System metrics API returning real data ($299.98 revenue, 2 error logs)
+- ✅ Backend running independently on port 5000
 
 ## Database Design
 Uses PostgreSQL with Drizzle ORM providing:
