@@ -15,48 +15,22 @@ import {
 // Saga functions
 function* fetchActivityLogsSaga(action) {
   try {
-    // Get current filters from the state and merge with action payload
     const params = action.payload || { page: 1, limit: 10 };
-    
-    // If this is called from filter change, get the full filter set
-    const filters = action.payload?.filters || {};
-    
-    // Build proper query parameters
-    const queryParams = {
-      page: params.page || 1,
-      limit: params.limit || 10,
-      level: params.level || filters.level,
-      tenantName: params.tenantName || filters.tenantName,
-      userEmail: params.userEmail || filters.userEmail,
-      actionPerformed: params.actionPerformed || filters.actionPerformed
-    };
+    console.log('📡 fetchActivityLogsSaga triggered with params:', params);
 
-    // Handle date range properly
-    if (params.dateRange || filters.dateRange) {
-      const dateRange = params.dateRange || filters.dateRange;
-      if (dateRange.start) {
-        queryParams['dateRange[start]'] = dateRange.start;
-      }
-      if (dateRange.end) {
-        queryParams['dateRange[end]'] = dateRange.end;
-      }
-    }
-
-    console.log('📡 fetchActivityLogsSaga triggered with params:', queryParams);
-
-    const response = yield call(superAdminAPI.getActivityLogs, queryParams);
+    const response = yield call(superAdminAPI.getActivityLogs, params);
     console.log('✅ Activity logs API response received:', response);
 
-    // Handle the response data
+    // Handle the response data - the API returns data in response.data
     const responseData = response.data || response;
     
     const validatedResponse = {
       logs: responseData.data || responseData.logs || [],
       pagination: responseData.pagination || {
-        page: queryParams.page,
-        limit: queryParams.limit,
+        page: params.page || 1,
+        limit: params.limit || 10,
         total: responseData.pagination?.total || 0,
-        totalPages: responseData.pagination?.totalPages || Math.ceil((responseData.pagination?.total || 0) / queryParams.limit)
+        totalPages: responseData.pagination?.totalPages || Math.ceil((responseData.pagination?.total || 0) / (params.limit || 10))
       }
     };
 

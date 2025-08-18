@@ -202,7 +202,7 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
         'warning': ['storage_limit_exceeded', 'multiple_login_attempts', 'disk_space_warning', 'subscription_expiring', 'api_quota_warning', 'performance_degradation'],
         'info': ['user_login', 'document_processed', 'system_maintenance', 'user_created']
       };
-
+      
       if (typeMapping[level]) {
         conditions.push(or(...typeMapping[level].map(type => eq(activityLogs.type, type))));
       }
@@ -212,7 +212,7 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
       conditions.push(like(activityLogs.type, `%${errorType}%`));
     }
 
-    // Apply conditions to query if any exist
+    // Apply conditions if any exist
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
@@ -243,7 +243,7 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
       const getLevel = (type) => {
         const errorTypes = ['authentication_failed', 'document_upload_failed', 'subscription_payment_failed', 'database_connection_timeout', 'password_reset_failed', 'api_rate_limit_exceeded', 'backup_failed', 'email_delivery_failed', 'integration_failure', 'license_validation_failed'];
         const warningTypes = ['storage_limit_exceeded', 'multiple_login_attempts', 'disk_space_warning', 'subscription_expiring', 'api_quota_warning', 'performance_degradation'];
-
+        
         if (errorTypes.includes(type)) return 'error';
         if (warningTypes.includes(type)) return 'warning';
         return 'info';

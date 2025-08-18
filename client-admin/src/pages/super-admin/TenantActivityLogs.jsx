@@ -48,48 +48,29 @@ const TenantActivityLogs = () => {
 
   const handleFilterChange = (newFilters) => {
     dispatch(setFilters(newFilters));
-    dispatch(fetchActivityLogsRequest({ 
-      page: 1, 
-      limit: pagination.limit, 
-      filters: newFilters 
-    }));
+    dispatch(fetchActivityLogsRequest(newFilters));
   };
 
   const handleClearFilters = () => {
     dispatch(clearFilters());
-    dispatch(fetchActivityLogsRequest({ 
-      page: 1, 
-      limit: pagination.limit 
-    }));
+    dispatch(fetchActivityLogsRequest());
   };
 
   const handleSort = (field, order) => {
     dispatch(setSorting({ sortBy: field, sortOrder: order }));
-    dispatch(fetchActivityLogsRequest({ 
-      page: pagination.page, 
-      limit: pagination.limit, 
-      filters 
-    }));
+    dispatch(fetchActivityLogsRequest());
   };
 
   const handlePageChange = (newPage) => {
     console.log('Page change to:', newPage);
     dispatch(setPage(newPage));
-    dispatch(fetchActivityLogsRequest({ 
-      page: newPage, 
-      limit: pagination.limit, 
-      filters 
-    }));
+    dispatch(fetchActivityLogsRequest({ page: newPage }));
   };
 
   const handlePageSizeChange = (newSize) => {
     console.log('Page size change to:', newSize);
     dispatch(setPageSize(newSize));
-    dispatch(fetchActivityLogsRequest({ 
-      page: 1, 
-      limit: newSize, 
-      filters 
-    }));
+    dispatch(fetchActivityLogsRequest({ page: 1, limit: newSize }));
   };
 
   const handleLogDetails = (log) => {
