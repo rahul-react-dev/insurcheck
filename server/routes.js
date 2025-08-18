@@ -155,6 +155,25 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
       actualStartDate, actualEndDate 
     });
 
+    // Check if activity logs table exists by trying a simple query first
+    try {
+      await db.select({ count: count() }).from(activityLogs).limit(1);
+    } catch (tableError) {
+      console.error('Activity logs table does not exist:', tableError);
+      // Return empty response if table doesn't exist
+      return res.json({
+        success: true,
+        data: [],
+        logs: [],
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: 0,
+          totalPages: 0
+        }
+      });
+    }
+
     // Build database query
     let query = db.select({
       id: activityLogs.id,
@@ -226,13 +245,31 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
       countQuery = countQuery.where(and(...conditions));
     }
 
-    const [totalResult, logs] = await Promise.all([
-      countQuery,
-      query
-        .orderBy(desc(activityLogs.createdAt))
-        .limit(Number(limit))
-        .offset((Number(page) - 1) * Number(limit))
-    ]);
+    // Execute queries with error handling
+    let totalResult, logs;
+    try {
+      [totalResult, logs] = await Promise.all([
+        countQuery,
+        query
+          .orderBy(desc(activityLogs.createdAt))
+          .limit(Number(limit))
+          .offset((Number(page) - 1) * Number(limit))
+      ]);
+    } catch (queryError) {
+      console.error('Database query error:', queryError);
+      // Return empty response if query fails
+      return res.json({
+        success: true,
+        data: [],
+        logs: [],
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: 0,
+          totalPages: 0
+        }
+      });
+    }
 
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / Number(limit));

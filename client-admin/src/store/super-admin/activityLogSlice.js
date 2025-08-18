@@ -51,14 +51,26 @@ const activityLogSlice = createSlice({
     fetchActivityLogsSuccess: (state, action) => {
       console.log('ActivityLog slice - Payload received:', action.payload);
       state.isLoading = false;
-      state.activityLogs = action.payload.logs || [];
-      state.filteredActivityLogs = action.payload.logs || [];
-      state.pagination = {
-        page: parseInt(action.payload.page) || 1,
-        limit: parseInt(action.payload.limit) || 10,
-        total: parseInt(action.payload.total) || 0,
-        totalPages: parseInt(action.payload.totalPages) || Math.ceil((action.payload.total || 0) / (action.payload.limit || 10))
-      };
+      state.activityLogs = action.payload.logs || action.payload.data || [];
+      state.filteredActivityLogs = action.payload.logs || action.payload.data || [];
+      
+      // Handle pagination from API response
+      if (action.payload.pagination) {
+        state.pagination = {
+          page: parseInt(action.payload.pagination.page) || 1,
+          limit: parseInt(action.payload.pagination.limit) || 10,
+          total: parseInt(action.payload.pagination.total) || 0,
+          totalPages: parseInt(action.payload.pagination.totalPages) || Math.ceil((action.payload.pagination.total || 0) / (action.payload.pagination.limit || 10))
+        };
+      } else {
+        // Fallback pagination
+        state.pagination = {
+          page: 1,
+          limit: 10,
+          total: state.activityLogs.length,
+          totalPages: Math.ceil(state.activityLogs.length / 10)
+        };
+      }
       console.log('ActivityLog slice - Updated pagination:', state.pagination);
     },
     fetchActivityLogsFailure: (state, action) => {

@@ -21,16 +21,16 @@ function* fetchActivityLogsSaga(action) {
     const response = yield call(superAdminAPI.getActivityLogs, params);
     console.log('✅ Activity logs API response received:', response);
 
-    // Handle the response data - the API returns data in response.data
-    const responseData = response.data || response;
+    // Handle the response data - the API should return data directly after interceptor processing
+    const responseData = response || {};
     
     const validatedResponse = {
       logs: responseData.data || responseData.logs || [],
       pagination: responseData.pagination || {
         page: params.page || 1,
         limit: params.limit || 10,
-        total: responseData.pagination?.total || 0,
-        totalPages: responseData.pagination?.totalPages || Math.ceil((responseData.pagination?.total || 0) / (params.limit || 10))
+        total: responseData.pagination?.total || (responseData.data || responseData.logs || []).length,
+        totalPages: responseData.pagination?.totalPages || Math.ceil(((responseData.pagination?.total || (responseData.data || responseData.logs || []).length)) / (params.limit || 10))
       }
     };
 

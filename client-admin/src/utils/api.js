@@ -410,8 +410,8 @@ export const superAdminAPI = {
   downloadInvoice: (id) => api.get(`/invoices/${id}/download`, { responseType: 'blob' }),
 
   // Activity Logs
-  getActivityLogs: (params) => api.get('/super-admin/activity-logs', { params }),
-  exportActivityLogs: (params) => api.post('/super-admin/activity-logs/export', params),
+  getActivityLogs: (params) => api.get('/activity-logs', { params }),
+  exportActivityLogs: (params) => api.post('/activity-logs/export', params),
 
   // Deleted Documents
   getDeletedDocuments: (params) => api.get('/super-admin/deleted-documents', { params }),
