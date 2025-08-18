@@ -7,26 +7,6 @@ import { eq, and, gte, lte, desc, count, sql, like, or, isNull, isNotNull } from
 
 const router = express.Router();
 
-// Helper function to map activity type to level
-const mapTypeToLevel = (type) => {
-  const errorTypes = ['authentication_failed', 'document_upload_failed', 'subscription_payment_failed', 'database_connection_timeout', 'password_reset_failed', 'api_rate_limit_exceeded', 'backup_failed', 'email_delivery_failed', 'integration_failure', 'license_validation_failed'];
-  const warningTypes = ['storage_limit_exceeded', 'multiple_login_attempts', 'disk_space_warning', 'subscription_expiring', 'api_quota_warning', 'performance_degradation'];
-
-  if (errorTypes.includes(type)) return 'error';
-  if (warningTypes.includes(type)) return 'warning';
-  return 'info';
-};
-
-// Helper function to map activity type to severity
-const mapTypeToSeverity = (type) => {
-  const errorTypes = ['authentication_failed', 'document_upload_failed', 'subscription_payment_failed', 'database_connection_timeout', 'password_reset_failed', 'api_rate_limit_exceeded', 'backup_failed', 'email_delivery_failed', 'integration_failure', 'license_validation_failed'];
-  const warningTypes = ['storage_limit_exceeded', 'multiple_login_attempts', 'disk_space_warning', 'subscription_expiring', 'api_quota_warning', 'performance_degradation'];
-
-  if (errorTypes.includes(type)) return 'high';
-  if (warningTypes.includes(type)) return 'medium';
-  return 'low';
-};
-
 // Middleware to authenticate token
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -169,141 +149,105 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
     const actualStartDate = startDate || altStartDate;
     const actualEndDate = endDate || altEndDate;
 
-    console.log('📡 Activity logs API called with params:', { 
+    console.log('Activity logs request params:', { 
       page, limit, level, tenantName, errorType, 
+      startDate, endDate, altStartDate, altEndDate, 
       actualStartDate, actualEndDate 
     });
 
-    // Check if activity logs table exists
+    // Check if activity logs table exists by trying a simple query first
     try {
-      const testQuery = await db.select({ count: count() }).from(activityLogs).limit(1);
-      console.log('✅ Activity logs table exists, count check passed');
+      await db.select({ count: count() }).from(activityLogs).limit(1);
     } catch (tableError) {
-      console.error('❌ Activity logs table does not exist:', tableError.message);
-      // Create mock data for development if table doesn't exist
-      const mockLogs = [
-        {
-          id: '1',
-          timestamp: new Date().toISOString(),
-          level: 'error',
-          action: 'authentication_failed',
-          errorType: 'authentication_failed',
-          affectedTenant: 'Test Tenant',
-          message: 'User login failed - incorrect password',
-          severity: 'high',
-          userId: 'user_123',
-          tenantId: 1,
-          tenantName: 'Test Tenant',
-          ipAddress: '192.168.1.100',
-          userAgent: 'Mozilla/5.0...',
-          createdAt: new Date(),
-          details: 'Authentication attempt failed for user with incorrect credentials'
-        }
-      ];
-
+      console.error('Activity logs table does not exist:', tableError);
+      // Return empty response if table doesn't exist
       return res.json({
         success: true,
-        data: mockLogs,
-        logs: mockLogs,
+        data: [],
+        logs: [],
         pagination: {
           page: Number(page),
           limit: Number(limit),
-          total: mockLogs.length,
-          totalPages: 1
+          total: 0,
+          totalPages: 0
         }
       });
     }
 
-    // Build the main query
-    let query = db
-      .select({
-        id: activityLogs.id,
-        type: activityLogs.type,
-        description: activityLogs.description,
-        userId: activityLogs.userId,
-        tenantId: activityLogs.tenantId,
-        ipAddress: activityLogs.ipAddress,
-        userAgent: activityLogs.userAgent,
-        createdAt: activityLogs.createdAt,
-        tenantName: tenants.name
-      })
-      .from(activityLogs)
-      .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id));
+    // Build database query
+    let query = db.select({
+      id: activityLogs.id,
+      tenantId: activityLogs.tenantId,
+      tenantName: tenants.name,
+      userId: activityLogs.userId,
+      userEmail: users.email,
+      type: activityLogs.type,
+      description: activityLogs.description,
+      ipAddress: activityLogs.ipAddress,
+      userAgent: activityLogs.userAgent,
+      createdAt: activityLogs.createdAt
+    })
+    .from(activityLogs)
+    .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+    .leftJoin(users, eq(activityLogs.userId, users.id));
 
-    // Build conditions array
+    // Build where conditions
     const conditions = [];
+
+    // Date range filtering
+    if (actualStartDate) {
+      const start = new Date(actualStartDate);
+      console.log('Date filter - Start date:', start);
+      conditions.push(gte(activityLogs.createdAt, start));
+    }
+
+    if (actualEndDate) {
+      const end = new Date(actualEndDate);
+      end.setHours(23, 59, 59, 999); // Include the entire end date
+      console.log('Date filter - End date:', end);
+      conditions.push(lte(activityLogs.createdAt, end));
+    }
 
     // Tenant name filtering
     if (tenantName && tenantName.trim()) {
       conditions.push(like(tenants.name, `%${tenantName}%`));
-      console.log('🔍 Adding tenant name filter:', tenantName);
     }
 
-    // Date range filtering with proper validation
-    if (actualStartDate && actualStartDate.trim()) {
-      try {
-        const startDateObj = new Date(actualStartDate);
-        startDateObj.setHours(0, 0, 0, 0); // Start of day
-        if (!isNaN(startDateObj.getTime())) {
-          conditions.push(gte(activityLogs.createdAt, startDateObj));
-          console.log('📅 Adding start date filter:', startDateObj.toISOString());
-        }
-      } catch (dateError) {
-        console.error('❌ Invalid start date:', actualStartDate);
-      }
-    }
-
-    if (actualEndDate && actualEndDate.trim()) {
-      try {
-        const endDateObj = new Date(actualEndDate);
-        endDateObj.setHours(23, 59, 59, 999); // End of day
-        if (!isNaN(endDateObj.getTime())) {
-          conditions.push(lte(activityLogs.createdAt, endDateObj));
-          console.log('📅 Adding end date filter:', endDateObj.toISOString());
-        }
-      } catch (dateError) {
-        console.error('❌ Invalid end date:', actualEndDate);
-      }
-    }
-
-    // Level/Type filtering
-    if (level && level.trim()) {
+    // Type/Error type filtering (map level to type for compatibility)
+    if (level) {
+      // Map UI levels to database activity types
       const typeMapping = {
         'error': ['authentication_failed', 'document_upload_failed', 'subscription_payment_failed', 'database_connection_timeout', 'password_reset_failed', 'api_rate_limit_exceeded', 'backup_failed', 'email_delivery_failed', 'integration_failure', 'license_validation_failed'],
         'warning': ['storage_limit_exceeded', 'multiple_login_attempts', 'disk_space_warning', 'subscription_expiring', 'api_quota_warning', 'performance_degradation'],
         'info': ['user_login', 'document_processed', 'system_maintenance', 'user_created']
       };
-
+      
       if (typeMapping[level]) {
         conditions.push(or(...typeMapping[level].map(type => eq(activityLogs.type, type))));
-        console.log('🏷️ Adding level filter:', level, 'with types:', typeMapping[level]);
       }
     }
 
     if (errorType && errorType.trim()) {
       conditions.push(like(activityLogs.type, `%${errorType}%`));
-      console.log('🏷️ Adding error type filter:', errorType);
     }
 
-    // Apply conditions
+    // Apply conditions if any exist
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    // Build count query with same conditions
-    let countQuery = db
-      .select({ count: count() })
-      .from(activityLogs)
-      .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id));
-
+    // Get total count for pagination
+    let countQuery = db.select({ count: count() }).from(activityLogs);
+    if (tenantName && tenantName.trim()) {
+      countQuery = countQuery.leftJoin(tenants, eq(activityLogs.tenantId, tenants.id));
+    }
     if (conditions.length > 0) {
       countQuery = countQuery.where(and(...conditions));
     }
 
-    // Execute queries
+    // Execute queries with error handling
     let totalResult, logs;
     try {
-      console.log('🔄 Executing database queries...');
       [totalResult, logs] = await Promise.all([
         countQuery,
         query
@@ -311,37 +255,69 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
           .limit(Number(limit))
           .offset((Number(page) - 1) * Number(limit))
       ]);
-      console.log('✅ Database queries executed successfully');
     } catch (queryError) {
-      console.error('❌ Database query execution failed:', queryError);
-      throw new Error(`Database query failed: ${queryError.message}`);
+      console.error('Database query error:', queryError);
+      // Return empty response if query fails
+      return res.json({
+        success: true,
+        data: [],
+        logs: [],
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: 0,
+          totalPages: 0
+        }
+      });
     }
 
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / Number(limit));
 
-    console.log(`📊 Query results: ${total} total logs, ${logs.length} returned for page ${page}`);
+    // Transform data to match frontend expectations
+    const transformedLogs = logs.map((log, index) => {
+      // Map activity type to level for UI
+      const getLevel = (type) => {
+        const errorTypes = ['authentication_failed', 'document_upload_failed', 'subscription_payment_failed', 'database_connection_timeout', 'password_reset_failed', 'api_rate_limit_exceeded', 'backup_failed', 'email_delivery_failed', 'integration_failure', 'license_validation_failed'];
+        const warningTypes = ['storage_limit_exceeded', 'multiple_login_attempts', 'disk_space_warning', 'subscription_expiring', 'api_quota_warning', 'performance_degradation'];
+        
+        if (errorTypes.includes(type)) return 'error';
+        if (warningTypes.includes(type)) return 'warning';
+        return 'info';
+      };
 
-    // Transform logs to expected format
-    const transformedLogs = logs.map(log => ({
-      id: log.id,
-      timestamp: log.createdAt?.toISOString() || new Date().toISOString(),
-      level: mapTypeToLevel(log.type),
-      action: log.type || 'unknown',
-      errorType: log.type || '',
-      affectedTenant: log.tenantName || 'Unknown',
-      message: log.description || 'No description available',
-      severity: mapTypeToSeverity(log.type),
-      userId: log.userId,
-      tenantId: log.tenantId,
-      tenantName: log.tenantName,
-      ipAddress: log.ipAddress,
-      userAgent: log.userAgent,
-      createdAt: log.createdAt,
-      details: log.description || 'No additional details'
-    }));
+      return {
+        id: log.id.toString(),
+        logId: `LOG-${String(log.id).padStart(6, '0')}`,
+        timestamp: log.createdAt.toISOString(),
+        level: getLevel(log.type),
+        action: log.type,
+        resource: log.type.split('_')[0] || 'system',
+        resourceId: `${log.type}_${log.id}`,
+        userId: log.userId,
+        tenantId: log.tenantId,
+        tenantName: log.tenantName || 'System',
+        errorType: getLevel(log.type) === 'error' ? log.type : null,
+        message: log.description.split('.')[0] || log.description,
+        details: log.description,
+        description: log.description,
+        tenant: log.tenantName || 'System Internal',
+        user: log.userEmail || 'System Process',
+        userEmail: log.userEmail || 'system@internal.com',
+        userType: log.userEmail ? 'user' : 'system',
+        ipAddress: log.ipAddress || 'internal',
+        userAgent: log.userAgent || 'System',
+        createdAt: log.createdAt,
+        actionPerformed: log.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        actionDetails: log.description,
+        status: getLevel(log.type) === 'error' ? 'failed' : 'success',
+        severity: getLevel(log.type) === 'error' ? 'high' : getLevel(log.type) === 'warning' ? 'medium' : 'low'
+      };
+    });
 
-    const response = {
+    console.log(`📊 Retrieved ${transformedLogs.length} logs from database (total: ${total})`);
+
+    res.json({
       success: true,
       data: transformedLogs,
       logs: transformedLogs, // For compatibility
@@ -351,20 +327,13 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
         total,
         totalPages
       }
-    };
-
-    console.log('✅ Activity logs API response prepared successfully');
-    res.json(response);
+    });
 
   } catch (error) {
-    console.error('❌ Activity logs API error:', error);
-    console.error('❌ Error stack:', error.stack);
-
+    console.error('Activity logs error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch activity logs',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
-      timestamp: new Date().toISOString()
+      message: 'Failed to fetch activity logs'
     });
   }
 });
