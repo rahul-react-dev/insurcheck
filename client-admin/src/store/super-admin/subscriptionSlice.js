@@ -46,7 +46,9 @@ const subscriptionSlice = createSlice({
     },
     createPlanSuccess: (state, action) => {
       state.isLoading = false;
-      state.plans.push(action.payload);
+      state.plans.unshift(action.payload); // Add to beginning
+      state.showPlanModal = false;
+      state.editingPlan = null;
       state.error = null;
     },
     createPlanFailure: (state, action) => {
@@ -65,6 +67,8 @@ const subscriptionSlice = createSlice({
       if (index !== -1) {
         state.plans[index] = action.payload;
       }
+      state.showPlanModal = false;
+      state.editingPlan = null;
       state.error = null;
     },
     updatePlanFailure: (state, action) => {
@@ -130,14 +134,17 @@ const subscriptionSlice = createSlice({
     showCreatePlanModal: (state) => {
       state.showPlanModal = true;
       state.editingPlan = null;
+      state.error = null;
     },
     showEditPlanModal: (state, action) => {
       state.showPlanModal = true;
       state.editingPlan = action.payload;
+      state.error = null;
     },
     hidePlanModal: (state) => {
       state.showPlanModal = false;
       state.editingPlan = null;
+      state.error = null;
     },
 
     // Fetch subscriptions

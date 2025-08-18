@@ -10,17 +10,18 @@ const PlanModal = () => {
   const { showPlanModal, editingPlan, isLoadingPlans, plansError } = useSelector(state => state.subscription);
 
   const [formData, setFormData] = useState({
-    planId: '',
     name: '',
     description: '',
     price: '',
-    billingCycle: 'Monthly',
+    billingCycle: 'monthly',
+    maxUsers: '',
+    storageLimit: '',
     features: {
-      maxUsers: '',
-      maxDocuments: '',
-      maxComplianceChecks: '',
-      storage: '',
-      support: ''
+      api_access: false,
+      user_support: 'email',
+      document_storage: '',
+      advanced_analytics: false,
+      custom_integrations: false
     }
   });
 
@@ -29,32 +30,34 @@ const PlanModal = () => {
   useEffect(() => {
     if (editingPlan) {
       setFormData({
-        planId: editingPlan.planId || '',
         name: editingPlan.name || '',
         description: editingPlan.description || '',
         price: editingPlan.price || '',
-        billingCycle: editingPlan.billingCycle || 'Monthly',
+        billingCycle: editingPlan.billingCycle || 'monthly',
+        maxUsers: editingPlan.maxUsers || '',
+        storageLimit: editingPlan.storageLimit || '',
         features: {
-          maxUsers: editingPlan.features?.maxUsers || '',
-          maxDocuments: editingPlan.features?.maxDocuments || '',
-          maxComplianceChecks: editingPlan.features?.maxComplianceChecks || '',
-          storage: editingPlan.features?.storage || '',
-          support: editingPlan.features?.support || ''
+          api_access: editingPlan.features?.api_access || false,
+          user_support: editingPlan.features?.user_support || 'email',
+          document_storage: editingPlan.features?.document_storage || '',
+          advanced_analytics: editingPlan.features?.advanced_analytics || false,
+          custom_integrations: editingPlan.features?.custom_integrations || false
         }
       });
     } else {
       setFormData({
-        planId: '',
         name: '',
         description: '',
         price: '',
-        billingCycle: 'Monthly',
+        billingCycle: 'monthly',
+        maxUsers: '',
+        storageLimit: '',
         features: {
-          maxUsers: '',
-          maxDocuments: '',
-          maxComplianceChecks: '',
-          storage: '',
-          support: ''
+          api_access: false,
+          user_support: 'email',
+          document_storage: '',
+          advanced_analytics: false,
+          custom_integrations: false
         }
       });
     }
@@ -89,10 +92,6 @@ const PlanModal = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.planId.trim()) {
-      newErrors.planId = 'Plan ID is required';
-    }
-
     if (!formData.name.trim()) {
       newErrors.name = 'Plan name is required';
     }
@@ -101,28 +100,22 @@ const PlanModal = () => {
       newErrors.description = 'Description is required';
     }
 
-    if (!formData.price || formData.price <= 0) {
-      newErrors.price = 'Valid price is required';
+    if (!formData.price) {
+      newErrors.price = 'Price is required';
+    } else if (isNaN(formData.price) || parseFloat(formData.price) < 0) {
+      newErrors.price = 'Price must be a valid positive number';
     }
 
-    if (!formData.features.maxUsers) {
-      newErrors['features.maxUsers'] = 'Max users is required';
+    if (!formData.maxUsers) {
+      newErrors.maxUsers = 'Max users is required';
+    } else if (isNaN(formData.maxUsers) || parseInt(formData.maxUsers) <= 0) {
+      newErrors.maxUsers = 'Max users must be a positive number';
     }
 
-    if (!formData.features.maxDocuments) {
-      newErrors['features.maxDocuments'] = 'Max documents is required';
-    }
-
-    if (!formData.features.maxComplianceChecks) {
-      newErrors['features.maxComplianceChecks'] = 'Max compliance checks is required';
-    }
-
-    if (!formData.features.storage.trim()) {
-      newErrors['features.storage'] = 'Storage limit is required';
-    }
-
-    if (!formData.features.support.trim()) {
-      newErrors['features.support'] = 'Support type is required';
+    if (!formData.storageLimit) {
+      newErrors.storageLimit = 'Storage limit (GB) is required';
+    } else if (isNaN(formData.storageLimit) || parseInt(formData.storageLimit) <= 0) {
+      newErrors.storageLimit = 'Storage limit must be a positive number';
     }
 
     setErrors(newErrors);
@@ -131,14 +124,22 @@ const PlanModal = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    
     if (!validateForm()) {
       return;
     }
 
     const planData = {
-      ...formData,
-      price: parseFloat(formData.price)
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      price: parseFloat(formData.price),
+      billingCycle: formData.billingCycle,
+      maxUsers: parseInt(formData.maxUsers),
+      storageLimit: parseInt(formData.storageLimit),
+      features: {
+        ...formData.features,
+        document_storage: `${formData.storageLimit}GB`
+      }
     };
 
     if (editingPlan) {
@@ -177,33 +178,15 @@ const PlanModal = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Input
-                  label="Plan ID"
-                  value={formData.planId}
-                  onChange={(e) => handleInputChange('planId', e.target.value)}
-                  placeholder="e.g., BASIC_001"
-                  error={errors.planId}
-                  disabled={!!editingPlan}
-                  required
-                />
-                {editingPlan && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Plan ID cannot be changed after creation
-                  </p>
-                )}
-              </div>
-              <div>
-                <Input
-                  label="Plan Name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="e.g., Basic Plan"
-                  error={errors.name}
-                  required
-                />
-              </div>
+            <div>
+              <Input
+                label="Plan Name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="e.g., Basic Plan"
+                error={errors.name}
+                required
+              />
             </div>
 
             <div>
@@ -249,67 +232,89 @@ const PlanModal = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="Monthly">Monthly</option>
-                  <option value="Annual">Annual</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="annual">Annual</option>
                 </select>
               </div>
             </div>
 
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Feature Limits</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Plan Limits</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Input
                     label="Max Users"
-                    value={formData.features.maxUsers}
-                    onChange={(e) => handleInputChange('features.maxUsers', e.target.value)}
-                    placeholder="5 or Unlimited"
-                    error={errors['features.maxUsers']}
+                    type="number"
+                    min="1"
+                    value={formData.maxUsers}
+                    onChange={(e) => handleInputChange('maxUsers', e.target.value)}
+                    placeholder="5"
+                    error={errors.maxUsers}
                     required
                   />
                 </div>
                 <div>
                   <Input
-                    label="Max Documents"
-                    value={formData.features.maxDocuments}
-                    onChange={(e) => handleInputChange('features.maxDocuments', e.target.value)}
-                    placeholder="100 or Unlimited"
-                    error={errors['features.maxDocuments']}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="Max Compliance Checks"
-                    value={formData.features.maxComplianceChecks}
-                    onChange={(e) => handleInputChange('features.maxComplianceChecks', e.target.value)}
-                    placeholder="50 or Unlimited"
-                    error={errors['features.maxComplianceChecks']}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="Storage Limit"
-                    value={formData.features.storage}
-                    onChange={(e) => handleInputChange('features.storage', e.target.value)}
-                    placeholder="1GB, 10GB, etc."
-                    error={errors['features.storage']}
+                    label="Storage Limit (GB)"
+                    type="number"
+                    min="1"
+                    value={formData.storageLimit}
+                    onChange={(e) => handleInputChange('storageLimit', e.target.value)}
+                    placeholder="10"
+                    error={errors.storageLimit}
                     required
                   />
                 </div>
               </div>
 
               <div className="mt-6">
-                <Input
-                  label="Support Type"
-                  value={formData.features.support}
-                  onChange={(e) => handleInputChange('features.support', e.target.value)}
-                  placeholder="Email, Phone, Dedicated Manager"
-                  error={errors['features.support']}
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Support Type
+                </label>
+                <select
+                  value={formData.features.user_support}
+                  onChange={(e) => handleInputChange('features.user_support', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
-                />
+                >
+                  <option value="email">Email Support</option>
+                  <option value="phone+email">Phone + Email Support</option>
+                  <option value="dedicated">Dedicated Manager</option>
+                </select>
+              </div>
+              
+              <div className="mt-6">
+                <h4 className="text-md font-medium text-gray-900 mb-4">Additional Features</h4>
+                <div className="space-y-3">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.features.api_access}
+                      onChange={(e) => handleInputChange('features.api_access', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">API Access</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.features.advanced_analytics}
+                      onChange={(e) => handleInputChange('features.advanced_analytics', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Advanced Analytics</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.features.custom_integrations}
+                      onChange={(e) => handleInputChange('features.custom_integrations', e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Custom Integrations</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -324,8 +329,11 @@ const PlanModal = () => {
               <Button
                 type="submit"
                 disabled={isLoadingPlans}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 flex items-center"
               >
+                {isLoadingPlans && (
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                )}
                 {isLoadingPlans ? 'Saving...' : editingPlan ? 'Update Plan' : 'Create Plan'}
               </Button>
             </div>

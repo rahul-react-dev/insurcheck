@@ -2,106 +2,106 @@
 import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
 import { superAdminAPI } from '../../utils/api';
 import {
-  fetchSubscriptionPlansRequest,
-  fetchSubscriptionPlansSuccess,
-  fetchSubscriptionPlansFailure,
-  createSubscriptionPlanRequest,
-  createSubscriptionPlanSuccess,
-  createSubscriptionPlanFailure,
-  updateSubscriptionPlanRequest,
-  updateSubscriptionPlanSuccess,
-  updateSubscriptionPlanFailure,
-  deleteSubscriptionPlanRequest,
-  deleteSubscriptionPlanSuccess,
-  deleteSubscriptionPlanFailure,
-  fetchSubscriptionsRequest,
-  fetchSubscriptionsSuccess,
-  fetchSubscriptionsFailure,
-  createSubscriptionRequest,
-  createSubscriptionSuccess,
-  createSubscriptionFailure,
-  updateSubscriptionRequest,
-  updateSubscriptionSuccess,
-  updateSubscriptionFailure,
-  cancelSubscriptionRequest,
-  cancelSubscriptionSuccess,
-  cancelSubscriptionFailure
+  fetchPlansRequest,
+  fetchPlansSuccess,
+  fetchPlansFailure,
+  createPlanRequest,
+  createPlanSuccess,
+  createPlanFailure,
+  updatePlanRequest,
+  updatePlanSuccess,
+  updatePlanFailure,
+  deletePlanRequest,
+  deletePlanSuccess,
+  deletePlanFailure,
+  fetchTenantsRequest,
+  fetchTenantsSuccess,
+  fetchTenantsFailure,
+  assignPlanToTenantRequest,
+  assignPlanToTenantSuccess,
+  assignPlanToTenantFailure,
+  hidePlanModal
 } from './subscriptionSlice';
 
 // Saga functions for subscription plans
-function* fetchSubscriptionPlansSaga(action) {
+function* fetchPlansSaga(action) {
   try {
     const params = action.payload || {};
     const response = yield call(superAdminAPI.getSubscriptionPlans, params);
     const plans = response.data || response;
-    yield put(fetchSubscriptionPlansSuccess(plans));
+    yield put(fetchPlansSuccess(plans));
   } catch (error) {
-    console.error('❌ Error in fetchSubscriptionPlansSaga:', error);
+    console.error('❌ Error in fetchPlansSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch subscription plans';
-    yield put(fetchSubscriptionPlansFailure(errorMessage));
+    yield put(fetchPlansFailure(errorMessage));
   }
 }
 
-function* createSubscriptionPlanSaga(action) {
+function* createPlanSaga(action) {
   try {
     const response = yield call(superAdminAPI.createSubscriptionPlan, action.payload);
     const newPlan = response.data || response;
-    yield put(createSubscriptionPlanSuccess(newPlan));
+    yield put(createPlanSuccess(newPlan));
+    yield put(hidePlanModal());
 
     if (window.showNotification) {
       window.showNotification('Subscription plan created successfully', 'success');
     }
 
     // Refresh plans list
-    yield put(fetchSubscriptionPlansRequest());
+    yield put(fetchPlansRequest());
   } catch (error) {
-    console.error('❌ Error in createSubscriptionPlanSaga:', error);
+    console.error('❌ Error in createPlanSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to create subscription plan';
-    yield put(createSubscriptionPlanFailure(errorMessage));
+    yield put(createPlanFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to create subscription plan', 'error');
+      window.showNotification(`Failed to create subscription plan: ${errorMessage}`, 'error');
     }
   }
 }
 
-function* updateSubscriptionPlanSaga(action) {
+function* updatePlanSaga(action) {
   try {
     const { id, ...planData } = action.payload;
     const response = yield call(superAdminAPI.updateSubscriptionPlan, id, planData);
     const updatedPlan = response.data || response;
-    yield put(updateSubscriptionPlanSuccess(updatedPlan));
+    yield put(updatePlanSuccess(updatedPlan));
+    yield put(hidePlanModal());
 
     if (window.showNotification) {
       window.showNotification('Subscription plan updated successfully', 'success');
     }
+
+    // Refresh plans list
+    yield put(fetchPlansRequest());
   } catch (error) {
-    console.error('❌ Error in updateSubscriptionPlanSaga:', error);
+    console.error('❌ Error in updatePlanSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update subscription plan';
-    yield put(updateSubscriptionPlanFailure(errorMessage));
+    yield put(updatePlanFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to update subscription plan', 'error');
+      window.showNotification(`Failed to update subscription plan: ${errorMessage}`, 'error');
     }
   }
 }
 
-function* deleteSubscriptionPlanSaga(action) {
+function* deletePlanSaga(action) {
   try {
     const planId = action.payload;
     yield call(superAdminAPI.deleteSubscriptionPlan, planId);
-    yield put(deleteSubscriptionPlanSuccess(planId));
+    yield put(deletePlanSuccess(planId));
 
     if (window.showNotification) {
       window.showNotification('Subscription plan deleted successfully', 'success');
     }
   } catch (error) {
-    console.error('❌ Error in deleteSubscriptionPlanSaga:', error);
+    console.error('❌ Error in deletePlanSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to delete subscription plan';
-    yield put(deleteSubscriptionPlanFailure(errorMessage));
+    yield put(deletePlanFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to delete subscription plan', 'error');
+      window.showNotification(`Failed to delete subscription plan: ${errorMessage}`, 'error');
     }
   }
 }
@@ -195,21 +195,29 @@ function* cancelSubscriptionSaga(action) {
   }
 }
 
-// Watcher sagas
-function* watchFetchSubscriptionPlans() {
-  yield takeLatest(fetchSubscriptionPlansRequest.type, fetchSubscriptionPlansSaga);
+// Watcher sagas for subscription plans
+function* watchFetchPlans() {
+  yield takeLatest(fetchPlansRequest.type, fetchPlansSaga);
 }
 
-function* watchCreateSubscriptionPlan() {
-  yield takeEvery(createSubscriptionPlanRequest.type, createSubscriptionPlanSaga);
+function* watchCreatePlan() {
+  yield takeEvery(createPlanRequest.type, createPlanSaga);
 }
 
-function* watchUpdateSubscriptionPlan() {
-  yield takeEvery(updateSubscriptionPlanRequest.type, updateSubscriptionPlanSaga);
+function* watchUpdatePlan() {
+  yield takeEvery(updatePlanRequest.type, updatePlanSaga);
 }
 
-function* watchDeleteSubscriptionPlan() {
-  yield takeEvery(deleteSubscriptionPlanRequest.type, deleteSubscriptionPlanSaga);
+function* watchDeletePlan() {
+  yield takeEvery(deletePlanRequest.type, deletePlanSaga);
+}
+
+function* watchFetchTenants() {
+  yield takeLatest(fetchTenantsRequest.type, fetchTenantsSaga);
+}
+
+function* watchAssignPlanToTenant() {
+  yield takeEvery(assignPlanToTenantRequest.type, assignPlanToTenantSaga);
 }
 
 function* watchFetchSubscriptions() {
@@ -228,16 +236,48 @@ function* watchCancelSubscription() {
   yield takeEvery(cancelSubscriptionRequest.type, cancelSubscriptionSaga);
 }
 
+// Missing saga functions for tenants and assignment
+function* fetchTenantsSaga(action) {
+  try {
+    const params = action.payload || {};
+    const response = yield call(superAdminAPI.getTenants, params);
+    const tenants = response.data || response;
+    yield put(fetchTenantsSuccess(tenants));
+  } catch (error) {
+    console.error('❌ Error in fetchTenantsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch tenants';
+    yield put(fetchTenantsFailure(errorMessage));
+  }
+}
+
+function* assignPlanToTenantSaga(action) {
+  try {
+    const { tenantId, planId } = action.payload;
+    const response = yield call(superAdminAPI.assignSubscriptionToTenant, tenantId, { planId });
+    yield put(assignPlanToTenantSuccess({ tenantId, planId, subscription: response.data || response }));
+
+    if (window.showNotification) {
+      window.showNotification('Plan assigned to tenant successfully', 'success');
+    }
+  } catch (error) {
+    console.error('❌ Error in assignPlanToTenantSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to assign plan to tenant';
+    yield put(assignPlanToTenantFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification(`Failed to assign plan: ${errorMessage}`, 'error');
+    }
+  }
+}
+
 // Root saga
 export default function* subscriptionSaga() {
   yield all([
-    fork(watchFetchSubscriptionPlans),
-    fork(watchCreateSubscriptionPlan),
-    fork(watchUpdateSubscriptionPlan),
-    fork(watchDeleteSubscriptionPlan),
-    fork(watchFetchSubscriptions),
-    fork(watchCreateSubscription),
-    fork(watchUpdateSubscription),
-    fork(watchCancelSubscription)
+    fork(watchFetchPlans),
+    fork(watchCreatePlan),
+    fork(watchUpdatePlan),
+    fork(watchDeletePlan),
+    fork(watchFetchTenants),
+    fork(watchAssignPlanToTenant)
   ]);
 }

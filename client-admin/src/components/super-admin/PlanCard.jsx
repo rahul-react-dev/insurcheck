@@ -13,7 +13,11 @@ const PlanCard = ({ plan }) => {
 
   const handleDelete = () => {
     if (plan.tenantCount > 0) {
-      alert('Cannot delete plan that is currently assigned to tenants.');
+      if (window.showNotification) {
+        window.showNotification('Cannot delete plan that is currently assigned to tenants.', 'error');
+      } else {
+        alert('Cannot delete plan that is currently assigned to tenants.');
+      }
       return;
     }
 
@@ -65,7 +69,7 @@ const PlanCard = ({ plan }) => {
               {plan.isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <p className="text-sm text-gray-600 mb-2">ID: {plan.planId}</p>
+          <p className="text-sm text-gray-600 mb-2">ID: {plan.id}</p>
           <p className="text-gray-700 leading-relaxed line-clamp-2">
             {plan.description}
           </p>
@@ -85,23 +89,30 @@ const PlanCard = ({ plan }) => {
         <div className="grid grid-cols-1 gap-2 text-sm">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Max Users:</span>
-            <span className="font-medium">{formatFeatureValue(plan.features.maxUsers)}</span>
+            <span className="font-medium">{formatFeatureValue(plan.maxUsers)}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Max Documents:</span>
-            <span className="font-medium">{formatFeatureValue(plan.features.maxDocuments)}</span>
+            <span className="text-gray-600">Storage Limit:</span>
+            <span className="font-medium">{plan.storageLimit}GB</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Compliance Checks:</span>
-            <span className="font-medium">{formatFeatureValue(plan.features.maxComplianceChecks)}</span>
+            <span className="text-gray-600">API Access:</span>
+            <span className="font-medium text-blue-600">
+              {plan.features?.api_access ? 'Yes' : 'No'}
+            </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Storage:</span>
-            <span className="font-medium">{plan.features.storage}</span>
+            <span className="text-gray-600">Analytics:</span>
+            <span className="font-medium text-blue-600">
+              {plan.features?.advanced_analytics ? 'Advanced' : 'Basic'}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Support:</span>
-            <span className="font-medium text-blue-600">{plan.features.support}</span>
+            <span className="font-medium text-blue-600">
+              {plan.features?.user_support === 'dedicated' ? 'Dedicated' : 
+               plan.features?.user_support === 'phone+email' ? 'Phone + Email' : 'Email'}
+            </span>
           </div>
         </div>
       </div>
