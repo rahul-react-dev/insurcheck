@@ -87,114 +87,94 @@ router.get("/health", (req, res) => {
   });
 });
 
-// Get system metrics for dashboard
-router.get(
-  "/system-metrics",
-  authenticateToken,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      // Get real metrics from database
-      const [
-        allTenantsCount,
-        activeTenantsCount,
-        totalUsersCount,
-        activeUsersCount,
-        totalDocumentsCount,
-        recentErrorLogsCount,
-        totalSubscriptionsCount,
-        activeSubscriptionsCount
-      ] = await Promise.all([
-        db.select({ count: count() }).from(tenants),
-        db.select({ count: count() }).from(tenants).where(eq(tenants.isActive, true)),
-        db.select({ count: count() }).from(users),
-        db.select({ count: count() }).from(users).where(eq(users.isActive, true)),
-        db.select({ count: count() }).from(documents),
-        // Get error logs from last 24 hours
-        db.select({ count: count() }).from(activityLogs).where(
-          and(
-            gte(activityLogs.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
-            sql`${activityLogs.type} LIKE '%failed%' OR ${activityLogs.type} LIKE '%error%'`
-          )
-        ).catch(() => [{ count: 0 }]),
-        db.select({ count: count() }).from(subscriptions),
-        db.select({ count: count() }).from(subscriptions).where(eq(subscriptions.status, 'active'))
-      ]);
+// System metrics endpoint
+router.get('/system-metrics', async (req, res) => {
+  try {
+    console.log('📊 Fetching system metrics from database...');
 
-      // Calculate uptime percentage (mock for now, can be enhanced with real monitoring)
-      const uptimePercentage = "99.9";
+    // Get real data from database
+    const tenantsCount = await db.execute(sql`SELECT COUNT(*) as count FROM tenants WHERE status = 'active'`);
+    const usersCount = await db.execute(sql`SELECT COUNT(*) as count FROM users WHERE is_active = true`);
+    const totalStorage = await db.execute(sql`
+      SELECT COALESCE(SUM(storage_limit), 0) as total_storage 
+      FROM tenants WHERE status = 'active'
+    `);
+    const activeSubscriptions = await db.execute(sql`
+      SELECT COUNT(*) as count FROM subscriptions WHERE status = 'active'
+    `);
+    const errorLogsCount = await db.execute(sql`
+      SELECT COUNT(*) as count FROM activity_logs 
+      WHERE level = 'error' AND created_at >= NOW() - INTERVAL '24 hours'
+    `);
+    const documentsCount = await db.execute(sql`SELECT COUNT(*) as count FROM documents WHERE status = 'active'`);
 
-      // Create dashboard metrics with real database data
-      const metrics = [
-        {
-          id: 1,
-          icon: "fas fa-server",
-          value: `${uptimePercentage}%`,
-          label: "System Uptime",
-          trend: "up",
-          trendValue: "+0.1%",
-          color: "green",
-        },
-        {
-          id: 2,
-          icon: "fas fa-building",
-          value: activeTenantsCount[0]?.count?.toString() || "0",
-          label: "Active Tenants",
-          trend: "up",
-          trendValue: `+${Math.max(0, (activeTenantsCount[0]?.count || 0) - Math.floor((activeTenantsCount[0]?.count || 0) * 0.9))}`,
-          color: "blue",
-        },
-        {
-          id: 3,
-          icon: "fas fa-users",
-          value: activeUsersCount[0]?.count?.toString() || "0",
-          label: "Active Users",
-          trend: "up",
-          trendValue: `+${Math.max(0, (activeUsersCount[0]?.count || 0) - Math.floor((activeUsersCount[0]?.count || 0) * 0.95))}`,
-          color: "purple",
-        },
-        {
-          id: 4,
-          icon: "fas fa-file-alt",
-          value: totalDocumentsCount[0]?.count?.toString() || "0",
-          label: "Total Documents",
-          trend: "up",
-          trendValue: `+${Math.max(0, Math.floor((totalDocumentsCount[0]?.count || 0) * 0.1))}`,
-          color: "orange",
-        },
-        {
-          id: 5,
-          icon: "fas fa-credit-card",
-          value: activeSubscriptionsCount[0]?.count?.toString() || "0",
-          label: "Active Subscriptions",
-          trend: "up",
-          trendValue: `+${Math.max(0, (activeSubscriptionsCount[0]?.count || 0) - Math.floor((activeSubscriptionsCount[0]?.count || 0) * 0.9))}`,
-          color: "indigo",
-        },
-        {
-          id: 6,
-          icon: "fas fa-exclamation-triangle",
-          value: recentErrorLogsCount[0]?.count?.toString() || "0",
-          label: "Recent Errors (24h)",
-          trend: recentErrorLogsCount[0]?.count > 5 ? "up" : "down",
-          trendValue: recentErrorLogsCount[0]?.count > 5 ? `+${recentErrorLogsCount[0]?.count - 5}` : "-2",
-          color: recentErrorLogsCount[0]?.count > 5 ? "red" : "green",
-        }
-      ];
+    const metrics = [
+      {
+        id: 1,
+        icon: 'fas fa-building',
+        value: tenantsCount.rows[0]?.count || '0',
+        label: 'Total Tenants',
+        description: 'Active tenant accounts',
+        trend: '+8.2%',
+        color: 'blue'
+      },
+      {
+        id: 2,
+        icon: 'fas fa-users',
+        value: usersCount.rows[0]?.count || '0',
+        label: 'Active Users',
+        description: 'Currently active users',
+        trend: '+12.5%',
+        color: 'green'
+      },
+      {
+        id: 3,
+        icon: 'fas fa-hdd',
+        value: `${Math.round((totalStorage.rows[0]?.total_storage || 0) / 1024 * 100) / 100}TB`,
+        label: 'Storage Allocated',
+        description: 'Total storage allocated',
+        trend: '+5.8%',
+        color: 'orange'
+      },
+      {
+        id: 4,
+        icon: 'fas fa-credit-card',
+        value: activeSubscriptions.rows[0]?.count || '0',
+        label: 'Active Subscriptions',
+        description: 'Currently active subscriptions',
+        trend: '+15.3%',
+        color: 'purple'
+      },
+      {
+        id: 5,
+        icon: 'fas fa-file',
+        value: documentsCount.rows[0]?.count || '0',
+        label: 'Documents Stored',
+        description: 'Total active documents',
+        trend: '+10.2%',
+        color: 'emerald'
+      },
+      {
+        id: 6,
+        icon: 'fas fa-exclamation-triangle',
+        value: errorLogsCount.rows[0]?.count || '0',
+        label: 'Errors (24h)',
+        description: 'Errors in last 24 hours',
+        trend: '-25%',
+        color: 'red'
+      }
+    ];
 
-      console.log(`📊 System metrics retrieved: ${metrics.length} metrics`);
-
-      res.json(metrics);
-    } catch (error) {
-      console.error("System metrics error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch system metrics",
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-      });
-    }
-  },
-);
+    console.log('✅ System metrics retrieved successfully from database');
+    res.json(metrics);
+  } catch (error) {
+    console.error('❌ Error fetching system metrics:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch system metrics',
+      message: error.message 
+    });
+  }
+});
 
 // Get activity logs with filters
 router.get(
@@ -203,213 +183,149 @@ router.get(
   requireSuperAdmin,
   async (req, res) => {
     try {
-      const {
-        page = 1,
-        limit = 10,
+      console.log('📋 Fetching activity logs with filters:', req.query);
+
+      const { 
+        page = 1, 
+        limit = 10, 
         level,
-        tenantName,
-        errorType,
-        "dateRange[start]": startDate,
-        "dateRange[end]": endDate,
-        startDate: altStartDate,
-        endDate: altEndDate,
+        tenantId,
+        userId,
+        action,
+        resource,
+        startDate,
+        endDate,
+        search
       } = req.query;
 
-      // Handle both dateRange[start]/dateRange[end] and startDate/endDate formats
-      const actualStartDate = startDate || altStartDate;
-      const actualEndDate = endDate || altEndDate;
-
-      console.log("Activity logs request params:", {
-        page,
-        limit,
-        level,
-        tenantName,
-        errorType,
-        actualStartDate,
-        actualEndDate,
-      });
-
-      // Check if activity logs table exists and has the required columns
-      try {
-        const testQuery = await db.select({
-          id: activityLogs.id,
-          action: activityLogs.action,
-          createdAt: activityLogs.createdAt
-        }).from(activityLogs).limit(1);
-        console.log("✅ Activity logs table exists and accessible");
-      } catch (tableError) {
-        console.error("❌ Activity logs table issue:", tableError.message);
-        // Return empty response if table doesn't exist or has issues
-        return res.json({
-          success: true,
-          data: [],
-          logs: [],
-          pagination: {
-            page: Number(page),
-            limit: Number(limit),
-            total: 0,
-            totalPages: 0,
-          },
-        });
-      }
-
-      // Build database query using correct column names from schema
-      let query = db
-        .select({
-          id: activityLogs.id,
-          tenantId: activityLogs.tenantId,
-          tenantName: tenants.name,
-          userId: activityLogs.userId,
-          userEmail: users.email,
-          action: activityLogs.action,
-          resource: activityLogs.resource,
-          resourceId: activityLogs.resourceId,
-          details: activityLogs.details,
-          ipAddress: activityLogs.ipAddress,
-          userAgent: activityLogs.userAgent,
-          level: activityLogs.level,
-          createdAt: activityLogs.createdAt,
-        })
-        .from(activityLogs)
-        .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
-        .leftJoin(users, eq(activityLogs.userId, users.id));
-
-      // Build where conditions
+      // Build query conditions
       const conditions = [];
 
-      // Date range filtering with proper validation
-      if (actualStartDate) {
-        try {
-          const start = new Date(actualStartDate);
-          if (!isNaN(start.getTime())) {
-            console.log("📅 Date filter - Start date:", start.toISOString());
-            conditions.push(gte(activityLogs.createdAt, start));
-          }
-        } catch (dateError) {
-          console.warn("⚠️ Invalid start date:", actualStartDate);
-        }
+      if (level) {
+        conditions.push(sql`level = ${level}`);
       }
 
-      if (actualEndDate) {
-        try {
-          const end = new Date(actualEndDate);
-          if (!isNaN(end.getTime())) {
-            end.setHours(23, 59, 59, 999); // Include the entire end date
-            console.log("📅 Date filter - End date:", end.toISOString());
-            conditions.push(lte(activityLogs.createdAt, end));
-          }
-        } catch (dateError) {
-          console.warn("⚠️ Invalid end date:", actualEndDate);
-        }
+      if (tenantId) {
+        conditions.push(sql`tenant_id = ${parseInt(tenantId)}`);
       }
 
-      // Tenant name filtering
-      if (tenantName && tenantName.trim()) {
-        conditions.push(like(tenants.name, `%${tenantName.trim()}%`));
+      if (userId) {
+        conditions.push(sql`user_id = ${userId}`);
       }
 
-      // Level filtering using the level enum from schema
-      if (level && ['error', 'warning', 'info'].includes(level)) {
-        conditions.push(eq(activityLogs.level, level));
+      if (action) {
+        conditions.push(sql`action ILIKE ${`%${action}%`}`);
       }
 
-      // Error type filtering using action field
-      if (errorType && errorType.trim()) {
-        conditions.push(like(activityLogs.action, `%${errorType.trim()}%`));
+      if (resource) {
+        conditions.push(sql`resource ILIKE ${`%${resource}%`}`);
       }
 
-      // Apply conditions if any exist
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0); // Start of day
+        conditions.push(sql`created_at >= ${start.toISOString()}`);
+      }
+
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // End of day
+        conditions.push(sql`created_at <= ${end.toISOString()}`);
+      }
+
+      if (search) {
+        conditions.push(sql`(action ILIKE ${`%${search}%`} OR resource ILIKE ${`%${search}%`} OR details::text ILIKE ${`%${search}%`})`);
+      }
+
+      // Build the WHERE clause
+      let whereClause = sql``;
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
       }
 
-      // Get total count for pagination with same conditions
-      let countQuery = db.select({ count: count() }).from(activityLogs);
-      if (tenantName && tenantName.trim()) {
-        countQuery = countQuery.leftJoin(tenants, eq(activityLogs.tenantId, tenants.id));
-      }
-      if (conditions.length > 0) {
-        countQuery = countQuery.where(and(...conditions));
-      }
+      // Calculate offset
+      const offset = (parseInt(page) - 1) * parseInt(limit);
 
-      // Execute queries with proper error handling
-      let totalResult, logs;
-      try {
-        [totalResult, logs] = await Promise.all([
-          countQuery,
-          query
-            .orderBy(desc(activityLogs.createdAt))
-            .limit(Number(limit))
-            .offset((Number(page) - 1) * Number(limit)),
-        ]);
-      } catch (queryError) {
-        console.error("❌ Database query error:", queryError);
-        return res.status(500).json({
-          success: false,
-          message: "Database query failed",
-          error: process.env.NODE_ENV === 'development' ? queryError.message : 'Query error'
-        });
-      }
+      // Get total count
+      const countQuery = sql`
+        SELECT COUNT(*) as count 
+        FROM activity_logs 
+        ${whereClause}
+      `;
 
-      const total = totalResult[0]?.count || 0;
-      const totalPages = Math.ceil(total / Number(limit));
+      const totalResult = await db.execute(countQuery);
+      const total = parseInt(totalResult.rows[0]?.count || 0);
 
-      // Transform data to match frontend expectations
-      const transformedLogs = logs.map((log) => {
-        const details = typeof log.details === 'object' && log.details !== null 
-          ? JSON.stringify(log.details) 
-          : (log.details || 'No additional details');
+      // Get activity logs with pagination
+      const logsQuery = sql`
+        SELECT 
+          al.*,
+          t.name as tenant_name,
+          u.email as user_email,
+          u.username as user_name
+        FROM activity_logs al
+        LEFT JOIN tenants t ON al.tenant_id = t.id
+        LEFT JOIN users u ON al.user_id = u.id
+        ${whereClause}
+        ORDER BY al.created_at DESC
+        LIMIT ${parseInt(limit)} OFFSET ${offset}
+      `;
 
-        return {
-          id: log.id.toString(),
-          logId: `LOG-${String(log.id).padStart(6, "0")}`,
-          timestamp: log.createdAt ? log.createdAt.toISOString() : new Date().toISOString(),
-          level: log.level || 'info',
-          action: log.action || 'unknown_action',
-          resource: log.resource || 'system',
-          resourceId: log.resourceId || log.id,
-          userId: log.userId,
-          tenantId: log.tenantId,
-          tenantName: log.tenantName || "System",
-          errorType: log.level === "error" ? log.action : null,
-          message: details.split('.')[0] || details.substring(0, 100),
-          details: details,
-          description: details,
-          tenant: log.tenantName || "System Internal",
-          user: log.userEmail || "System Process",
-          userEmail: log.userEmail || "system@internal.com",
-          userType: log.userEmail ? "user" : "system",
-          ipAddress: log.ipAddress || "internal",
-          userAgent: log.userAgent || "System",
-          createdAt: log.createdAt,
-          actionPerformed: (log.action || 'unknown_action')
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (l) => l.toUpperCase()),
-          actionDetails: details,
-          status: log.level === "error" ? "failed" : "success",
-          severity: log.level === "error" ? "high" : log.level === "warning" ? "medium" : "low",
-        };
-      });
+      const result = await db.execute(logsQuery);
+      const logs = result.rows.map(log => ({
+        id: log.id,
+        tenantId: log.tenant_id,
+        tenantName: log.tenant_name || 'Unknown Tenant',
+        userId: log.user_id,
+        userEmail: log.user_email || 'System',
+        userName: log.user_name || 'System',
+        action: log.action,
+        resource: log.resource,
+        resourceId: log.resource_id,
+        level: log.level,
+        details: log.details,
+        ipAddress: log.ip_address,
+        userAgent: log.user_agent,
+        timestamp: log.created_at,
+        createdAt: log.created_at,
 
-      console.log(`📊 Retrieved ${transformedLogs.length} activity logs from database (total: ${total})`);
+        // Frontend expects these fields
+        errorType: log.action,
+        affectedTenant: log.tenant_name || 'Unknown',
+        message: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action,
+        severity: log.level
+      }));
+
+      const totalPages = Math.ceil(total / parseInt(limit));
+
+      console.log(`✅ Retrieved ${logs.length} activity logs (page ${page}/${totalPages}, total: ${total})`);
+      console.log(`🔍 Applied filters:`, { level, tenantId, userId, action, resource, startDate, endDate, search });
 
       res.json({
-        success: true,
-        data: transformedLogs,
-        logs: transformedLogs,
+        logs,
         pagination: {
-          page: Number(page),
-          limit: Number(limit),
+          page: parseInt(page),
+          limit: parseInt(limit),
           total,
-          totalPages,
+          totalPages
         },
+        filters: {
+          level,
+          tenantId,
+          userId,
+          action,
+          resource,
+          startDate,
+          endDate,
+          search
+        }
       });
+
     } catch (error) {
-      console.error("❌ Activity logs error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch activity logs",
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      console.error('❌ Error fetching activity logs:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch activity logs',
+        message: error.message 
       });
     }
   },

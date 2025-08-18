@@ -6,7 +6,8 @@ import {
   users, 
   documents, 
   subscriptions, 
-  subscriptionPlans 
+  subscriptionPlans,
+  systemMetrics
 } from '../../shared/schema.js';
 
 async function seedSystemData() {
@@ -23,23 +24,23 @@ async function seedSystemData() {
         {
           name: 'SecureLife Insurance',
           domain: 'securelife.com',
-          isActive: true,
+          status: 'active',
           maxUsers: 50,
-          contactEmail: 'admin@securelife.com'
+          storageLimit: 100
         },
         {
           name: 'HealthGuard Corp',
           domain: 'healthguard.com', 
-          isActive: true,
+          status: 'active',
           maxUsers: 100,
-          contactEmail: 'admin@healthguard.com'
+          storageLimit: 200
         },
         {
           name: 'SafetyFirst Insurance',
           domain: 'safetyfirst.com',
-          isActive: true,
+          status: 'active',
           maxUsers: 75,
-          contactEmail: 'admin@safetyfirst.com'
+          storageLimit: 150
         }
       ];
       existingTenants = await db.insert(tenants).values(sampleTenants).returning();
@@ -51,21 +52,24 @@ async function seedSystemData() {
       const sampleUsers = [
         {
           email: 'admin@securelife.com',
-          name: 'Admin User',
+          username: 'admin_securelife',
+          password: 'hashed_password_1',
           role: 'tenant-admin',
           tenantId: existingTenants[0]?.id,
           isActive: true
         },
         {
           email: 'user@healthguard.com',
-          name: 'John Doe',
+          username: 'john_doe',
+          password: 'hashed_password_2',
           role: 'user',
           tenantId: existingTenants[1]?.id,
           isActive: true
         },
         {
           email: 'manager@safetyfirst.com',
-          name: 'Jane Smith',
+          username: 'jane_smith',
+          password: 'hashed_password_3',
           role: 'user',
           tenantId: existingTenants[2]?.id,
           isActive: true
@@ -75,7 +79,7 @@ async function seedSystemData() {
       console.log(`✅ Created ${existingUsers.length} sample users`);
     }
 
-    // Now create comprehensive activity logs
+    // Create comprehensive activity logs
     console.log('📝 Creating sample activity logs...');
     
     const currentTime = new Date();
@@ -223,26 +227,52 @@ async function seedSystemData() {
       console.log(`📊 Inserted ${insertedCount}/${activityLogsData.length} activity logs`);
     }
 
-    // Create some sample documents and subscriptions for better metrics
-    console.log('📝 Creating sample documents...');
-    const sampleDocuments = [];
-    for (let i = 0; i < 25; i++) {
-      sampleDocuments.push({
-        tenantId: existingTenants[Math.floor(Math.random() * existingTenants.length)].id,
-        userId: existingUsers[Math.floor(Math.random() * existingUsers.length)].id,
-        filename: `document_${i + 1}.pdf`,
-        originalName: `Document ${i + 1}.pdf`,
-        fileSize: Math.floor(Math.random() * 5000000) + 100000, // 100KB to 5MB
-        mimeType: 'application/pdf',
-        status: Math.random() > 0.1 ? 'active' : 'deleted'
-      });
-    }
-    
+    // Create system metrics data for /system-metrics API
+    console.log('📝 Creating system metrics data...');
+    const systemMetricsData = [
+      {
+        metricName: 'total_tenants',
+        metricValue: existingTenants.length.toString(),
+        metricType: 'counter',
+        tags: { category: 'tenants' }
+      },
+      {
+        metricName: 'active_users',
+        metricValue: existingUsers.filter(u => u.isActive).length.toString(),
+        metricType: 'counter',
+        tags: { category: 'users' }
+      },
+      {
+        metricName: 'total_storage_used',
+        metricValue: '245.7',
+        metricType: 'gauge',
+        tags: { category: 'storage', unit: 'GB' }
+      },
+      {
+        metricName: 'monthly_revenue',
+        metricValue: '15420.50',
+        metricType: 'gauge',
+        tags: { category: 'finance', unit: 'USD' }
+      },
+      {
+        metricName: 'error_rate',
+        metricValue: '2.3',
+        metricType: 'gauge',
+        tags: { category: 'performance', unit: 'percent' }
+      },
+      {
+        metricName: 'uptime',
+        metricValue: '99.8',
+        metricType: 'gauge',
+        tags: { category: 'performance', unit: 'percent' }
+      }
+    ];
+
     try {
-      await db.insert(documents).values(sampleDocuments);
-      console.log(`✅ Created ${sampleDocuments.length} sample documents`);
-    } catch (docError) {
-      console.log('ℹ️ Documents may already exist or table structure differs');
+      await db.insert(systemMetrics).values(systemMetricsData);
+      console.log(`✅ Created ${systemMetricsData.length} system metrics`);
+    } catch (metricsError) {
+      console.log('ℹ️ System metrics may already exist or table structure differs');
     }
 
     // Create subscription plans if they don't exist
@@ -253,19 +283,21 @@ async function seedSystemData() {
           {
             name: 'Basic Plan',
             description: 'Basic features for small teams',
-            price: 29.99,
-            currency: 'USD',
-            interval: 'monthly',
-            features: JSON.stringify(['5 users', '10GB storage', 'Basic support']),
+            price: '29.99',
+            billingCycle: 'monthly',
+            features: { users: 5, storage: '10GB', support: 'Basic' },
+            maxUsers: 5,
+            storageLimit: 10,
             isActive: true
           },
           {
             name: 'Pro Plan', 
             description: 'Advanced features for growing businesses',
-            price: 99.99,
-            currency: 'USD',
-            interval: 'monthly',
-            features: JSON.stringify(['25 users', '100GB storage', 'Priority support']),
+            price: '99.99',
+            billingCycle: 'monthly',
+            features: { users: 25, storage: '100GB', support: 'Priority' },
+            maxUsers: 25,
+            storageLimit: 100,
             isActive: true
           }
         ];
@@ -294,7 +326,7 @@ async function seedSystemData() {
     console.log(`   - Activity Logs: ${activityLogsData.length}`);
     console.log(`   - Tenants: ${existingTenants.length}`);
     console.log(`   - Users: ${existingUsers.length}`);
-    console.log(`   - Documents: ${sampleDocuments.length}`);
+    console.log(`   - System Metrics: ${systemMetricsData.length}`);
 
   } catch (error) {
     console.error('❌ Error seeding system data:', error);
