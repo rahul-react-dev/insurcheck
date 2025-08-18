@@ -1040,4 +1040,96 @@ router.delete('/subscription-plans/:id', authenticateToken, requireSuperAdmin, a
   }
 });
 
+// Assign subscription plan to tenant
+router.post('/tenants/:id/subscription', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const tenantId = parseInt(req.params.id);
+    const { planId } = req.body;
+    
+    console.log(`📋 Assigning plan ${planId} to tenant ${tenantId}`);
+    
+    if (!planId) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Plan ID is required'
+      });
+    }
+
+    // Check if tenant exists
+    const existingTenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    
+    if (existingTenant.length === 0) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'Tenant does not exist'
+      });
+    }
+
+    // Check if plan exists
+    const existingPlan = await db.select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, planId))
+      .limit(1);
+    
+    if (existingPlan.length === 0) {
+      return res.status(404).json({
+        error: 'Plan not found',
+        message: 'Subscription plan does not exist'
+      });
+    }
+
+    // Check if tenant already has an active subscription
+    const existingSubscription = await db.select()
+      .from(subscriptions)
+      .where(and(
+        eq(subscriptions.tenantId, tenantId),
+        eq(subscriptions.status, 'active')
+      ))
+      .limit(1);
+
+    let newSubscription;
+    
+    if (existingSubscription.length > 0) {
+      // Update existing subscription
+      console.log(`📝 Updating existing subscription for tenant ${tenantId}`);
+      [newSubscription] = await db.update(subscriptions)
+        .set({
+          planId: planId,
+          updatedAt: new Date()
+        })
+        .where(eq(subscriptions.id, existingSubscription[0].id))
+        .returning();
+    } else {
+      // Create new subscription
+      console.log(`➕ Creating new subscription for tenant ${tenantId}`);
+      [newSubscription] = await db.insert(subscriptions)
+        .values({
+          tenantId: tenantId,
+          planId: planId,
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+    }
+
+    console.log('✅ Plan assigned to tenant successfully:', newSubscription);
+    res.status(201).json({
+      message: 'Plan assigned to tenant successfully',
+      subscription: newSubscription,
+      tenantId: tenantId,
+      planId: planId
+    });
+  } catch (error) {
+    console.error('❌ Error assigning plan to tenant:', error);
+    res.status(500).json({ 
+      error: 'Failed to assign plan to tenant',
+      message: error.message 
+    });
+  }
+});
+
 export default router;

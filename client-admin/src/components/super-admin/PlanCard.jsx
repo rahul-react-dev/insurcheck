@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { showEditPlanModal, deletePlanRequest } from '../../store/super-admin/subscriptionSlice';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 const PlanCard = ({ plan }) => {
   const dispatch = useDispatch();
+  const { isLoading, deletingPlanId } = useSelector(state => state.subscription);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleEdit = () => {
     dispatch(showEditPlanModal(plan));
@@ -20,11 +22,19 @@ const PlanCard = ({ plan }) => {
       }
       return;
     }
-
-    if (window.confirm(`Are you sure you want to delete "${plan.name}"? This action cannot be undone.`)) {
-      dispatch(deletePlanRequest(plan.id));
-    }
+    setShowDeleteModal(true);
   };
+
+  const confirmDelete = () => {
+    dispatch(deletePlanRequest(plan.id));
+    setShowDeleteModal(false);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+  };
+
+  const isDeleting = deletingPlanId === plan.id;
 
   const formatFeatureValue = (value) => {
     if (typeof value === 'string' && value.toLowerCase() === 'unlimited') {
@@ -132,24 +142,80 @@ const PlanCard = ({ plan }) => {
       <div className="flex space-x-3 mt-auto flex-shrink-0">
         <Button
           onClick={handleEdit}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm font-medium"
+          disabled={isLoading || isDeleting}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm font-medium disabled:opacity-50"
         >
           <i className="fas fa-edit mr-2"></i>
           <span>Edit Plan</span>
         </Button>
         <Button
           onClick={handleDelete}
-          disabled={plan.tenantCount > 0}
+          disabled={plan.tenantCount > 0 || isLoading || isDeleting}
           className={`flex-1 py-2 text-sm font-medium ${
-            plan.tenantCount > 0
+            plan.tenantCount > 0 || isLoading || isDeleting
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-red-600 hover:bg-red-700 text-white'
           }`}
         >
-          <i className="fas fa-trash mr-2"></i>
-          <span>Delete</span>
+          {isDeleting ? (
+            <>
+              <i className="fas fa-spinner fa-spin mr-2"></i>
+              <span>Deleting...</span>
+            </>
+          ) : (
+            <>
+              <i className="fas fa-trash mr-2"></i>
+              <span>Delete</span>
+            </>
+          )}
         </Button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <i className="fas fa-exclamation-triangle text-red-600"></i>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">Delete Subscription Plan</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete the subscription plan <strong>"{plan.name}"</strong>?
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Plan'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

@@ -7,6 +7,8 @@ const initialState = {
   isLoading: false,
   isLoadingPlans: false,
   isLoadingTenants: false,
+  deletingPlanId: null,
+  isAssigning: false,
   error: null,
   planError: null,
   tenantError: null,
@@ -77,17 +79,17 @@ const subscriptionSlice = createSlice({
     },
 
     // Delete Plan
-    deletePlanRequest: (state) => {
-      state.isLoading = true;
+    deletePlanRequest: (state, action) => {
+      state.deletingPlanId = action.payload;
       state.error = null;
     },
     deletePlanSuccess: (state, action) => {
-      state.isLoading = false;
+      state.deletingPlanId = null;
       state.plans = state.plans.filter(plan => plan.id !== action.payload);
       state.error = null;
     },
     deletePlanFailure: (state, action) => {
-      state.isLoading = false;
+      state.deletingPlanId = null;
       state.error = action.payload;
     },
 
@@ -98,7 +100,14 @@ const subscriptionSlice = createSlice({
     },
     fetchTenantsSuccess: (state, action) => {
       state.isLoadingTenants = false;
-      state.tenants = action.payload;
+      // Handle different API response structures
+      if (action.payload.tenants) {
+        state.tenants = action.payload.tenants;
+      } else if (Array.isArray(action.payload)) {
+        state.tenants = action.payload;
+      } else {
+        state.tenants = action.payload.data || [];
+      }
       state.tenantError = null;
     },
     fetchTenantsFailure: (state, action) => {
@@ -108,11 +117,11 @@ const subscriptionSlice = createSlice({
 
     // Assign Plan to Tenant
     assignPlanToTenantRequest: (state) => {
-      state.isLoading = true;
+      state.isAssigning = true;
       state.error = null;
     },
     assignPlanToTenantSuccess: (state, action) => {
-      state.isLoading = false;
+      state.isAssigning = false;
       const { tenantId, planId } = action.payload;
       const tenantIndex = state.tenants.findIndex(tenant => tenant.id === tenantId);
       if (tenantIndex !== -1) {
@@ -126,7 +135,7 @@ const subscriptionSlice = createSlice({
       state.error = null;
     },
     assignPlanToTenantFailure: (state, action) => {
-      state.isLoading = false;
+      state.isAssigning = false;
       state.error = action.payload;
     },
 

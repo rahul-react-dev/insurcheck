@@ -1,21 +1,31 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { assignPlanToTenantRequest } from '../../store/super-admin/subscriptionSlice';
+import { assignPlanToTenantRequest, fetchTenantsRequest, fetchPlansRequest } from '../../store/super-admin/subscriptionSlice';
 
 const TenantPlanAssignment = () => {
   const dispatch = useDispatch();
-  const { tenants, plans, isAssigning, assignmentError } = useSelector(state => state.subscription);
+  const { tenants, plans, isAssigning, error, isLoadingTenants, isLoadingPlans } = useSelector(state => state.subscription);
   
   const [selectedTenant, setSelectedTenant] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('');
   const [showAssignmentSection, setShowAssignmentSection] = useState(false);
 
+  // Fetch data on component mount
+  useEffect(() => {
+    dispatch(fetchTenantsRequest());
+    dispatch(fetchPlansRequest());
+  }, [dispatch]);
+
   const handleAssignPlan = () => {
     if (!selectedTenant || !selectedPlan) {
-      alert('Please select both tenant and plan');
+      if (window.showNotification) {
+        window.showNotification('Please select both tenant and plan', 'error');
+      } else {
+        alert('Please select both tenant and plan');
+      }
       return;
     }
 
@@ -24,6 +34,7 @@ const TenantPlanAssignment = () => {
       planId: parseInt(selectedPlan)
     }));
 
+    // Reset form after successful assignment
     setSelectedTenant('');
     setSelectedPlan('');
     setShowAssignmentSection(false);
@@ -42,11 +53,18 @@ const TenantPlanAssignment = () => {
         </Button>
       </div>
 
-      {assignmentError && (
+      {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-          <p className="text-red-700">{assignmentError}</p>
+          <p className="text-red-700">{error}</p>
         </div>
       )}
+
+      {isLoadingTenants || isLoadingPlans ? (
+        <div className="text-center py-8">
+          <i className="fas fa-spinner fa-spin text-2xl text-gray-400 mb-4"></i>
+          <p className="text-gray-600">Loading tenants and plans...</p>
+        </div>
+      ) : null}
 
       {showAssignmentSection && (
         <Card className="p-6 border-2 border-green-200 bg-green-50">

@@ -328,13 +328,17 @@ const PlanModal = () => {
               </Button>
               <Button
                 type="submit"
-                disabled={isLoadingPlans}
+                disabled={isLoading}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 flex items-center"
               >
-                {isLoadingPlans && (
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                {isLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    {editingPlan ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  editingPlan ? 'Update Plan' : 'Create Plan'
                 )}
-                {isLoadingPlans ? 'Saving...' : editingPlan ? 'Update Plan' : 'Create Plan'}
               </Button>
             </div>
           </form>
