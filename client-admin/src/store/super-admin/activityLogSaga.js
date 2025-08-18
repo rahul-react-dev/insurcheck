@@ -21,13 +21,16 @@ function* fetchActivityLogsSaga(action) {
     const response = yield call(superAdminAPI.getActivityLogs, params);
     console.log('✅ Activity logs API response received:', response);
 
+    // Handle the response data - the API returns data in response.data
+    const responseData = response.data || response;
+    
     const validatedResponse = {
-      logs: response.logs || response.data || [],
-      pagination: response.pagination || {
+      logs: responseData.data || responseData.logs || [],
+      pagination: responseData.pagination || {
         page: params.page || 1,
         limit: params.limit || 10,
-        total: response.total || 0,
-        totalPages: Math.ceil((response.total || 0) / (params.limit || 10))
+        total: responseData.pagination?.total || 0,
+        totalPages: responseData.pagination?.totalPages || Math.ceil((responseData.pagination?.total || 0) / (params.limit || 10))
       }
     };
 
@@ -35,6 +38,13 @@ function* fetchActivityLogsSaga(action) {
     yield put(fetchActivityLogsSuccess(validatedResponse));
   } catch (error) {
     console.error('❌ Error in fetchActivityLogsSaga:', error);
+    
+    // Don't show error for 401 (token expired) as the API interceptor handles it
+    if (error?.status === 401) {
+      console.log('🔐 Token expired, letting API interceptor handle redirect');
+      return;
+    }
+    
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch activity logs';
     yield put(fetchActivityLogsFailure(errorMessage));
 
