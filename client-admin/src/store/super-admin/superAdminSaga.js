@@ -66,6 +66,13 @@ function* fetchSystemMetricsSaga() {
     yield put(fetchSystemMetricsSuccess(metrics));
   } catch (error) {
     console.error('❌ Error in fetchSystemMetricsSaga:', error);
+    
+    // Don't show error for 401 (token expired) as the API interceptor handles it
+    if (error?.status === 401) {
+      console.log('🔐 Token expired, letting API interceptor handle redirect');
+      return;
+    }
+    
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch system metrics';
     yield put(fetchSystemMetricsFailure(errorMessage));
   }
@@ -79,6 +86,13 @@ function* fetchErrorLogsSaga(action) {
     yield put(fetchErrorLogsSuccess(logs));
   } catch (error) {
     console.error('❌ Error in fetchErrorLogsSaga:', error);
+    
+    // Don't show error for 401 (token expired) as the API interceptor handles it
+    if (error?.status === 401) {
+      console.log('🔐 Token expired, letting API interceptor handle redirect');
+      return;
+    }
+    
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch error logs';
     yield put(fetchErrorLogsFailure(errorMessage));
   }

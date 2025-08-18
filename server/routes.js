@@ -13,7 +13,10 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
+    return res.status(401).json({ 
+      error: 'Access token required',
+      message: 'Authentication token is missing'
+    });
   }
 
   try {
@@ -21,8 +24,20 @@ const authenticateToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(403).json({ error: 'Invalid or expired token' });
+    console.log('Token verification error:', error);
+
+    let errorMessage = 'Invalid or expired token';
+    if (error.name === 'TokenExpiredError') {
+      errorMessage = 'Token has expired';
+    } else if (error.name === 'JsonWebTokenError') {
+      errorMessage = 'Invalid token';
+    }
+
+    return res.status(401).json({ 
+      error: errorMessage,
+      message: errorMessage,
+      tokenExpired: error.name === 'TokenExpiredError'
+    });
   }
 };
 

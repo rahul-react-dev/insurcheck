@@ -42,6 +42,108 @@ api.interceptors.request.use(
   }
 );
 
+// Function to show session expired popup
+const showSessionExpiredPopup = () => {
+  // Remove any existing popup
+  const existingPopup = document.getElementById('session-expired-popup');
+  if (existingPopup) {
+    existingPopup.remove();
+  }
+
+  // Create popup HTML
+  const popup = document.createElement('div');
+  popup.id = 'session-expired-popup';
+  popup.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    ">
+      <div style="
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+      ">
+        <div style="
+          width: 60px;
+          height: 60px;
+          margin: 0 auto 16px;
+          background: #fee2e2;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <svg width="24" height="24" fill="#dc2626" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        </div>
+        <h3 style="
+          margin: 0 0 8px;
+          font-size: 18px;
+          font-weight: 600;
+          color: #111827;
+        ">
+          Session Expired
+        </h3>
+        <p style="
+          margin: 0 0 20px;
+          color: #6b7280;
+          font-size: 14px;
+          line-height: 1.5;
+        ">
+          Your session has expired. Please login again to continue.
+        </p>
+        <button id="session-expired-ok" style="
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 10px 24px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.2s;
+        " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+          Login Again
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // Handle OK button click
+  document.getElementById('session-expired-ok').onclick = () => {
+    popup.remove();
+    
+    // Clear all authentication data
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+    
+    // Redirect to appropriate login page
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/admin/') && !currentPath.includes('/super-admin/')) {
+      window.location.href = '/admin/login';
+    } else {
+      window.location.href = '/super-admin/login';
+    }
+  };
+};
+
 // Response interceptor for handling responses and errors
 api.interceptors.response.use(
   (response) => {
@@ -77,18 +179,31 @@ api.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Unauthorized - clear local storage and redirect to login
+          // Check if it's a token expiration or invalid token
+          const isTokenExpired = data?.message?.includes('expired') || 
+                                 data?.message?.includes('invalid') ||
+                                 data?.error?.includes('expired') ||
+                                 data?.error?.includes('invalid') ||
+                                 error.message?.includes('expired');
+
+          // Clear authentication data
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          localStorage.removeItem('isAuthenticated'); // Remove authentication status
+          localStorage.removeItem('isAuthenticated');
 
-          // Only redirect if not already on login page
+          // Only show popup and redirect if not already on login page
           const currentPath = window.location.pathname;
           if (!currentPath.includes('/login')) {
-            if (currentPath.includes('/admin/')) {
-              window.location.href = '/admin/login';
+            if (isTokenExpired) {
+              // Show session expired popup for token expiration
+              showSessionExpiredPopup();
             } else {
-              window.location.href = '/super-admin/login'; // Redirect to super-admin login
+              // Direct redirect for other 401 errors
+              if (currentPath.includes('/admin/') && !currentPath.includes('/super-admin/')) {
+                window.location.href = '/admin/login';
+              } else {
+                window.location.href = '/super-admin/login';
+              }
             }
           }
           break;

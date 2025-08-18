@@ -106,26 +106,55 @@ const superAdminSlice = createSlice({
       localStorage.removeItem('isAuthenticated');
     },
 
-    // Hydrate from localStorage
+    // Hydrate authentication state from localStorage
     hydrateAuth: (state) => {
-      try {
-        const token = localStorage.getItem('token');
-        const user = localStorage.getItem('user');
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-        if (token && user && isAuthenticated === 'true') {
-          state.token = token;
-          state.user = JSON.parse(user);
-          state.isAuthenticated = true;
-          state.error = null;
+      if (token && user && isAuthenticated === 'true') {
+        try {
+          // Basic token validation - check if it's not expired
+          const tokenParts = token.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            // Check if token is expired
+            if (payload.exp && payload.exp < currentTime) {
+              console.log('🔐 Token expired during hydration, clearing auth data');
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              localStorage.removeItem('isAuthenticated');
+              state.user = null;
+              state.token = null;
+              state.isAuthenticated = false;
+            } else {
+              state.token = token;
+              state.user = JSON.parse(user);
+              state.isAuthenticated = true;
+              console.log('✅ Auth state hydrated successfully');
+            }
+          } else {
+            throw new Error('Invalid token format');
+          }
+        } catch (error) {
+          console.error('❌ Error validating token or parsing user data:', error);
+          // Clear invalid data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated');
+          state.user = null;
+          state.token = null;
+          state.isAuthenticated = false;
         }
-      } catch (error) {
-        console.error('Error hydrating auth state:', error);
-        // Clear invalid data
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('isAuthenticated');
+      } else {
+        console.log('🔍 No valid authentication data found in localStorage');
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
       }
+      state.isLoading = false;
     },
 
     // Dashboard actions
