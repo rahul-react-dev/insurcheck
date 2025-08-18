@@ -24,21 +24,21 @@ async function seedSystemData() {
         {
           name: 'SecureLife Insurance',
           domain: 'securelife.com',
-          status: 'active',
+          status: 'active' as const,
           maxUsers: 50,
           storageLimit: 100
         },
         {
           name: 'HealthGuard Corp',
           domain: 'healthguard.com', 
-          status: 'active',
+          status: 'active' as const,
           maxUsers: 100,
           storageLimit: 200
         },
         {
           name: 'SafetyFirst Insurance',
           domain: 'safetyfirst.com',
-          status: 'active',
+          status: 'active' as const,
           maxUsers: 75,
           storageLimit: 150
         }

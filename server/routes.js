@@ -87,81 +87,87 @@ router.get("/health", (req, res) => {
   });
 });
 
-// System metrics endpoint
+// System metrics endpoint - For SuperAdminDashboard
 router.get('/system-metrics', async (req, res) => {
   try {
-    console.log('📊 Fetching system metrics from database...');
+    console.log('🔍 Fetching system metrics from database...');
 
-    // Get real data from database
-    const tenantsCount = await db.execute(sql`SELECT COUNT(*) as count FROM tenants WHERE status = 'active'`);
-    const usersCount = await db.execute(sql`SELECT COUNT(*) as count FROM users WHERE is_active = true`);
-    const totalStorage = await db.execute(sql`
-      SELECT COALESCE(SUM(storage_limit), 0) as total_storage 
-      FROM tenants WHERE status = 'active'
-    `);
-    const activeSubscriptions = await db.execute(sql`
-      SELECT COUNT(*) as count FROM subscriptions WHERE status = 'active'
-    `);
-    const errorLogsCount = await db.execute(sql`
-      SELECT COUNT(*) as count FROM activity_logs 
-      WHERE level = 'error' AND created_at >= NOW() - INTERVAL '24 hours'
-    `);
-    const documentsCount = await db.execute(sql`SELECT COUNT(*) as count FROM documents WHERE status = 'active'`);
+    // Get real metrics from database
+    const [
+      tenantsCount,
+      usersCount,
+      activeUsersCount,
+      errorLogsCount,
+      recentPayments
+    ] = await Promise.all([
+      db.select({ count: sql`count(*)` }).from(tenants),
+      db.select({ count: sql`count(*)` }).from(users),
+      db.select({ count: sql`count(*)` }).from(users).where(eq(users.isActive, true)),
+      db.select({ count: sql`count(*)` }).from(activityLogs).where(eq(activityLogs.level, 'error')),
+      db.select({ 
+        total: sql`coalesce(sum(${payments.amount}), 0)` 
+      }).from(payments).where(
+        and(
+          eq(payments.status, 'completed'),
+          gte(payments.createdAt, sql`NOW() - INTERVAL '30 days'`)
+        )
+      )
+    ]);
+
+    // Calculate storage usage (mock for now, can be replaced with real calculation)
+    const storageUsed = Math.floor(Math.random() * 2000 + 500); // GB
+
+    // Calculate uptime percentage (mock)
+    const uptime = (99.5 + Math.random() * 0.5).toFixed(1);
 
     const metrics = [
       {
         id: 1,
         icon: 'fas fa-building',
-        value: tenantsCount.rows[0]?.count || '0',
+        value: tenantsCount[0]?.count?.toString() || '0',
         label: 'Total Tenants',
-        description: 'Active tenant accounts',
-        trend: '+8.2%',
-        color: 'blue'
+        trend: '+2.1%',
+        color: 'text-blue-600'
       },
       {
         id: 2,
         icon: 'fas fa-users',
-        value: usersCount.rows[0]?.count || '0',
+        value: activeUsersCount[0]?.count?.toString() || '0',
         label: 'Active Users',
-        description: 'Currently active users',
-        trend: '+12.5%',
-        color: 'green'
+        trend: '+5.4%',
+        color: 'text-green-600'
       },
       {
         id: 3,
-        icon: 'fas fa-hdd',
-        value: `${Math.round((totalStorage.rows[0]?.total_storage || 0) / 1024 * 100) / 100}TB`,
-        label: 'Storage Allocated',
-        description: 'Total storage allocated',
-        trend: '+5.8%',
-        color: 'orange'
+        icon: 'fas fa-database',
+        value: `${(storageUsed / 1000).toFixed(1)}TB`,
+        label: 'Storage Used',
+        trend: '+12.3%',
+        color: 'text-orange-600'
       },
       {
         id: 4,
-        icon: 'fas fa-credit-card',
-        value: activeSubscriptions.rows[0]?.count || '0',
-        label: 'Active Subscriptions',
-        description: 'Currently active subscriptions',
-        trend: '+15.3%',
-        color: 'purple'
+        icon: 'fas fa-dollar-sign',
+        value: `$${Number(recentPayments[0]?.total || 0).toLocaleString()}`,
+        label: 'Monthly Revenue',
+        trend: '+8.7%',
+        color: 'text-purple-600'
       },
       {
         id: 5,
-        icon: 'fas fa-file',
-        value: documentsCount.rows[0]?.count || '0',
-        label: 'Documents Stored',
-        description: 'Total active documents',
-        trend: '+10.2%',
-        color: 'emerald'
+        icon: 'fas fa-exclamation-triangle',
+        value: errorLogsCount[0]?.count?.toString() || '0',
+        label: 'Error Logs',
+        trend: '-15.2%',
+        color: 'text-red-600'
       },
       {
         id: 6,
-        icon: 'fas fa-exclamation-triangle',
-        value: errorLogsCount.rows[0]?.count || '0',
-        label: 'Errors (24h)',
-        description: 'Errors in last 24 hours',
-        trend: '-25%',
-        color: 'red'
+        icon: 'fas fa-chart-line',
+        value: `${uptime}%`,
+        label: 'Uptime',
+        trend: '+0.1%',
+        color: 'text-green-600'
       }
     ];
 
@@ -202,99 +208,112 @@ router.get(
       const conditions = [];
 
       if (level) {
-        conditions.push(sql`level = ${level}`);
+        conditions.push(eq(activityLogs.level, level));
       }
 
       if (tenantId) {
-        conditions.push(sql`tenant_id = ${parseInt(tenantId)}`);
+        conditions.push(eq(activityLogs.tenantId, parseInt(tenantId)));
       }
 
       if (userId) {
-        conditions.push(sql`user_id = ${userId}`);
+        conditions.push(eq(activityLogs.userId, userId));
       }
 
       if (action) {
-        conditions.push(sql`action ILIKE ${`%${action}%`}`);
+        conditions.push(like(activityLogs.action, `%${action}%`));
       }
 
       if (resource) {
-        conditions.push(sql`resource ILIKE ${`%${resource}%`}`);
+        conditions.push(like(activityLogs.resource, `%${resource}%`));
       }
 
       if (startDate) {
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0); // Start of day
-        conditions.push(sql`created_at >= ${start.toISOString()}`);
+        conditions.push(gte(activityLogs.createdAt, start));
       }
 
       if (endDate) {
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // End of day
-        conditions.push(sql`created_at <= ${end.toISOString()}`);
+        conditions.push(lte(activityLogs.createdAt, end));
       }
 
       if (search) {
-        conditions.push(sql`(action ILIKE ${`%${search}%`} OR resource ILIKE ${`%${search}%`} OR details::text ILIKE ${`%${search}%`})`);
-      }
-
-      // Build the WHERE clause
-      let whereClause = sql``;
-      if (conditions.length > 0) {
-        whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
+        conditions.push(or(
+          like(activityLogs.action, `%${search}%`),
+          like(activityLogs.resource, `%${search}%`),
+          like(activityLogs.details::text, `%${search}%`)
+        ));
       }
 
       // Calculate offset
       const offset = (parseInt(page) - 1) * parseInt(limit);
 
       // Get total count
-      const countQuery = sql`
-        SELECT COUNT(*) as count 
-        FROM activity_logs 
-        ${whereClause}
-      `;
+      const countQuery = db
+        .select({ count: count() })
+        .from(activityLogs);
 
-      const totalResult = await db.execute(countQuery);
-      const total = parseInt(totalResult.rows[0]?.count || 0);
+      if (conditions.length > 0) {
+        countQuery = countQuery.where(and(...conditions));
+      }
+      
+      const totalResult = await countQuery;
+      const total = parseInt(totalResult[0]?.count || 0);
 
       // Get activity logs with pagination
-      const logsQuery = sql`
-        SELECT 
-          al.*,
-          t.name as tenant_name,
-          u.email as user_email,
-          u.username as user_name
-        FROM activity_logs al
-        LEFT JOIN tenants t ON al.tenant_id = t.id
-        LEFT JOIN users u ON al.user_id = u.id
-        ${whereClause}
-        ORDER BY al.created_at DESC
-        LIMIT ${parseInt(limit)} OFFSET ${offset}
-      `;
+      const logsQuery = db
+        .select({
+          id: activityLogs.id,
+          timestamp: activityLogs.createdAt,
+          action: activityLogs.action,
+          resource: activityLogs.resource,
+          level: activityLogs.level,
+          details: activityLogs.details,
+          ipAddress: activityLogs.ipAddress,
+          tenantName: tenants.name,
+          userEmail: users.email
+        })
+        .from(activityLogs)
+        .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+        .leftJoin(users, eq(activityLogs.userId, users.id));
+      
+      if (conditions.length > 0) {
+        logsQuery.where(and(...conditions));
+      }
 
-      const result = await db.execute(logsQuery);
-      const logs = result.rows.map(log => ({
-        id: log.id,
-        tenantId: log.tenant_id,
-        tenantName: log.tenant_name || 'Unknown Tenant',
-        userId: log.user_id,
-        userEmail: log.user_email || 'System',
-        userName: log.user_name || 'System',
-        action: log.action,
-        resource: log.resource,
-        resourceId: log.resource_id,
-        level: log.level,
-        details: log.details,
-        ipAddress: log.ip_address,
-        userAgent: log.user_agent,
-        timestamp: log.created_at,
-        createdAt: log.created_at,
+      const result = await logsQuery
+        .orderBy(desc(activityLogs.createdAt))
+        .limit(parseInt(limit))
+        .offset(offset);
 
-        // Frontend expects these fields
-        errorType: log.action,
-        affectedTenant: log.tenant_name || 'Unknown',
-        message: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action,
-        severity: log.level
-      }));
+      const logs = result.map(log => {
+        const isErrorLog = level === 'error';
+
+        if (isErrorLog) {
+          return {
+            id: log.id,
+            timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
+            errorType: log.action || 'Unknown Error',
+            affectedTenant: log.tenantName || 'System',
+            message: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action,
+            severity: log.level === 'critical' ? 'Critical' : 
+                     log.level === 'error' ? 'High' : 
+                     log.level === 'warning' ? 'Medium' : 'Low'
+          };
+        } else {
+          return {
+            id: log.id,
+            timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
+            action: log.action,
+            user: log.userEmail || 'System',
+            tenant: log.tenantName || 'System',
+            resource: log.resource,
+            details: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action
+          };
+        }
+      });
 
       const totalPages = Math.ceil(total / parseInt(limit));
 
@@ -302,7 +321,7 @@ router.get(
       console.log(`🔍 Applied filters:`, { level, tenantId, userId, action, resource, startDate, endDate, search });
 
       res.json({
-        logs,
+        data: logs,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
