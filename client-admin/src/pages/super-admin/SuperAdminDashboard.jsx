@@ -43,7 +43,6 @@ const SuperAdminDashboard = () => {
   const [filters, setFilters] = useState({
     tenantName: '',
     errorType: '',
-    search: '',
     dateRange: {
       start: '',
       end: ''
@@ -70,9 +69,6 @@ const SuperAdminDashboard = () => {
     }
     if (newFilters.errorType) {
       queryParams.errorType = newFilters.errorType;
-    }
-    if (newFilters.search) {
-      queryParams.search = newFilters.search;
     }
     if (newFilters.dateRange?.start) {
       queryParams.startDate = newFilters.dateRange.start;
@@ -108,9 +104,6 @@ const SuperAdminDashboard = () => {
     }
     if (filters.errorType) {
       queryParams.errorType = filters.errorType;
-    }
-    if (filters.search) {
-      queryParams.search = filters.search;
     }
     if (filters.dateRange?.start) {
       queryParams.startDate = filters.dateRange.start;

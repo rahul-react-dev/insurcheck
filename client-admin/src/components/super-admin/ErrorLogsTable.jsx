@@ -27,7 +27,6 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
 
   const clearFilters = () => {
     const clearedFilters = {
-      search: '',
       tenantName: '',
       errorType: '',
       dateRange: { start: '', end: '' }
@@ -58,23 +57,12 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
     <div className="space-y-4 sm:space-y-6">
       {/* Filters Section */}
       <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <Input
-              type="text"
-              placeholder="Search logs..."
-              value={localFilters.search || ''}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="text-sm"
-            />
-          </div>
-          
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Name</label>
             <Input
               type="text"
-              placeholder="Filter by tenant..."
+              placeholder="Search by tenant name..."
               value={localFilters.tenantName}
               onChange={(e) => handleFilterChange('tenantName', e.target.value)}
               className="text-sm"
@@ -155,7 +143,7 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
             <i className="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Error Logs Found</h3>
             <p className="text-gray-500">
-              {(localFilters.search || localFilters.tenantName || localFilters.errorType || localFilters.dateRange?.start || localFilters.dateRange?.end)
+              {(localFilters.tenantName || localFilters.errorType || localFilters.dateRange?.start || localFilters.dateRange?.end)
                 ? 'Try adjusting your filters to see more results.'
                 : 'No system errors have been logged yet.'}
             </p>
@@ -270,7 +258,7 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
           </div>
 
           {/* Pagination Controls */}
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && pagination.total > 0 && (
             <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
               <div className="text-sm text-gray-700">
                 Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total logs)

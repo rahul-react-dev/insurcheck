@@ -204,7 +204,7 @@ router.get(
         conditions.push(eq(activityLogs.tenantId, parseInt(tenantId)));
       }
 
-      // Handle tenantName filter
+      // Handle tenantName filter - need to add tenants join for filtering
       if (tenantName) {
         conditions.push(like(tenants.name, `%${tenantName}%`));
       }
@@ -238,15 +238,7 @@ router.get(
         conditions.push(lte(activityLogs.createdAt, end));
       }
 
-      if (search) {
-        conditions.push(or(
-          like(activityLogs.action, `%${search}%`),
-          like(activityLogs.resource, `%${search}%`),
-          sql`${activityLogs.details}::text ILIKE ${'%' + search + '%'}`,
-          like(tenants.name, `%${search}%`),
-          like(users.email, `%${search}%`)
-        ));
-      }
+      // Remove search functionality as requested - only use tenant name filter
 
       // Calculate offset
       const offset = (parseInt(page) - 1) * parseInt(limit);
