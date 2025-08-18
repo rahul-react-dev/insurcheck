@@ -54,10 +54,10 @@ const activityLogSlice = createSlice({
       state.activityLogs = action.payload.logs || [];
       state.filteredActivityLogs = action.payload.logs || [];
       state.pagination = {
-        page: parseInt(action.payload.page) || 1,
-        limit: parseInt(action.payload.limit) || 10,
-        total: parseInt(action.payload.total) || 0,
-        totalPages: parseInt(action.payload.totalPages) || Math.ceil((action.payload.total || 0) / (action.payload.limit || 10))
+        page: parseInt(action.payload.pagination?.page) || 1,
+        limit: parseInt(action.payload.pagination?.limit) || 10,
+        total: parseInt(action.payload.pagination?.total) || 0,
+        totalPages: parseInt(action.payload.pagination?.totalPages) || Math.ceil((action.payload.pagination?.total || 0) / (action.payload.pagination?.limit || 10))
       };
       console.log('ActivityLog slice - Updated pagination:', state.pagination);
     },
