@@ -1,5 +1,5 @@
 
-import { db } from '../db.js';
+import { db } from '../db.ts';
 import { sql } from 'drizzle-orm';
 
 const seedSystemData = async () => {
@@ -35,44 +35,44 @@ const seedSystemData = async () => {
     if (existingLogs.rows[0]?.count > 0) {
       console.log('📊 Activity logs already exist, skipping...');
     } else {
-      // Insert sample activity logs
+      // Insert sample activity logs based on actual table structure
       const sampleLogs = [
         {
           action: 'User Login',
-          actor: 'john.doe@securelife.com',
-          target: 'Authentication System',
-          details: 'User successfully logged in',
-          timestamp: new Date().toISOString(),
+          resource: 'Authentication System',
+          details: { message: 'User successfully logged in', actor: 'john.doe@securelife.com' },
           tenant_id: 1,
-          ip_address: '192.168.1.100'
+          ip_address: '192.168.1.100',
+          user_agent: 'Mozilla/5.0',
+          level: 'info'
         },
         {
           action: 'Document Upload',
-          actor: 'jane.smith@healthguard.com',
-          target: 'Document Management',
-          details: 'Uploaded insurance policy document',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          resource: 'Document Management',
+          details: { message: 'Uploaded insurance policy document', actor: 'jane.smith@healthguard.com' },
           tenant_id: 2,
-          ip_address: '192.168.1.101'
+          ip_address: '192.168.1.101',
+          user_agent: 'Mozilla/5.0',
+          level: 'info'
         },
         {
           action: 'System Error',
-          actor: 'system',
-          target: 'Payment Processing',
-          details: 'Payment gateway timeout error',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
+          resource: 'Payment Processing',
+          details: { message: 'Payment gateway timeout error', actor: 'system' },
           tenant_id: null,
-          ip_address: 'internal'
+          ip_address: 'internal',
+          user_agent: 'system',
+          level: 'error'
         }
       ];
 
       for (const log of sampleLogs) {
         await db.execute(sql`
           INSERT INTO activity_logs (
-            action, actor, target, details, timestamp, tenant_id, ip_address
+            action, resource, details, tenant_id, ip_address, user_agent, level
           ) VALUES (
-            ${log.action}, ${log.actor}, ${log.target}, ${log.details}, 
-            ${log.timestamp}, ${log.tenant_id}, ${log.ip_address}
+            ${log.action}, ${log.resource}, ${JSON.stringify(log.details)}, 
+            ${log.tenant_id}, ${log.ip_address}, ${log.user_agent}, ${log.level}
           );
         `);
       }
