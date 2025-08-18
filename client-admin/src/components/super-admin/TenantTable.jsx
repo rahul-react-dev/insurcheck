@@ -205,7 +205,7 @@ const TenantTable = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-900">
-                    #{tenant.tenantId}
+                    #{tenant.id}
                   </span>
                 </div>
                 {getStatusBadge(tenant.status)}
@@ -215,13 +215,13 @@ const TenantTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Name:</span>
                   <span className="text-sm font-medium text-gray-900">
-                    {tenant.tenantName}
+                    {tenant.name}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Contact:</span>
                   <span className="text-sm text-gray-900">
-                    {tenant.primaryContactEmail}
+                    {tenant.email}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -231,7 +231,7 @@ const TenantTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Created:</span>
                   <span className="text-sm text-gray-900">
-                    {formatDate(tenant.createdDate)}
+                    {formatDate(tenant.createdAt)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -240,15 +240,13 @@ const TenantTable = ({
                     <span className="text-sm font-bold text-gray-900">
                       {tenant.userCount || 0}
                     </span>
-                    {tenant.userCount > 0 && (
-                      <button
-                        onClick={() => onViewUsers(tenant)}
-                        className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors"
-                        title="View Users"
-                      >
-                        <i className="fas fa-eye text-xs"></i>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onViewUsers(tenant)}
+                      className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors"
+                      title="View Users"
+                    >
+                      <i className="fas fa-eye text-xs"></i>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -326,27 +324,27 @@ const TenantTable = ({
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm font-medium text-gray-900">
-                    #{tenant.tenantId}
+                    #{tenant.id}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900 font-medium">
-                    {tenant.tenantName}
+                    {tenant.name}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {tenant.description || "No description"}
+                    ID: {tenant.id}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {tenant.primaryContactEmail}
+                    {tenant.email}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(tenant.status)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(tenant.createdDate)}
+                  {formatDate(tenant.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getPlanBadge(tenant.subscriptionPlan)}
@@ -356,15 +354,13 @@ const TenantTable = ({
                     <span className="text-lg font-bold text-gray-900 min-w-[50px] text-center">
                       {tenant.userCount || 0}
                     </span>
-                    {tenant.userCount > 0 && (
-                      <button
-                        onClick={() => onViewUsers(tenant)}
-                        className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors"
-                        title="View Users"
-                      >
-                        <i className="fas fa-eye text-sm"></i>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onViewUsers(tenant)}
+                      className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors"
+                      title="View Users"
+                    >
+                      <i className="fas fa-eye text-sm"></i>
+                    </button>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -402,17 +398,39 @@ const TenantTable = ({
         </table>
       </div>
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={pagination.page}
-        totalPages={Math.ceil(totalTenants / pagination.limit)}
-        totalItems={totalTenants}
-        itemsPerPage={pagination.limit}
-        onPageChange={onPageChange}
-        onItemsPerPageChange={onPageSizeChange}
-        showItemsPerPage={true}
-        itemsPerPageOptions={[5, 10, 25, 50]}
-      />
+      {/* Pagination Controls - Show when we have tenants */}
+      {tenants && tenants.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
+          <div className="text-sm text-gray-700">
+            {pagination ? (
+              `Showing page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total tenants)`
+            ) : (
+              `Showing ${tenants.length} tenants`
+            )}
+          </div>
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => onPageChange && onPageChange(pagination.page - 1)}
+                disabled={!pagination || pagination.page <= 1}
+                className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Previous
+              </button>
+              <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded font-medium">
+                {pagination.page}
+              </span>
+              <button
+                onClick={() => onPageChange && onPageChange(pagination.page + 1)}
+                disabled={!pagination || pagination.page >= pagination.totalPages}
+                className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

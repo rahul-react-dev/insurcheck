@@ -90,8 +90,13 @@ function* createTenantSaga(action) {
       window.showNotification('Tenant created successfully', 'success');
     }
 
-    // Refresh tenants list
-    yield put(fetchTenantsRequest({ page: 1, limit: 10 }));
+    // Refresh tenants list to maintain current state
+    const currentState = yield select(state => state.tenant);
+    yield put(fetchTenantsRequest({ 
+      ...currentState.filters, 
+      page: 1, // Reset to first page for new tenant
+      limit: currentState.pagination.limit 
+    }));
   } catch (error) {
     console.error('❌ Error in createTenantSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to create tenant';
@@ -111,10 +116,13 @@ function* updateTenantSaga(action) {
     const updatedTenant = response.data || response;
     yield put(updateTenantSuccess(updatedTenant));
 
-    // Show success message
+    // Show success toast
     if (window.showNotification) {
       window.showNotification('Tenant updated successfully', 'success');
     }
+
+    // Refresh tenants list to maintain current filters/pagination
+    yield put(fetchTenantsRequest({ page: 1, limit: 10 }));
   } catch (error) {
     console.error('❌ Error in updateTenantSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update tenant';

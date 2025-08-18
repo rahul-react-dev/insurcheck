@@ -457,4 +457,344 @@ router.post(
   },
 );
 
+// ===================== TENANTS MANAGEMENT ROUTES =====================
+
+// Get all tenants with filtering, pagination, and search
+router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching tenants with params:', req.query);
+    
+    const {
+      page = 1,
+      limit = 10,
+      tenantName = '',
+      status = '',
+      subscriptionPlan = '',
+      dateRange = {}
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build where conditions
+    const conditions = [];
+    
+    if (tenantName) {
+      conditions.push(sql`LOWER(${tenants.name}) LIKE LOWER(${'%' + tenantName + '%'})`);
+    }
+    
+    if (status) {
+      conditions.push(eq(tenants.status, status));
+    }
+    
+    if (subscriptionPlan) {
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM ${subscriptions} s 
+        JOIN ${subscriptionPlans} sp ON s.plan_id = sp.id 
+        WHERE s.tenant_id = ${tenants.id} 
+        AND sp.name = ${subscriptionPlan}
+        AND s.status = 'active'
+      )`);
+    }
+    
+    if (dateRange.start) {
+      conditions.push(gte(tenants.createdAt, new Date(dateRange.start)));
+    }
+    
+    if (dateRange.end) {
+      conditions.push(lte(tenants.createdAt, new Date(dateRange.end)));
+    }
+
+    // Execute queries
+    const [tenantsData, totalCount, statusCounts] = await Promise.all([
+      // Get paginated tenants with subscription info
+      db.select({
+        id: tenants.id,
+        name: tenants.name,
+        email: tenants.email,
+        status: tenants.status,
+        createdAt: tenants.createdAt,
+        updatedAt: tenants.updatedAt,
+        subscriptionPlan: subscriptionPlans.name,
+        subscriptionStatus: subscriptions.status
+      })
+      .from(tenants)
+      .leftJoin(subscriptions, and(
+        eq(subscriptions.tenantId, tenants.id),
+        eq(subscriptions.status, 'active')
+      ))
+      .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, subscriptions.planId))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(tenants.createdAt))
+      .limit(parseInt(limit))
+      .offset(offset),
+      
+      // Get total count
+      db.select({ count: count() })
+        .from(tenants)
+        .where(conditions.length > 0 ? and(...conditions) : undefined),
+      
+      // Get status counts
+      db.select({
+        status: tenants.status,
+        count: count()
+      })
+      .from(tenants)
+      .groupBy(tenants.status)
+    ]);
+
+    const total = totalCount[0]?.count || 0;
+    const totalPages = Math.ceil(total / parseInt(limit));
+    
+    // Format status counts
+    const statusCountsFormatted = statusCounts.reduce((acc, item) => {
+      acc[item.status] = item.count;
+      return acc;
+    }, { active: 0, suspended: 0, unverified: 0, locked: 0, deactivated: 0 });
+
+    console.log(`✅ Retrieved ${tenantsData.length} tenants (page ${page}/${totalPages}, total: ${total})`);
+    
+    res.json({
+      tenants: tenantsData,
+      summary: {
+        totalTenants: total,
+        statusCounts: statusCountsFormatted
+      },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching tenants:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch tenants',
+      message: error.message 
+    });
+  }
+});
+
+// Get subscription plans
+router.get('/subscription-plans', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching subscription plans');
+    
+    const plans = await db.select()
+      .from(subscriptionPlans)
+      .orderBy(subscriptionPlans.name);
+    
+    console.log(`✅ Retrieved ${plans.length} subscription plans`);
+    res.json(plans);
+  } catch (error) {
+    console.error('❌ Error fetching subscription plans:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch subscription plans',
+      message: error.message 
+    });
+  }
+});
+
+// Create new tenant
+router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('➕ Creating new tenant:', req.body);
+    
+    const { name, email, status = 'unverified' } = req.body;
+    
+    if (!name || !email) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Name and email are required'
+      });
+    }
+
+    // Check if tenant already exists
+    const existingTenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.email, email))
+      .limit(1);
+    
+    if (existingTenant.length > 0) {
+      return res.status(409).json({
+        error: 'Tenant already exists',
+        message: 'A tenant with this email already exists'
+      });
+    }
+
+    const [newTenant] = await db.insert(tenants)
+      .values({
+        name,
+        email,
+        status,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+
+    console.log('✅ Tenant created successfully:', newTenant);
+    res.status(201).json(newTenant);
+  } catch (error) {
+    console.error('❌ Error creating tenant:', error);
+    res.status(500).json({ 
+      error: 'Failed to create tenant',
+      message: error.message 
+    });
+  }
+});
+
+// Update tenant
+router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const tenantId = parseInt(req.params.id);
+    console.log(`📝 Updating tenant ${tenantId}:`, req.body);
+    
+    const { name, email, status } = req.body;
+    
+    if (!name || !email) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Name and email are required'
+      });
+    }
+
+    // Check if tenant exists
+    const existingTenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    
+    if (existingTenant.length === 0) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'Tenant does not exist'
+      });
+    }
+
+    // Check if email is taken by another tenant
+    if (email !== existingTenant[0].email) {
+      const emailCheck = await db.select()
+        .from(tenants)
+        .where(and(
+          eq(tenants.email, email),
+          sql`${tenants.id} != ${tenantId}`
+        ))
+        .limit(1);
+      
+      if (emailCheck.length > 0) {
+        return res.status(409).json({
+          error: 'Email already taken',
+          message: 'Another tenant already uses this email'
+        });
+      }
+    }
+
+    const [updatedTenant] = await db.update(tenants)
+      .set({
+        name,
+        email,
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(tenants.id, tenantId))
+      .returning();
+
+    console.log('✅ Tenant updated successfully:', updatedTenant);
+    res.json(updatedTenant);
+  } catch (error) {
+    console.error('❌ Error updating tenant:', error);
+    res.status(500).json({ 
+      error: 'Failed to update tenant',
+      message: error.message 
+    });
+  }
+});
+
+// Delete tenant
+router.delete('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const tenantId = parseInt(req.params.id);
+    console.log(`🗑️ Deleting tenant ${tenantId}`);
+    
+    // Check if tenant exists
+    const existingTenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    
+    if (existingTenant.length === 0) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'Tenant does not exist'
+      });
+    }
+
+    // Delete related data first (cascade delete)
+    await Promise.all([
+      db.delete(subscriptions).where(eq(subscriptions.tenantId, tenantId)),
+      db.delete(users).where(eq(users.tenantId, tenantId)),
+      db.delete(documents).where(eq(documents.tenantId, tenantId)),
+      db.delete(payments).where(eq(payments.tenantId, tenantId)),
+      db.delete(activityLogs).where(eq(activityLogs.tenantId, tenantId))
+    ]);
+
+    // Delete the tenant
+    await db.delete(tenants).where(eq(tenants.id, tenantId));
+
+    console.log('✅ Tenant deleted successfully');
+    res.json({ 
+      message: 'Tenant deleted successfully',
+      deletedTenantId: tenantId 
+    });
+  } catch (error) {
+    console.error('❌ Error deleting tenant:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete tenant',
+      message: error.message 
+    });
+  }
+});
+
+// Get tenant users
+router.get('/tenants/:id/users', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const tenantId = parseInt(req.params.id);
+    console.log(`👥 Fetching users for tenant ${tenantId}`);
+    
+    // Check if tenant exists
+    const tenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    
+    if (tenant.length === 0) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'Tenant does not exist'
+      });
+    }
+
+    const tenantUsers = await db.select({
+      id: users.id,
+      email: users.email,
+      role: users.role,
+      isActive: users.isActive,
+      lastLogin: users.lastLogin,
+      createdAt: users.createdAt
+    })
+    .from(users)
+    .where(eq(users.tenantId, tenantId))
+    .orderBy(desc(users.createdAt));
+
+    console.log(`✅ Retrieved ${tenantUsers.length} users for tenant ${tenantId}`);
+    res.json(tenantUsers);
+  } catch (error) {
+    console.error('❌ Error fetching tenant users:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch tenant users',
+      message: error.message 
+    });
+  }
+});
+
 export default router;
