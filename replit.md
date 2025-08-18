@@ -92,13 +92,14 @@ The design system implements a professional blue color palette with CSS custom p
 - ✅ **Complete Subscription Management System Fixed (August 18, 2025)**:
   - Delete confirmation popup implemented (matches tenant management pattern)
   - Button loading spinners added for all Create/Update/Delete operations
-  - Tenant assignment functionality fully working with dedicated API endpoint
+  - Tenant assignment functionality fully working with dedicated API endpoint (/api/tenants/:id/subscription)
   - Redux state management optimized with proper loading states
   - API field mapping corrected between frontend and backend
   - Toast notification system integrated for all subscription operations
   - Edge case handling implemented for all CRUD operations
   - Real-time data updates after all operations
   - Comprehensive error handling with user-friendly messages
+  - **CRITICAL BUG FIX**: Fixed "isLoading is not defined" error in PlanModal.jsx by correcting Redux state selector from isLoadingPlans to isLoading
 
 ## Database Design
 Uses PostgreSQL with Drizzle ORM providing:

@@ -7,7 +7,7 @@ import { createPlanRequest, updatePlanRequest, hidePlanModal } from '../../store
 
 const PlanModal = () => {
   const dispatch = useDispatch();
-  const { showPlanModal, editingPlan, isLoadingPlans, plansError } = useSelector(state => state.subscription);
+  const { showPlanModal, editingPlan, isLoading, plansError } = useSelector(state => state.subscription);
 
   const [formData, setFormData] = useState({
     name: '',
