@@ -9,6 +9,15 @@ const TenantPlanAssignment = () => {
   const dispatch = useDispatch();
   const { tenants, plans, isAssigning, error, isLoadingTenants, isLoadingPlans } = useSelector(state => state.subscription);
   
+  // Reset form when assignment succeeds
+  useEffect(() => {
+    if (!isAssigning && !error && selectedTenant && selectedPlan) {
+      setSelectedTenant('');
+      setSelectedPlan('');
+      setShowAssignmentSection(false);
+    }
+  }, [isAssigning, error, selectedTenant, selectedPlan]);
+  
   const [selectedTenant, setSelectedTenant] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('');
   const [showAssignmentSection, setShowAssignmentSection] = useState(false);
@@ -33,11 +42,6 @@ const TenantPlanAssignment = () => {
       tenantId: parseInt(selectedTenant),
       planId: parseInt(selectedPlan)
     }));
-
-    // Reset form after successful assignment
-    setSelectedTenant('');
-    setSelectedPlan('');
-    setShowAssignmentSection(false);
   };
 
   return (
@@ -59,12 +63,19 @@ const TenantPlanAssignment = () => {
         </div>
       )}
 
-      {isLoadingTenants || isLoadingPlans ? (
+      {(isLoadingTenants || isLoadingPlans) && (
         <div className="text-center py-8">
           <i className="fas fa-spinner fa-spin text-2xl text-gray-400 mb-4"></i>
           <p className="text-gray-600">Loading tenants and plans...</p>
         </div>
-      ) : null}
+      )}
+      
+      {!isLoadingTenants && !isLoadingPlans && tenants.length === 0 && (
+        <div className="text-center py-8">
+          <i className="fas fa-users text-4xl text-gray-300 mb-4"></i>
+          <p className="text-gray-600">No tenants found</p>
+        </div>
+      )}
 
       {showAssignmentSection && (
         <Card className="p-6 border-2 border-green-200 bg-green-50">
@@ -113,9 +124,16 @@ const TenantPlanAssignment = () => {
               <Button
                 onClick={handleAssignPlan}
                 disabled={!selectedTenant || !selectedPlan || isAssigning}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 disabled:opacity-50"
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 disabled:opacity-50 flex items-center justify-center"
               >
-                {isAssigning ? 'Assigning...' : 'Assign Plan'}
+                {isAssigning ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Assigning...
+                  </>
+                ) : (
+                  'Assign Plan'
+                )}
               </Button>
             </div>
           </div>
@@ -123,19 +141,22 @@ const TenantPlanAssignment = () => {
       )}
 
       {/* Tenant List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {tenants.map(tenant => (
+      {!isLoadingTenants && !isLoadingPlans && tenants.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {tenants.map(tenant => (
           <Card key={tenant.id} className="p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{tenant.name}</h3>
                 <p className="text-sm text-gray-600">{tenant.email}</p>
                 <span className={`inline-block mt-2 px-2 py-1 text-xs font-medium rounded-full ${
-                  tenant.status === 'Active' 
+                  tenant.status === 'active' 
                     ? 'bg-green-100 text-green-800' 
+                    : tenant.status === 'suspended'
+                    ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {tenant.status}
+                  {tenant.status?.charAt(0).toUpperCase() + tenant.status?.slice(1)}
                 </span>
               </div>
               <div className="text-right">
@@ -164,13 +185,11 @@ const TenantPlanAssignment = () => {
                 <div>
                   <div className="text-sm font-medium text-gray-900">Current Plan</div>
                   <div className="text-sm text-gray-600">
-                    {tenant.plan ? tenant.plan.name : 'No plan assigned'}
+                    {tenant.subscriptionPlan || 'No plan assigned'}
                   </div>
-                  {tenant.plan && (
-                    <div className="text-xs text-blue-600">
-                      ${tenant.plan.price}/month
-                    </div>
-                  )}
+                  <div className="text-xs text-blue-600">
+                    Status: {tenant.subscriptionStatus || 'inactive'}
+                  </div>
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -186,8 +205,9 @@ const TenantPlanAssignment = () => {
               </div>
             </div>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

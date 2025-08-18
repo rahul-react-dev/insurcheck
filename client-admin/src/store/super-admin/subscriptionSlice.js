@@ -128,7 +128,7 @@ const subscriptionSlice = createSlice({
         const plan = state.plans.find(p => p.id === planId);
         state.tenants[tenantIndex] = {
           ...state.tenants[tenantIndex],
-          subscriptionPlan: plan?.name || planId,
+          subscriptionPlan: plan?.name || 'Unknown Plan',
           planId: planId
         };
       }
