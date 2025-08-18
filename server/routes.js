@@ -140,10 +140,16 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
       tenantName,
       errorType,
       'dateRange[start]': startDate,
-      'dateRange[end]': endDate
+      'dateRange[end]': endDate,
+      startDate: altStartDate,
+      endDate: altEndDate
     } = req.query;
 
-    console.log('Activity logs request params:', { page, limit, level, tenantName, errorType, startDate, endDate });
+    // Handle both dateRange[start]/dateRange[end] and startDate/endDate formats
+    const actualStartDate = startDate || altStartDate;
+    const actualEndDate = endDate || altEndDate;
+
+    console.log('Activity logs request params:', { page, limit, level, tenantName, errorType, startDate, endDate, altStartDate, altEndDate, actualStartDate, actualEndDate });
 
     // Generate mock activity logs data
     const mockLogs = [
@@ -346,6 +352,206 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
         ipAddress: 'internal',
         userAgent: 'System',
         createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000)
+      },
+      {
+        id: '11',
+        timestamp: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
+        level: 'error',
+        action: 'backup_failed',
+        resource: 'system',
+        resourceId: 'backup_process_123',
+        userId: null,
+        tenantId: 1,
+        tenantName: 'Tech Corp Inc',
+        errorType: 'backup_error',
+        message: 'Automated backup process failed',
+        details: 'Daily backup for tenant Tech Corp Inc failed due to network timeout',
+        description: 'Backup process failure - manual intervention required',
+        tenant: 'Tech Corp Inc',
+        user: 'Backup Service',
+        ipAddress: 'internal',
+        userAgent: 'BackupAgent/1.0',
+        createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000)
+      },
+      {
+        id: '12',
+        timestamp: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(),
+        level: 'info',
+        action: 'document_processed',
+        resource: 'documents',
+        resourceId: 'doc_987',
+        userId: 'user_444',
+        tenantId: 2,
+        tenantName: 'HealthGuard Corp',
+        errorType: null,
+        message: 'Document successfully processed and validated',
+        details: 'Insurance document processed successfully with OCR validation',
+        description: 'Document processing completed successfully',
+        tenant: 'HealthGuard Corp',
+        user: 'process@healthguard.com',
+        ipAddress: '10.0.0.20',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        createdAt: new Date(Date.now() - 11 * 60 * 60 * 1000)
+      },
+      {
+        id: '13',
+        timestamp: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString(),
+        level: 'warning',
+        action: 'subscription_expiring',
+        resource: 'subscriptions',
+        resourceId: 'sub_555',
+        userId: 'user_666',
+        tenantId: 4,
+        tenantName: 'SecureLife Insurance',
+        errorType: 'subscription_warning',
+        message: 'Subscription expiring in 7 days',
+        details: 'Premium plan subscription for SecureLife Insurance expires on 2025-01-25',
+        description: 'Subscription renewal reminder - action required',
+        tenant: 'SecureLife Insurance',
+        user: 'billing@securelife.com',
+        ipAddress: '203.45.67.90',
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        createdAt: new Date(Date.now() - 13 * 60 * 60 * 1000)
+      },
+      {
+        id: '14',
+        timestamp: new Date(Date.now() - 15 * 60 * 60 * 1000).toISOString(),
+        level: 'error',
+        action: 'email_delivery_failed',
+        resource: 'notifications',
+        resourceId: 'email_777',
+        userId: 'user_888',
+        tenantId: 3,
+        tenantName: 'AutoProtect Ltd',
+        errorType: 'email_error',
+        message: 'Failed to deliver notification email',
+        details: 'Email notification to customer@autoprotect.com bounced - invalid email address',
+        description: 'Email delivery failure - recipient address invalid',
+        tenant: 'AutoProtect Ltd',
+        user: 'notifications@autoprotect.com',
+        ipAddress: 'internal',
+        userAgent: 'EmailService/2.1',
+        createdAt: new Date(Date.now() - 15 * 60 * 60 * 1000)
+      },
+      {
+        id: '15',
+        timestamp: new Date(Date.now() - 17 * 60 * 60 * 1000).toISOString(),
+        level: 'info',
+        action: 'user_created',
+        resource: 'users',
+        resourceId: 'user_999',
+        userId: 'admin_111',
+        tenantId: 1,
+        tenantName: 'Tech Corp Inc',
+        errorType: null,
+        message: 'New user account created successfully',
+        details: 'User account created for newuser@techcorp.com with role: member',
+        description: 'New user registration completed',
+        tenant: 'Tech Corp Inc',
+        user: 'admin@techcorp.com',
+        ipAddress: '192.168.1.115',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        createdAt: new Date(Date.now() - 17 * 60 * 60 * 1000)
+      },
+      {
+        id: '16',
+        timestamp: new Date(Date.now() - 19 * 60 * 60 * 1000).toISOString(),
+        level: 'warning',
+        action: 'api_quota_warning',
+        resource: 'api',
+        resourceId: 'quota_222',
+        userId: 'user_333',
+        tenantId: 3,
+        tenantName: 'AutoProtect Ltd',
+        errorType: 'quota_warning',
+        message: 'API quota usage at 80% - 800 of 1000 requests used',
+        details: 'Monthly API quota reaching limit for AutoProtect Ltd',
+        description: 'API quota warning - consider upgrading plan',
+        tenant: 'AutoProtect Ltd',
+        user: 'api@autoprotect.com',
+        ipAddress: '172.16.0.35',
+        userAgent: 'APIClient/1.5',
+        createdAt: new Date(Date.now() - 19 * 60 * 60 * 1000)
+      },
+      {
+        id: '17',
+        timestamp: new Date(Date.now() - 21 * 60 * 60 * 1000).toISOString(),
+        level: 'error',
+        action: 'integration_failure',
+        resource: 'integrations',
+        resourceId: 'integration_444',
+        userId: null,
+        tenantId: 2,
+        tenantName: 'HealthGuard Corp',
+        errorType: 'integration_error',
+        message: 'Third-party integration service unavailable',
+        details: 'Connection to insurance verification service failed - timeout after 30 seconds',
+        description: 'External service integration failure',
+        tenant: 'HealthGuard Corp',
+        user: 'System Integration',
+        ipAddress: 'internal',
+        userAgent: 'IntegrationService/3.0',
+        createdAt: new Date(Date.now() - 21 * 60 * 60 * 1000)
+      },
+      {
+        id: '18',
+        timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
+        level: 'info',
+        action: 'system_maintenance',
+        resource: 'system',
+        resourceId: 'maintenance_555',
+        userId: null,
+        tenantId: null,
+        tenantName: 'System',
+        errorType: null,
+        message: 'Scheduled system maintenance completed',
+        details: 'Weekly system maintenance window completed - all systems operational',
+        description: 'Scheduled maintenance completed successfully',
+        tenant: 'System Internal',
+        user: 'Maintenance Service',
+        ipAddress: 'internal',
+        userAgent: 'MaintenanceBot/2.0',
+        createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000)
+      },
+      {
+        id: '19',
+        timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+        level: 'error',
+        action: 'license_validation_failed',
+        resource: 'licensing',
+        resourceId: 'license_666',
+        userId: 'user_777',
+        tenantId: 4,
+        tenantName: 'SecureLife Insurance',
+        errorType: 'license_error',
+        message: 'Software license validation failed',
+        details: 'License key validation failed for advanced features module',
+        description: 'License validation error - contact support',
+        tenant: 'SecureLife Insurance',
+        user: 'tech@securelife.com',
+        ipAddress: '203.45.67.95',
+        userAgent: 'Mozilla/5.0 (Linux; Ubuntu) AppleWebKit/537.36',
+        createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000)
+      },
+      {
+        id: '20',
+        timestamp: new Date(Date.now() - 27 * 60 * 60 * 1000).toISOString(),
+        level: 'warning',
+        action: 'performance_degradation',
+        resource: 'system',
+        resourceId: 'perf_monitor_888',
+        userId: null,
+        tenantId: null,
+        tenantName: 'System',
+        errorType: 'performance_warning',
+        message: 'System performance degradation detected',
+        details: 'Response time increased by 25% over the last hour - investigating',
+        description: 'Performance monitoring alert - response time increase',
+        tenant: 'System Internal',
+        user: 'Performance Monitor',
+        ipAddress: 'internal',
+        userAgent: 'PerfMonitor/1.0',
+        createdAt: new Date(Date.now() - 27 * 60 * 60 * 1000)
       }
     ];
 
@@ -368,15 +574,23 @@ router.get('/activity-logs', authenticateToken, requireSuperAdmin, async (req, r
       );
     }
 
-    if (startDate) {
-      const start = new Date(startDate);
-      filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) >= start);
+    if (actualStartDate) {
+      const start = new Date(actualStartDate);
+      console.log('Date filter - Start date:', start);
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return logDate >= start;
+      });
     }
 
-    if (endDate) {
-      const end = new Date(endDate);
+    if (actualEndDate) {
+      const end = new Date(actualEndDate);
       end.setHours(23, 59, 59, 999); // Include the entire end date
-      filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) <= end);
+      console.log('Date filter - End date:', end);
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return logDate <= end;
+      });
     }
 
     // Apply pagination
