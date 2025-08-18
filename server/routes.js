@@ -242,17 +242,21 @@ router.get(
         conditions.push(or(
           like(activityLogs.action, `%${search}%`),
           like(activityLogs.resource, `%${search}%`),
-          like(activityLogs.details, `%${search}%`)
+          sql`${activityLogs.details}::text ILIKE ${'%' + search + '%'}`,
+          like(tenants.name, `%${search}%`),
+          like(users.email, `%${search}%`)
         ));
       }
 
       // Calculate offset
       const offset = (parseInt(page) - 1) * parseInt(limit);
 
-      // Get total count
+      // Get total count with proper joins for filtering
       let countQuery = db
         .select({ count: count() })
-        .from(activityLogs);
+        .from(activityLogs)
+        .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+        .leftJoin(users, eq(activityLogs.userId, users.id));
 
       if (conditions.length > 0) {
         countQuery = countQuery.where(and(...conditions));
@@ -261,7 +265,7 @@ router.get(
       const totalResult = await countQuery;
       const total = parseInt(totalResult[0]?.count || 0);
 
-      // Get activity logs with pagination
+      // Get activity logs with pagination, including tenant and user info
       const logsQuery = db
         .select({
           id: activityLogs.id,
@@ -272,7 +276,9 @@ router.get(
           details: activityLogs.details,
           ipAddress: activityLogs.ipAddress,
           tenantName: tenants.name,
-          userEmail: users.email
+          userEmail: users.email,
+          userId: activityLogs.userId,
+          tenantId: activityLogs.tenantId
         })
         .from(activityLogs)
         .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))

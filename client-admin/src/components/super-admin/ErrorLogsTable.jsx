@@ -27,6 +27,7 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
 
   const clearFilters = () => {
     const clearedFilters = {
+      search: '',
       tenantName: '',
       errorType: '',
       dateRange: { start: '', end: '' }
@@ -57,7 +58,18 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
     <div className="space-y-4 sm:space-y-6">
       {/* Filters Section */}
       <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <Input
+              type="text"
+              placeholder="Search logs..."
+              value={localFilters.search || ''}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              className="text-sm"
+            />
+          </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Tenant Name</label>
             <Input
@@ -77,11 +89,16 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
               <option value="">All Types</option>
-              <option value="authentication">Authentication</option>
-              <option value="database">Database</option>
-              <option value="api">API</option>
-              <option value="upload">Upload</option>
-              <option value="processing">Processing</option>
+              <option value="AUTHENTICATION_ERROR">Authentication Error</option>
+              <option value="DATABASE_ERROR">Database Error</option>
+              <option value="API_RATE_LIMIT">API Rate Limit</option>
+              <option value="VALIDATION_ERROR">Validation Error</option>
+              <option value="SYSTEM_ERROR">System Error</option>
+              <option value="TIMEOUT_ERROR">Timeout Error</option>
+              <option value="DOCUMENT_UPLOAD_ERROR">Document Upload Error</option>
+              <option value="LOGIN_FAILED">Login Failed</option>
+              <option value="MEMORY_ERROR">Memory Error</option>
+              <option value="DATABASE_CONNECTION_ERROR">Database Connection Error</option>
             </select>
           </div>
           
@@ -138,7 +155,7 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
             <i className="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Error Logs Found</h3>
             <p className="text-gray-500">
-              {Object.values(localFilters).some(v => v !== '' && (!v.start && !v.end))
+              {(localFilters.search || localFilters.tenantName || localFilters.errorType || localFilters.dateRange?.start || localFilters.dateRange?.end)
                 ? 'Try adjusting your filters to see more results.'
                 : 'No system errors have been logged yet.'}
             </p>

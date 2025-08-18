@@ -3,6 +3,23 @@ import React from 'react';
 import Card from '../ui/Card';
 
 const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) => {
+  // Parse trend value from backend format like "+0.1%" or "+2"
+  const parseTrend = (trendStr) => {
+    if (!trendStr) return { direction: null, value: null };
+    
+    const isPositive = trendStr.startsWith('+');
+    const isNegative = trendStr.startsWith('-');
+    const value = trendStr.replace(/[+-]/, '');
+    
+    return {
+      direction: isPositive ? 'up' : isNegative ? 'down' : null,
+      value: value
+    };
+  };
+  
+  const parsedTrend = parseTrend(trend);
+  const trendDirection = parsedTrend.direction;
+  const trendVal = parsedTrend.value || trendValue;
   const colorClasses = {
     blue: 'text-blue-600 bg-blue-50 border-blue-200',
     green: 'text-green-600 bg-green-50 border-green-200',
@@ -12,11 +29,11 @@ const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) =
     cyan: 'text-cyan-600 bg-cyan-50 border-cyan-200'
   };
 
-  // Icon mapping for consistent display
+  // Icon mapping for consistent display matching screenshot
   const getIconElement = (iconString) => {
     if (!iconString) return null;
     
-    // Map different icon formats to consistent display
+    // Map different icon formats to match screenshot exactly
     const iconMap = {
       'fas fa-clock': 'fa-clock',
       'fas fa-building': 'fa-th-large', // Grid icon like screenshot
@@ -25,11 +42,22 @@ const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) =
     };
     
     const iconClass = iconMap[iconString] || iconString.replace('fas fa-', 'fa-');
-    return <i className={`fas ${iconClass} text-2xl`}></i>;
+    return <i className={`fas ${iconClass} text-xl`}></i>;
   };
 
-  // Fallback to blue if color is not found
-  const currentColorClass = colorClasses[color] || colorClasses.blue;
+  // Parse color from backend format like "text-green-600"
+  const parseColor = (colorStr) => {
+    if (!colorStr) return 'blue';
+    if (colorStr.includes('green')) return 'green';
+    if (colorStr.includes('blue')) return 'blue';
+    if (colorStr.includes('purple')) return 'purple';
+    if (colorStr.includes('red')) return 'red';
+    if (colorStr.includes('yellow')) return 'yellow';
+    return 'blue';
+  };
+  
+  const parsedColor = parseColor(color);
+  const currentColorClass = colorClasses[parsedColor] || colorClasses.blue;
   const textColorClass = currentColorClass.split(' ')[0];
 
   return (
@@ -48,33 +76,33 @@ const MetricCard = ({ icon, value, label, trend, trendValue, color = 'blue' }) =
           </div>
         </div>
         
-        {trend && trendValue && (
+        {(trendDirection || trendVal) && (
           <div className="flex-shrink-0 ml-2">
             <div className={`flex items-center space-x-1 ${
-              trend === 'up' ? 'text-green-600' : 
-              trend === 'down' ? 'text-red-600' : 
+              trendDirection === 'up' ? 'text-green-600' : 
+              trendDirection === 'down' ? 'text-red-600' : 
               'text-gray-500'
             }`}>
               <i className={`fas ${
-                trend === 'up' ? 'fa-arrow-up' : 
-                trend === 'down' ? 'fa-arrow-down' : 
+                trendDirection === 'up' ? 'fa-arrow-up' : 
+                trendDirection === 'down' ? 'fa-arrow-down' : 
                 'fa-minus'
               } text-xs sm:text-sm`}></i>
-              <span className="text-xs sm:text-sm font-medium">{trendValue}</span>
+              <span className="text-xs sm:text-sm font-medium">{trendVal}</span>
             </div>
           </div>
         )}
       </div>
       
-      {trend && (
+      {trendDirection && (
         <div className="mt-3 sm:mt-4">
           <div className={`text-xs sm:text-sm ${
-            trend === 'up' ? 'text-green-600' : 
-            trend === 'down' ? 'text-red-600' : 
+            trendDirection === 'up' ? 'text-green-600' : 
+            trendDirection === 'down' ? 'text-red-600' : 
             'text-gray-500'
           }`}>
-            {trend === 'up' ? 'Trending up' : 
-             trend === 'down' ? 'Trending down' : 
+            {trendDirection === 'up' ? 'Trending up' : 
+             trendDirection === 'down' ? 'Trending down' : 
              'No change'} from last period
           </div>
         </div>
