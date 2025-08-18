@@ -13,11 +13,11 @@ const TenantUsersModal = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = (users || []).filter(user => {
     const matchesSearch = 
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.phoneNumber?.includes(searchTerm);
     
     const matchesStatus = !statusFilter || user.status === statusFilter;

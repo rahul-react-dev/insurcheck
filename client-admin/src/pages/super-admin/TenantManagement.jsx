@@ -128,12 +128,20 @@ const TenantManagement = () => {
   const handleViewUsers = (tenant) => {
     setSelectedTenant(tenant);
     setIsUsersModalOpen(true);
-    dispatch(fetchTenantUsersRequest(tenant.id));
+    dispatch(fetchTenantUsersRequest({ 
+      tenantId: tenant.id, 
+      page: 1, 
+      limit: 10 
+    }));
   };
 
   const handleRefreshUsers = () => {
     if (selectedTenant) {
-      dispatch(fetchTenantUsersRequest(selectedTenant.id));
+      dispatch(fetchTenantUsersRequest({ 
+        tenantId: selectedTenant.id, 
+        page: 1, 
+        limit: 10 
+      }));
     }
   };
 
@@ -230,23 +238,42 @@ const TenantManagement = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-building text-blue-600 text-xl"></i>
+        {isLoading && !hasInitialLoad ? (
+          // Skeleton loading for summary cards
+          <>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="p-4 sm:p-6 animate-pulse">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                  </div>
+                  <div className="ml-4 flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-building text-blue-600 text-xl"></i>
+                  </div>
+                </div>
+                <div className="ml-4 flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-500 truncate">
+                    Total Tenants
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {totalTenants || 0}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">
-                Total Tenants
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {totalTenants || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
+            </Card>
 
         <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center">
@@ -300,7 +327,9 @@ const TenantManagement = () => {
               </p>
             </div>
           </div>
-        </Card>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Filters and Actions */}
@@ -394,7 +423,7 @@ const TenantManagement = () => {
           setSelectedTenant(null);
         }}
         tenant={selectedTenant}
-        users={selectedTenant ? tenantUsers[selectedTenant.id] || [] : []}
+        users={selectedTenant ? (tenantUsers[selectedTenant.id] || tenantUsers.current || []) : []}
         isLoading={isLoadingUsers}
         onRefresh={handleRefreshUsers}
       />

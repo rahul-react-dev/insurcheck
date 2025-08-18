@@ -282,8 +282,22 @@ const tenantSlice = createSlice({
     },
     fetchTenantUsersSuccess: (state, action) => {
       state.isLoadingUsers = false;
-      const { tenantId, users } = action.payload;
-      state.tenantUsers[tenantId] = users;
+      
+      // Handle the actual API response format
+      if (action.payload.users && action.payload.tenantId) {
+        // Direct format with tenantId and users
+        const { tenantId, users } = action.payload;
+        state.tenantUsers[tenantId] = users;
+      } else if (action.payload.users) {
+        // API response format from /api/tenants/:id/users
+        // Need to extract tenantId from somewhere - use 'current' as fallback
+        const tenantId = action.payload.tenantId || 'current';
+        state.tenantUsers[tenantId] = action.payload.users;
+      } else {
+        // Fallback to direct users array
+        state.tenantUsers.current = action.payload || [];
+      }
+      
       state.error = null;
     },
     fetchTenantUsersFailure: (state, action) => {

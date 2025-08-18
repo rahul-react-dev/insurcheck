@@ -190,10 +190,20 @@ function* deleteTenantSaga(action) {
 
 function* fetchTenantUsersSaga(action) {
   try {
-    const tenantId = action.payload;
-    const response = yield call(superAdminAPI.getTenantUsers, tenantId);
-    const users = response.data || response;
-    yield put(fetchTenantUsersSuccess({ tenantId, users }));
+    console.log('👥 fetchTenantUsersSaga called with:', action.payload);
+    
+    // Handle both old format (just tenantId) and new format (object with tenantId)
+    const params = typeof action.payload === 'object' ? action.payload : { tenantId: action.payload };
+    const { tenantId, page = 1, limit = 10 } = params;
+    
+    const response = yield call(superAdminAPI.getTenantUsers, tenantId, { page, limit });
+    console.log('✅ Tenant users API response:', response);
+    
+    yield put(fetchTenantUsersSuccess({ 
+      tenantId, 
+      users: response.users || response.data || [],
+      pagination: response.pagination 
+    }));
   } catch (error) {
     console.error('❌ Error in fetchTenantUsersSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch tenant users';
