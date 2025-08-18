@@ -25,17 +25,13 @@ export const invoiceStatusEnum = pgEnum('invoice_status', ['draft', 'sent', 'pai
 // Activity log level enum
 export const logLevelEnum = pgEnum('log_level', ['info', 'warning', 'error', 'critical']);
 
-// Tenants table - shared across the application
+// Tenants table - shared across the application  
 export const tenants = pgTable("tenants", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
+  email: varchar("email", { length: 255 }).unique(), // Email field that exists in database
   domain: text("domain").unique(),
-  status: tenantStatusEnum("status").notNull().default('active'),
-  subscriptionId: integer("subscription_id").references(() => subscriptions.id),
-  trialEndsAt: timestamp("trial_ends_at"),
-  isTrialActive: boolean("is_trial_active").default(false),
-  maxUsers: integer("max_users").default(10),
-  storageLimit: integer("storage_limit_gb").default(100),
+  status: varchar("status", { length: 20 }).notNull().default('active'), // Status field that exists in database
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -60,10 +56,9 @@ export const subscriptions = pgTable("subscriptions", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
   planId: integer("plan_id").references(() => subscriptionPlans.id).notNull(),
-  status: subscriptionStatusEnum("status").notNull().default('active'),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  autoRenew: boolean("auto_renew").default(true),
+  status: varchar("status", { length: 20 }).notNull().default('active'),
+  startedAt: timestamp("started_at").defaultNow(),
+  endsAt: timestamp("ends_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -175,13 +170,10 @@ export const systemMetrics = pgTable("system_metrics", {
 });
 
 // Define relations
-export const tenantsRelations = relations(tenants, ({ many, one }) => ({
+export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   documents: many(documents),
-  subscription: one(subscriptions, {
-    fields: [tenants.subscriptionId],
-    references: [subscriptions.id],
-  }),
+  subscriptions: many(subscriptions), // Changed to many-to-many relation via subscriptions.tenantId
   payments: many(payments),
   invoices: many(invoices),
   activityLogs: many(activityLogs),
