@@ -243,7 +243,7 @@ router.get(
         conditions.push(or(
           like(activityLogs.action, `%${search}%`),
           like(activityLogs.resource, `%${search}%`),
-          like(activityLogs.details::text, `%${search}%`)
+          like(activityLogs.details, `%${search}%`)
         ));
       }
 
@@ -251,14 +251,14 @@ router.get(
       const offset = (parseInt(page) - 1) * parseInt(limit);
 
       // Get total count
-      const countQuery = db
+      let countQuery = db
         .select({ count: count() })
         .from(activityLogs);
 
       if (conditions.length > 0) {
         countQuery = countQuery.where(and(...conditions));
       }
-      
+
       const totalResult = await countQuery;
       const total = parseInt(totalResult[0]?.count || 0);
 
@@ -278,7 +278,7 @@ router.get(
         .from(activityLogs)
         .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
         .leftJoin(users, eq(activityLogs.userId, users.id));
-      
+
       if (conditions.length > 0) {
         logsQuery.where(and(...conditions));
       }
