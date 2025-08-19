@@ -24,6 +24,7 @@ function* fetchTenantStatesSaga(action) {
 
     const validatedResponse = {
       tenantStates: response.tenantStates || response.data || [],
+      summary: response.summary || {},
       pagination: response.pagination || {
         page: params.page || 1,
         limit: params.limit || 10,

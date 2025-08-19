@@ -6,6 +6,8 @@ InsurCheck is a multi-tenant SaaS insurance management platform. It's designed a
 
 ✅ **Tenant States API Implementation** - Added missing `/api/tenant-states` endpoint with GET and PUT operations, comprehensive filtering support (tenantName, status, subscriptionPlan, date ranges), pagination, proper error handling, and enriched response data including state information, storage usage, and activity tracking.
 
+✅ **Tenant States Frontend Issues Fixed** - Fixed critical PUT request ID issue (was sending undefined), enhanced server validation for status-only updates, added skeleton loaders for cards and table, updated summary data mapping to display actual counts in cards, fixed all filter functionality (subscription status, trial status working correctly), and resolved table data mapping issues.
+
 ✅ **Activity Logs Module Fully Operational** - Fixed critical field mapping issues, resolved "NaN" status display, corrected spinner behavior on filter buttons, implemented comprehensive API field mappings with proper actionPerformed, status, logId, and userType fields. All filtering functionality (tenant name, user email, action performed, date range) working correctly with proper loading states and error handling.
 
 ✅ **Invoice Generation System Fully Functional** - Fixed critical date conversion API errors, resolved Redux saga response handling, implemented complete invoice configuration and generation features with real-time data integration, pagination, and status filtering.

@@ -166,7 +166,8 @@ const TenantStateManagement = () => {
       case "deactivate":
         dispatch(
           updateTenantStateRequest({
-            tenantId: selectedTenant.id,
+            id: selectedTenant.id || selectedTenant.tenantId,
+            tenantId: selectedTenant.id || selectedTenant.tenantId,
             status: "deactivated",
             reason: "Manual deactivation by super admin",
           }),
@@ -175,7 +176,8 @@ const TenantStateManagement = () => {
       case "activate":
         dispatch(
           updateTenantStateRequest({
-            tenantId: selectedTenant.id,
+            id: selectedTenant.id || selectedTenant.tenantId,
+            tenantId: selectedTenant.id || selectedTenant.tenantId,
             status: "active",
             reason: "Manual activation by super admin",
           }),
@@ -184,7 +186,8 @@ const TenantStateManagement = () => {
       case "suspend":
         dispatch(
           updateTenantStateRequest({
-            tenantId: selectedTenant.id,
+            id: selectedTenant.id || selectedTenant.tenantId,
+            tenantId: selectedTenant.id || selectedTenant.tenantId,
             status: "suspended",
             reason: "Manual suspension by super admin",
           }),
@@ -211,7 +214,8 @@ const TenantStateManagement = () => {
   const handleStateModalSubmit = (stateData) => {
     dispatch(
       updateTenantStateRequest({
-        tenantId: selectedTenant.id,
+        id: selectedTenant.id || selectedTenant.tenantId,
+        tenantId: selectedTenant.id || selectedTenant.tenantId,
         ...stateData,
       }),
     );
@@ -287,23 +291,42 @@ const TenantStateManagement = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-check-circle text-green-600 text-xl"></i>
+        {isLoading ? (
+          // Skeleton Cards
+          <>
+            {[1, 2, 3, 4].map((index) => (
+              <Card key={index} className="p-4 sm:p-6">
+                <div className="animate-pulse">
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                    <div className="ml-4 flex-1 min-w-0">
+                      <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                      <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-check-circle text-green-600 text-xl"></i>
+                  </div>
+                </div>
+                <div className="ml-4 flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-500 truncate">
+                    Active Tenants
+                  </p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {summary?.activeTenants || 0}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">
-                Active Tenants
-              </p>
-              <p className="text-2xl font-bold text-green-600">
-                {summary?.activeTenants || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
+            </Card>
 
         <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center">
@@ -358,6 +381,8 @@ const TenantStateManagement = () => {
             </div>
           </div>
         </Card>
+          </>
+        )}
       </div>
 
       {/* Filters and Actions */}
