@@ -25,6 +25,9 @@ export const invoiceStatusEnum = pgEnum('invoice_status', ['draft', 'sent', 'pai
 // Activity log level enum
 export const logLevelEnum = pgEnum('log_level', ['info', 'warning', 'error', 'critical']);
 
+// Invoice generation status enum
+export const invoiceGenerationStatusEnum = pgEnum('generation_status', ['scheduled', 'processing', 'completed', 'failed', 'retrying']);
+
 // Tenants table - shared across the application  
 export const tenants = pgTable("tenants", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -253,6 +256,68 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+// Invoice generation configurations table
+export const invoiceGenerationConfigs = pgTable("invoice_generation_configs", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  frequency: text("frequency").notNull().default('monthly'), // monthly, quarterly, yearly
+  startDate: timestamp("start_date").notNull(),
+  billingContactEmail: varchar("billing_contact_email", { length: 255 }).notNull(),
+  timezone: text("timezone").notNull().default('UTC'),
+  generateOnWeekend: boolean("generate_on_weekend").default(false),
+  autoSend: boolean("auto_send").default(true),
+  reminderDays: integer("reminder_days").default(3),
+  isActive: boolean("is_active").default(true),
+  nextGenerationDate: timestamp("next_generation_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Invoice generation logs table
+export const invoiceGenerationLogs = pgTable("invoice_generation_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  tenantName: text("tenant_name").notNull(),
+  configId: integer("config_id").references(() => invoiceGenerationConfigs.id),
+  status: invoiceGenerationStatusEnum("status").notNull().default('scheduled'),
+  invoiceId: varchar("invoice_id").references(() => invoices.id),
+  invoiceNumber: text("invoice_number"),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  billingPeriodStart: timestamp("billing_period_start"),
+  billingPeriodEnd: timestamp("billing_period_end"),
+  generatedAt: timestamp("generated_at"),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relations for new tables
+export const invoiceGenerationConfigsRelations = relations(invoiceGenerationConfigs, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [invoiceGenerationConfigs.tenantId],
+    references: [tenants.id],
+  }),
+  logs: many(invoiceGenerationLogs),
+}));
+
+export const invoiceGenerationLogsRelations = relations(invoiceGenerationLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [invoiceGenerationLogs.tenantId],
+    references: [tenants.id],
+  }),
+  config: one(invoiceGenerationConfigs, {
+    fields: [invoiceGenerationLogs.configId],
+    references: [invoiceGenerationConfigs.id],
+  }),
+  invoice: one(invoices, {
+    fields: [invoiceGenerationLogs.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
 // Zod schemas for validation
 export const insertTenantSchema = createInsertSchema(tenants).pick({
   name: true,
@@ -324,6 +389,28 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).pick({
   level: true,
 });
 
+export const insertInvoiceGenerationConfigSchema = createInsertSchema(invoiceGenerationConfigs).pick({
+  tenantId: true,
+  frequency: true,
+  startDate: true,
+  billingContactEmail: true,
+  timezone: true,
+  generateOnWeekend: true,
+  autoSend: true,
+  reminderDays: true,
+  isActive: true,
+});
+
+export const insertInvoiceGenerationLogSchema = createInsertSchema(invoiceGenerationLogs).pick({
+  tenantId: true,
+  tenantName: true,
+  configId: true,
+  status: true,
+  amount: true,
+  billingPeriodStart: true,
+  billingPeriodEnd: true,
+});
+
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).pick({
   key: true,
   value: true,
@@ -341,6 +428,8 @@ export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
+export type InsertInvoiceGenerationConfig = z.infer<typeof insertInvoiceGenerationConfigSchema>;
+export type InsertInvoiceGenerationLog = z.infer<typeof insertInvoiceGenerationLogSchema>;
 
 export type Tenant = typeof tenants.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -350,5 +439,7 @@ export type Document = typeof documents.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InvoiceGenerationConfig = typeof invoiceGenerationConfigs.$inferSelect;
+export type InvoiceGenerationLog = typeof invoiceGenerationLogs.$inferSelect;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type SystemMetric = typeof systemMetrics.$inferSelect;

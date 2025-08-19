@@ -14,6 +14,9 @@ import {
   fetchInvoiceConfigRequest,
   fetchInvoiceConfigSuccess,
   fetchInvoiceConfigFailure,
+  retryInvoiceGenerationRequest,
+  retryInvoiceGenerationSuccess,
+  retryInvoiceGenerationFailure,
   downloadInvoiceRequest,
   downloadInvoiceSuccess,
   downloadInvoiceFailure
@@ -22,28 +25,29 @@ import {
 // Saga functions
 function* generateInvoiceSaga(action) {
   try {
-    const invoiceData = action.payload;
-    console.log('📡 generateInvoiceSaga triggered with data:', invoiceData);
+    const tenantId = action.payload;
+    console.log('📡 generateInvoiceSaga triggered for tenant:', tenantId);
 
-    const response = yield call(superAdminAPI.generateInvoice, invoiceData);
-    console.log('✅ Generate invoice API response received:', response);
+    const response = yield call(superAdminAPI.generateInvoice, tenantId);
+    console.log('✅ Generate invoice API response received:', response.data);
 
-    const generatedInvoice = response.invoice || response.data || response;
-    yield put(generateInvoiceSuccess(generatedInvoice));
+    yield put(generateInvoiceSuccess(response.data));
 
     if (window.showNotification) {
-      window.showNotification('Invoice generated successfully', 'success');
+      window.showNotification(response.data.message || 'Invoice generation started successfully', 'success');
     }
 
-    // Refresh invoice logs
-    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
+    // Refresh invoice logs after a short delay
+    setTimeout(() => {
+      put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
+    }, 2000);
   } catch (error) {
     console.error('❌ Error in generateInvoiceSaga:', error);
-    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to generate invoice';
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to generate invoice';
     yield put(generateInvoiceFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to generate invoice. Please try again.', 'error');
+      window.showNotification(errorMessage, 'error');
     }
   }
 }
@@ -53,27 +57,17 @@ function* fetchInvoiceLogsSaga(action) {
     const params = action.payload || { page: 1, limit: 10 };
     console.log('📡 fetchInvoiceLogsSaga triggered with params:', params);
 
-    const response = yield call(superAdminAPI.getInvoices, params);
-    console.log('✅ Invoice logs API response received:', response);
+    const response = yield call(superAdminAPI.getInvoiceLogs, params);
+    console.log('✅ Invoice logs API response received:', response.data);
 
-    const validatedResponse = {
-      logs: response.invoices || response.data || [],
-      pagination: response.pagination || {
-        page: params.page || 1,
-        limit: params.limit || 10,
-        total: response.total || 0,
-        totalPages: Math.ceil((response.total || 0) / (params.limit || 10))
-      }
-    };
-
-    yield put(fetchInvoiceLogsSuccess(validatedResponse));
+    yield put(fetchInvoiceLogsSuccess(response.data));
   } catch (error) {
     console.error('❌ Error in fetchInvoiceLogsSaga:', error);
-    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch invoice logs';
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch invoice logs';
     yield put(fetchInvoiceLogsFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to load invoice logs. Please try again.', 'error');
+      window.showNotification(errorMessage, 'error');
     }
   }
 }
@@ -82,55 +76,73 @@ function* fetchInvoiceConfigSaga() {
   try {
     console.log('📡 fetchInvoiceConfigSaga triggered');
 
-    // Get system config for invoice-related settings
-    const response = yield call(superAdminAPI.getSystemConfig);
-    console.log('✅ Invoice config API response received:', response);
+    const response = yield call(superAdminAPI.getInvoiceConfig);
+    console.log('✅ Invoice config API response received:', response.data);
 
-    // Filter for invoice-related configurations
-    const allConfigs = response.configs || response.data || response;
-    const invoiceConfig = Array.isArray(allConfigs) 
-      ? allConfigs.filter(config => config.category === 'invoice' || config.key?.includes('invoice'))
-      : allConfigs;
-
-    yield put(fetchInvoiceConfigSuccess(invoiceConfig));
+    yield put(fetchInvoiceConfigSuccess(response.data));
   } catch (error) {
     console.error('❌ Error in fetchInvoiceConfigSaga:', error);
-    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch invoice configuration';
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch invoice configuration';
     yield put(fetchInvoiceConfigFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to load invoice configuration. Please try again.', 'error');
+      window.showNotification(errorMessage, 'error');
     }
   }
 }
 
 function* updateInvoiceConfigSaga(action) {
   try {
-    const { key, value } = action.payload;
-    console.log('📡 updateInvoiceConfigSaga triggered with:', { key, value });
+    const { tenantId, config } = action.payload;
+    console.log('📡 updateInvoiceConfigSaga triggered with:', { tenantId, config });
 
-    const response = yield call(superAdminAPI.updateSystemConfig, key, { 
-      value, 
-      category: 'invoice' 
-    });
-    const updatedConfig = response.data || response;
+    const response = yield call(superAdminAPI.updateInvoiceConfig, { tenantId, ...config });
+    console.log('✅ Update invoice config API response received:', response.data);
     
-    yield put(updateInvoiceConfigSuccess({
-      key,
-      value,
-      updatedConfig
-    }));
+    yield put(updateInvoiceConfigSuccess(response.data));
 
     if (window.showNotification) {
       window.showNotification('Invoice configuration updated successfully', 'success');
     }
+
+    // Refresh configurations to get latest data
+    yield put(fetchInvoiceConfigRequest());
   } catch (error) {
     console.error('❌ Error in updateInvoiceConfigSaga:', error);
-    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update invoice configuration';
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update invoice configuration';
     yield put(updateInvoiceConfigFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to update invoice configuration', 'error');
+      window.showNotification(errorMessage, 'error');
+    }
+  }
+}
+
+function* retryInvoiceGenerationSaga(action) {
+  try {
+    const logId = action.payload;
+    console.log('📡 retryInvoiceGenerationSaga triggered for log:', logId);
+
+    const response = yield call(superAdminAPI.retryInvoiceGeneration, logId);
+    console.log('✅ Retry invoice generation API response received:', response.data);
+
+    yield put(retryInvoiceGenerationSuccess(response.data));
+
+    if (window.showNotification) {
+      window.showNotification('Invoice generation retry started successfully', 'success');
+    }
+
+    // Refresh logs after a short delay
+    setTimeout(() => {
+      put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
+    }, 2000);
+  } catch (error) {
+    console.error('❌ Error in retryInvoiceGenerationSaga:', error);
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to retry invoice generation';
+    yield put(retryInvoiceGenerationFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification(errorMessage, 'error');
     }
   }
 }
@@ -160,11 +172,11 @@ function* downloadInvoiceSaga(action) {
     }
   } catch (error) {
     console.error('❌ Error in downloadInvoiceSaga:', error);
-    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to download invoice';
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to download invoice';
     yield put(downloadInvoiceFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to download invoice', 'error');
+      window.showNotification(errorMessage, 'error');
     }
   }
 }
@@ -186,6 +198,10 @@ function* watchUpdateInvoiceConfig() {
   yield takeEvery(updateInvoiceConfigRequest.type, updateInvoiceConfigSaga);
 }
 
+function* watchRetryInvoiceGeneration() {
+  yield takeEvery(retryInvoiceGenerationRequest.type, retryInvoiceGenerationSaga);
+}
+
 function* watchDownloadInvoice() {
   yield takeEvery(downloadInvoiceRequest.type, downloadInvoiceSaga);
 }
@@ -197,6 +213,7 @@ export default function* invoiceGenerationSaga() {
     fork(watchFetchInvoiceLogs),
     fork(watchFetchInvoiceConfig),
     fork(watchUpdateInvoiceConfig),
+    fork(watchRetryInvoiceGeneration),
     fork(watchDownloadInvoice)
   ]);
 }

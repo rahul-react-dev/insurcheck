@@ -442,7 +442,14 @@ export const superAdminAPI = {
   updateTenantState: (id, data) => api.put(`/tenant-states/${id}`, data),
 
   // Test endpoints
-  runTests: () => api.get('/test/super-admin-features')
+  runTests: () => api.get('/test/super-admin-features'),
+
+  // Invoice Generation APIs
+  getInvoiceConfig: () => api.get('/super-admin/invoice-config'),
+  updateInvoiceConfig: (data) => api.post('/super-admin/invoice-config', data),
+  getInvoiceLogs: (params) => api.get('/super-admin/invoice-logs', { params }),
+  generateInvoice: (tenantId) => api.post('/super-admin/generate-invoice', { tenantId }),
+  retryInvoiceGeneration: (logId) => api.post(`/super-admin/invoice-logs/${logId}/retry`),
 };
 
 export default api;

@@ -6,11 +6,11 @@ import routes from './routes.js';
 import authRoutes from './src/routes/auth.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Middleware - Enhanced CORS configuration
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: function (origin: any, callback: any) {
     // Allow requests with no origin (mobile apps, curl requests, etc.)
     if (!origin) return callback(null, true);
     

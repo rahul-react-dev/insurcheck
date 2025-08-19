@@ -11,6 +11,8 @@ import {
   invoices,
   documents,
   activityLogs,
+  invoiceGenerationConfigs,
+  invoiceGenerationLogs,
 } from "../shared/schema.js";
 import {
   eq,
@@ -1602,5 +1604,456 @@ router.get('/payments/export', authenticateToken, requireSuperAdmin, async (req,
     });
   }
 });
+
+// ====================================
+// INVOICE GENERATION CONFIGURATION APIS
+// ====================================
+
+// Get all invoice generation configurations
+router.get('/super-admin/invoice-config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching invoice generation configurations');
+
+    const configs = await db.select({
+      id: invoiceGenerationConfigs.id,
+      tenantId: invoiceGenerationConfigs.tenantId,
+      tenantName: tenants.name,
+      frequency: invoiceGenerationConfigs.frequency,
+      startDate: invoiceGenerationConfigs.startDate,
+      billingContactEmail: invoiceGenerationConfigs.billingContactEmail,
+      timezone: invoiceGenerationConfigs.timezone,
+      generateOnWeekend: invoiceGenerationConfigs.generateOnWeekend,
+      autoSend: invoiceGenerationConfigs.autoSend,
+      reminderDays: invoiceGenerationConfigs.reminderDays,
+      isActive: invoiceGenerationConfigs.isActive,
+      nextGenerationDate: invoiceGenerationConfigs.nextGenerationDate,
+      createdAt: invoiceGenerationConfigs.createdAt,
+      updatedAt: invoiceGenerationConfigs.updatedAt,
+    })
+    .from(invoiceGenerationConfigs)
+    .leftJoin(tenants, eq(invoiceGenerationConfigs.tenantId, tenants.id))
+    .orderBy(desc(invoiceGenerationConfigs.createdAt));
+
+    // Also get all tenants for the configuration UI
+    const allTenants = await db.select({
+      id: tenants.id,
+      name: tenants.name,
+      email: tenants.email,
+      status: tenants.status,
+    })
+    .from(tenants)
+    .where(eq(tenants.status, 'active'))
+    .orderBy(tenants.name);
+
+    console.log(`✅ Found ${configs.length} invoice configurations and ${allTenants.length} active tenants`);
+    res.json({ 
+      configurations: configs,
+      tenants: allTenants,
+      summary: {
+        totalConfigurations: configs.length,
+        activeConfigurations: configs.filter(c => c.isActive).length,
+        totalTenants: allTenants.length,
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching invoice configurations:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch invoice configurations',
+      message: error.message 
+    });
+  }
+});
+
+// Create or update invoice generation configuration for a tenant
+router.post('/super-admin/invoice-config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId, ...configData } = req.body;
+    console.log('📝 Creating/updating invoice config for tenant:', tenantId, configData);
+
+    // Check if configuration already exists for this tenant
+    const existingConfig = await db.select()
+      .from(invoiceGenerationConfigs)
+      .where(eq(invoiceGenerationConfigs.tenantId, tenantId))
+      .limit(1);
+
+    let config;
+    if (existingConfig.length > 0) {
+      // Update existing configuration
+      [config] = await db.update(invoiceGenerationConfigs)
+        .set({
+          ...configData,
+          updatedAt: new Date(),
+        })
+        .where(eq(invoiceGenerationConfigs.tenantId, tenantId))
+        .returning();
+    } else {
+      // Create new configuration
+      [config] = await db.insert(invoiceGenerationConfigs)
+        .values({
+          tenantId,
+          ...configData,
+        })
+        .returning();
+    }
+
+    // Get tenant name for response
+    const tenant = await db.select({ name: tenants.name })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    console.log('✅ Invoice configuration saved successfully:', config);
+    res.json({ 
+      message: 'Invoice configuration saved successfully', 
+      configuration: {
+        ...config,
+        tenantName: tenant[0]?.name || 'Unknown Tenant'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error saving invoice configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to save invoice configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Get invoice generation logs with pagination and filtering
+router.get('/super-admin/invoice-logs', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      tenantName = '',
+      status = '',
+      startDate = '',
+      endDate = ''
+    } = req.query;
+
+    console.log('📋 Fetching invoice generation logs with params:', req.query);
+    
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build query conditions
+    let query = db.select({
+      id: invoiceGenerationLogs.id,
+      tenantId: invoiceGenerationLogs.tenantId,
+      tenantName: invoiceGenerationLogs.tenantName,
+      status: invoiceGenerationLogs.status,
+      invoiceId: invoiceGenerationLogs.invoiceId,
+      invoiceNumber: invoiceGenerationLogs.invoiceNumber,
+      amount: invoiceGenerationLogs.amount,
+      billingPeriodStart: invoiceGenerationLogs.billingPeriodStart,
+      billingPeriodEnd: invoiceGenerationLogs.billingPeriodEnd,
+      generatedAt: invoiceGenerationLogs.generatedAt,
+      sentAt: invoiceGenerationLogs.sentAt,
+      errorMessage: invoiceGenerationLogs.errorMessage,
+      retryCount: invoiceGenerationLogs.retryCount,
+      metadata: invoiceGenerationLogs.metadata,
+      createdAt: invoiceGenerationLogs.createdAt,
+    })
+    .from(invoiceGenerationLogs);
+
+    const conditions = [];
+
+    // Apply filters
+    if (tenantName) {
+      conditions.push(sql`${invoiceGenerationLogs.tenantName} ILIKE ${'%' + tenantName + '%'}`);
+    }
+
+    if (status) {
+      conditions.push(eq(invoiceGenerationLogs.status, status));
+    }
+
+    if (startDate) {
+      conditions.push(sql`DATE(${invoiceGenerationLogs.createdAt}) >= ${startDate}`);
+    }
+
+    if (endDate) {
+      conditions.push(sql`DATE(${invoiceGenerationLogs.createdAt}) <= ${endDate}`);
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count
+    let countQuery = db.select({ count: count() })
+      .from(invoiceGenerationLogs);
+
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions));
+    }
+
+    const [logsData, totalResult] = await Promise.all([
+      query.orderBy(desc(invoiceGenerationLogs.createdAt)).limit(parseInt(limit)).offset(offset),
+      countQuery
+    ]);
+
+    const total = parseInt(totalResult[0]?.count || 0);
+    
+    // Calculate summary statistics
+    const summaryQuery = db.select({
+      totalGenerated: sql`coalesce(count(*) filter (where ${invoiceGenerationLogs.status} IN ('completed', 'failed')), 0)`,
+      totalSent: sql`coalesce(count(*) filter (where ${invoiceGenerationLogs.status} = 'completed' AND ${invoiceGenerationLogs.sentAt} IS NOT NULL), 0)`,
+      totalFailed: sql`coalesce(count(*) filter (where ${invoiceGenerationLogs.status} = 'failed'), 0)`,
+      totalAmount: sql`coalesce(sum(${invoiceGenerationLogs.amount}) filter (where ${invoiceGenerationLogs.status} = 'completed'), 0)`,
+    })
+    .from(invoiceGenerationLogs);
+
+    const summary = await summaryQuery;
+
+    console.log(`✅ Retrieved ${logsData.length} invoice logs (page ${page}/${Math.ceil(total / parseInt(limit))}, total: ${total})`);
+    
+    res.json({
+      logs: logsData,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalItems: total,
+        itemsPerPage: parseInt(limit),
+        hasNextPage: parseInt(page) < Math.ceil(total / parseInt(limit)),
+        hasPreviousPage: parseInt(page) > 1,
+      },
+      summary: {
+        totalGenerated: parseInt(summary[0]?.totalGenerated || 0),
+        totalSent: parseInt(summary[0]?.totalSent || 0), 
+        totalFailed: parseInt(summary[0]?.totalFailed || 0),
+        totalAmount: parseFloat(summary[0]?.totalAmount || 0),
+      },
+      filters: {
+        tenantName,
+        status,
+        startDate,
+        endDate,
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching invoice logs:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch invoice logs',
+      message: error.message 
+    });
+  }
+});
+
+// Manual invoice generation for a tenant
+router.post('/super-admin/generate-invoice', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId } = req.body;
+    console.log('🔄 Generating invoice for tenant:', tenantId);
+
+    if (tenantId === 'all') {
+      // Generate for all active tenants with configurations
+      const activeConfigs = await db.select({
+        tenantId: invoiceGenerationConfigs.tenantId,
+        tenantName: tenants.name,
+      })
+      .from(invoiceGenerationConfigs)
+      .leftJoin(tenants, eq(invoiceGenerationConfigs.tenantId, tenants.id))
+      .where(and(
+        eq(invoiceGenerationConfigs.isActive, true),
+        eq(tenants.status, 'active')
+      ));
+
+      const results = [];
+      for (const config of activeConfigs) {
+        const result = await generateInvoiceForTenant(config.tenantId, config.tenantName);
+        results.push(result);
+      }
+
+      console.log(`✅ Generated invoices for ${results.length} tenants`);
+      res.json({ 
+        message: `Invoice generation initiated for ${results.length} tenants`,
+        results 
+      });
+    } else {
+      // Generate for specific tenant
+      const tenant = await db.select({ name: tenants.name })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      if (!tenant.length) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const result = await generateInvoiceForTenant(tenantId, tenant[0].name);
+      
+      console.log('✅ Invoice generation completed for tenant:', tenantId);
+      res.json({ 
+        message: 'Invoice generation initiated successfully',
+        result 
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error generating invoice:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate invoice',
+      message: error.message 
+    });
+  }
+});
+
+// Retry failed invoice generation
+router.post('/super-admin/invoice-logs/:logId/retry', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { logId } = req.params;
+    console.log('🔄 Retrying invoice generation for log:', logId);
+
+    const log = await db.select()
+      .from(invoiceGenerationLogs)
+      .where(eq(invoiceGenerationLogs.id, logId))
+      .limit(1);
+
+    if (!log.length) {
+      return res.status(404).json({ error: 'Generation log not found' });
+    }
+
+    if (log[0].status !== 'failed') {
+      return res.status(400).json({ error: 'Only failed generations can be retried' });
+    }
+
+    // Update log to retrying status
+    await db.update(invoiceGenerationLogs)
+      .set({
+        status: 'retrying',
+        retryCount: sql`${invoiceGenerationLogs.retryCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(invoiceGenerationLogs.id, logId));
+
+    // Attempt to regenerate
+    const result = await generateInvoiceForTenant(log[0].tenantId, log[0].tenantName);
+    
+    console.log('✅ Invoice generation retry completed for log:', logId);
+    res.json({ 
+      message: 'Invoice generation retry initiated successfully',
+      result 
+    });
+  } catch (error) {
+    console.error('❌ Error retrying invoice generation:', error);
+    res.status(500).json({ 
+      error: 'Failed to retry invoice generation',
+      message: error.message 
+    });
+  }
+});
+
+// Helper function to generate invoice for a tenant
+async function generateInvoiceForTenant(tenantId, tenantName) {
+  try {
+    // Create generation log entry
+    const logId = Math.random().toString(36).substr(2, 9);
+    const billingPeriodStart = new Date();
+    billingPeriodStart.setMonth(billingPeriodStart.getMonth() - 1);
+    const billingPeriodEnd = new Date();
+    
+    // Get tenant's subscription for billing amount
+    const subscription = await db.select({
+      planId: subscriptions.planId,
+      planName: subscriptionPlans.name,
+      planPrice: subscriptionPlans.price,
+    })
+    .from(subscriptions)
+    .leftJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id))
+    .where(and(
+      eq(subscriptions.tenantId, tenantId),
+      eq(subscriptions.status, 'active')
+    ))
+    .limit(1);
+
+    if (!subscription.length) {
+      throw new Error('No active subscription found for tenant');
+    }
+
+    const amount = parseFloat(subscription[0].planPrice);
+    
+    const [generationLog] = await db.insert(invoiceGenerationLogs)
+      .values({
+        id: logId,
+        tenantId,
+        tenantName,
+        status: 'processing',
+        amount,
+        billingPeriodStart,
+        billingPeriodEnd,
+        metadata: {
+          planName: subscription[0].planName,
+          generationType: 'manual',
+          generatedBy: 'super-admin'
+        }
+      })
+      .returning();
+
+    // Simulate invoice generation process
+    setTimeout(async () => {
+      try {
+        // Generate invoice number
+        const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+        
+        // Create actual invoice
+        const [newInvoice] = await db.insert(invoices)
+          .values({
+            invoiceNumber,
+            tenantId,
+            subscriptionId: subscription[0].planId,
+            amount,
+            taxAmount: amount * 0.1,
+            totalAmount: amount * 1.1,
+            status: 'sent',
+            issueDate: new Date(),
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            billingPeriodStart,
+            billingPeriodEnd,
+            items: [{
+              description: `${subscription[0].planName} Subscription`,
+              quantity: 1,
+              unitPrice: amount,
+              total: amount
+            }]
+          })
+          .returning();
+
+        // Update generation log to completed
+        await db.update(invoiceGenerationLogs)
+          .set({
+            status: 'completed',
+            invoiceId: newInvoice.id,
+            invoiceNumber: newInvoice.invoiceNumber,
+            generatedAt: new Date(),
+            sentAt: new Date(), // Assume auto-send is enabled
+            updatedAt: new Date(),
+          })
+          .where(eq(invoiceGenerationLogs.id, logId));
+
+        console.log(`✅ Invoice ${invoiceNumber} generated successfully for tenant ${tenantName}`);
+      } catch (error) {
+        // Update log with error
+        await db.update(invoiceGenerationLogs)
+          .set({
+            status: 'failed',
+            errorMessage: error.message,
+            updatedAt: new Date(),
+          })
+          .where(eq(invoiceGenerationLogs.id, logId));
+        
+        console.error(`❌ Failed to generate invoice for tenant ${tenantName}:`, error);
+      }
+    }, 2000); // 2 second delay to simulate processing
+
+    return {
+      logId,
+      tenantId,
+      tenantName,
+      status: 'processing',
+      message: 'Invoice generation started'
+    };
+  } catch (error) {
+    console.error(`❌ Error initiating invoice generation for tenant ${tenantName}:`, error);
+    throw error;
+  }
+}
 
 export default router;
