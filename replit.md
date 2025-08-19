@@ -1,6 +1,11 @@
 # Overview
 InsurCheck is a multi-tenant SaaS insurance management platform. It's designed as a monorepo, featuring separate React frontends for Super Admins, Tenant Admins, and Tenant Users, all powered by a shared Node.js backend. The platform aims to provide a comprehensive solution for insurance management, including user management, subscription handling, payment processing, and invoice generation, with a focus on a professional and consistent user experience.
 
+## Recent Changes (August 19, 2025)
+✅ **Invoice Generation System Fully Functional** - Fixed critical date conversion API errors, resolved Redux saga response handling, implemented complete invoice configuration and generation features with real-time data integration, pagination, and status filtering.
+
+✅ **Architecture Note** - This project requires separate startup processes: backend runs with `npm run dev` (port 5000), while frontend clients require separate commands: `cd client-admin && npm run dev` for admin interface.
+
 # User Preferences
 Preferred communication style: Simple, everyday language.
 

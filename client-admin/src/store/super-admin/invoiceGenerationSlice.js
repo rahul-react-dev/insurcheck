@@ -61,13 +61,13 @@ const invoiceGenerationSlice = createSlice({
     },
     updateInvoiceConfigSuccess: (state, action) => {
       state.isLoading = false;
-      const { tenantId, config } = action.payload;
-      const existingIndex = state.configurations.findIndex(c => c.tenantId === tenantId);
+      const config = action.payload.configuration || action.payload;
+      const existingIndex = state.configurations.findIndex(c => c.tenantId === config.tenantId);
 
       if (existingIndex !== -1) {
         state.configurations[existingIndex] = { ...state.configurations[existingIndex], ...config };
       } else {
-        state.configurations.push({ tenantId, ...config });
+        state.configurations.push(config);
       }
       state.error = null;
     },

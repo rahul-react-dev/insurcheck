@@ -1670,6 +1670,14 @@ router.post('/super-admin/invoice-config', authenticateToken, requireSuperAdmin,
     const { tenantId, ...configData } = req.body;
     console.log('📝 Creating/updating invoice config for tenant:', tenantId, configData);
 
+    // Convert string dates to Date objects if necessary
+    const processedConfigData = {
+      ...configData,
+      startDate: configData.startDate ? new Date(configData.startDate) : undefined,
+      nextGenerationDate: configData.nextGenerationDate ? new Date(configData.nextGenerationDate) : undefined,
+      updatedAt: new Date()
+    };
+
     // Check if configuration already exists for this tenant
     const existingConfig = await db.select()
       .from(invoiceGenerationConfigs)
@@ -1680,10 +1688,7 @@ router.post('/super-admin/invoice-config', authenticateToken, requireSuperAdmin,
     if (existingConfig.length > 0) {
       // Update existing configuration
       [config] = await db.update(invoiceGenerationConfigs)
-        .set({
-          ...configData,
-          updatedAt: new Date(),
-        })
+        .set(processedConfigData)
         .where(eq(invoiceGenerationConfigs.tenantId, tenantId))
         .returning();
     } else {
@@ -1691,7 +1696,7 @@ router.post('/super-admin/invoice-config', authenticateToken, requireSuperAdmin,
       [config] = await db.insert(invoiceGenerationConfigs)
         .values({
           tenantId,
-          ...configData,
+          ...processedConfigData,
         })
         .returning();
     }

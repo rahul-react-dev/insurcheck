@@ -37,10 +37,8 @@ function* generateInvoiceSaga(action) {
       window.showNotification(response.message || 'Invoice generation started successfully', 'success');
     }
 
-    // Refresh invoice logs after a short delay
-    setTimeout(() => {
-      put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
-    }, 2000);
+    // Refresh invoice logs after generation
+    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
   } catch (error) {
     console.error('❌ Error in generateInvoiceSaga:', error);
     const errorMessage = error?.message || 'Failed to generate invoice';
@@ -132,10 +130,8 @@ function* retryInvoiceGenerationSaga(action) {
       window.showNotification('Invoice generation retry started successfully', 'success');
     }
 
-    // Refresh logs after a short delay
-    setTimeout(() => {
-      put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
-    }, 2000);
+    // Refresh logs after retry
+    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
   } catch (error) {
     console.error('❌ Error in retryInvoiceGenerationSaga:', error);
     const errorMessage = error?.message || 'Failed to retry invoice generation';

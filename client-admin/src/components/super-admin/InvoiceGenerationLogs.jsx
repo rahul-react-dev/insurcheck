@@ -32,14 +32,14 @@ const InvoiceGenerationLogs = ({
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "success":
+      case "completed":
         return <i className="fas fa-check-circle text-green-500"></i>;
       case "failed":
         return <i className="fas fa-exclamation-circle text-red-500"></i>;
-      case "pending":
+      case "processing":
         return <i className="fas fa-clock text-yellow-500"></i>;
-      case "sent":
-        return <i className="fas fa-paper-plane text-blue-500"></i>;
+      case "retrying":
+        return <i className="fas fa-redo text-blue-500"></i>;
       default:
         return <i className="fas fa-circle text-gray-500"></i>;
     }
@@ -47,13 +47,13 @@ const InvoiceGenerationLogs = ({
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "success":
+      case "completed":
         return "bg-green-100 text-green-800";
       case "failed":
         return "bg-red-100 text-red-800";
-      case "pending":
+      case "processing":
         return "bg-yellow-100 text-yellow-800";
-      case "sent":
+      case "retrying":
         return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -122,10 +122,10 @@ const InvoiceGenerationLogs = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Status</option>
-              <option value="success">Success</option>
+              <option value="completed">Completed</option>
               <option value="failed">Failed</option>
-              <option value="pending">Pending</option>
-              <option value="sent">Sent</option>
+              <option value="processing">Processing</option>
+              <option value="retrying">Retrying</option>
             </select>
           </div>
 
@@ -201,7 +201,7 @@ const InvoiceGenerationLogs = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {log.invoiceId}
+                          {log.invoiceNumber || log.invoiceId || `Log #${log.id.substring(0, 8)}`}
                         </h3>
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(log.status)}`}
@@ -227,27 +227,31 @@ const InvoiceGenerationLogs = ({
                         <div>
                           <span className="text-gray-500">Generated:</span>
                           <span className="ml-1 font-medium">
-                            {formatDateTime(log.generationDate)}
+                            {log.generatedAt ? formatDateTime(log.generatedAt) : 'Processing...'}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500">Method:</span>
                           <span className="ml-1 font-medium capitalize">
-                            {log.generationType}
+                            {log.metadata?.generationType || 'Unknown'}
                           </span>
                         </div>
                       </div>
 
-                      {log.sentDate && (
+                      {log.sentAt && (
                         <div className="mt-2 text-sm">
                           <span className="text-gray-500">Sent:</span>
                           <span className="ml-1 font-medium">
-                            {formatDateTime(log.sentDate)}
+                            {formatDateTime(log.sentAt)}
                           </span>
-                          <span className="text-gray-500 ml-4">To:</span>
-                          <span className="ml-1 font-medium">
-                            {log.sentToEmail}
-                          </span>
+                          {log.metadata?.planName && (
+                            <>
+                              <span className="text-gray-500 ml-4">Plan:</span>
+                              <span className="ml-1 font-medium">
+                                {log.metadata.planName}
+                              </span>
+                            </>
+                          )}
                         </div>
                       )}
 

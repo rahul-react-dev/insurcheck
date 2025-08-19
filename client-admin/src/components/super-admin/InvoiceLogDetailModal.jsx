@@ -20,14 +20,14 @@ const InvoiceLogDetailModal = ({ isOpen, onClose, log }) => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "success":
+      case "completed":
         return <i className="fas fa-check-circle text-green-500"></i>;
       case "failed":
         return <i className="fas fa-exclamation-circle text-red-500"></i>;
-      case "pending":
+      case "processing":
         return <i className="fas fa-clock text-yellow-500"></i>;
-      case "sent":
-        return <i className="fas fa-paper-plane text-blue-500"></i>;
+      case "retrying":
+        return <i className="fas fa-redo text-blue-500"></i>;
       default:
         return <i className="fas fa-circle text-gray-500"></i>;
     }
@@ -35,13 +35,13 @@ const InvoiceLogDetailModal = ({ isOpen, onClose, log }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "success":
+      case "completed":
         return "bg-green-100 text-green-800 border-green-200";
       case "failed":
         return "bg-red-100 text-red-800 border-red-200";
-      case "pending":
+      case "processing":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "sent":
+      case "retrying":
         return "bg-blue-100 text-blue-800 border-blue-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
@@ -73,7 +73,7 @@ const InvoiceLogDetailModal = ({ isOpen, onClose, log }) => {
                   <p className="text-sm text-gray-600">
                     Invoice ID:{" "}
                     <span className="font-mono font-medium text-purple-600">
-                      {log.invoiceId}
+                      {log.invoiceNumber || log.invoiceId || `Log #${log.id.substring(0, 8)}`}
                     </span>
                   </p>
                 </div>
@@ -109,7 +109,7 @@ const InvoiceLogDetailModal = ({ isOpen, onClose, log }) => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Generation Type:</span>
                       <span className="text-sm font-medium capitalize">
-                        {log.generationType}
+                        {log.metadata?.generationType || 'Unknown'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
