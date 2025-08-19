@@ -71,18 +71,6 @@ const InvoiceGenerationLogs = ({
     }).format(amount);
   };
 
-  // Add loading states for retry operations
-  const [retryingIds, setRetryingIds] = useState({});
-
-  const handleRetryWithSpinner = async (invoiceId) => {
-    setRetryingIds(prev => ({ ...prev, [invoiceId]: true }));
-    try {
-      await onRetryGeneration(invoiceId);
-    } finally {
-      setRetryingIds(prev => ({ ...prev, [invoiceId]: false }));
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -296,21 +284,13 @@ const InvoiceGenerationLogs = ({
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 flex-shrink-0">
                     {log.status === "failed" && (
                       <Button
-                        onClick={() => handleRetryWithSpinner(log.id)}
+                        onClick={() =>
+                          onRetryGeneration && onRetryGeneration(log.id)
+                        }
                         className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 text-sm"
-                        disabled={retryingIds[log.id]}
                       >
-                        {retryingIds[log.id] ? (
-                          <>
-                            <i className="fas fa-spinner fa-spin mr-1"></i>
-                            Retrying...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-redo mr-1"></i>
-                            Retry
-                          </>
-                        )}
+                        <i className="fas fa-redo mr-1"></i>
+                        Retry
                       </Button>
                     )}
                     <Button

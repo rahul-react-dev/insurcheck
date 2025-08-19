@@ -43,20 +43,8 @@ const InvoiceGeneration = () => {
   // Fetch initial data when component mounts
   useEffect(() => {
     console.log('🔄 InvoiceGeneration component mounted, fetching data...');
-    console.log('📊 Current Redux state:', { configurations, logs, isLoading, isLoadingLogs, error });
-    console.log('🏪 Redux store exists:', !!dispatch);
-    
-    // Force immediate dispatch with detailed logging
-    const configAction = fetchInvoiceConfigRequest();
-    const logsAction = fetchInvoiceLogsRequest({ page: 1, limit: 5 });
-    
-    console.log('🎯 Dispatching config action:', configAction);
-    dispatch(configAction);
-    
-    console.log('🎯 Dispatching logs action:', logsAction);
-    dispatch(logsAction);
-    
-    console.log('✅ Both actions dispatched successfully');
+    dispatch(fetchInvoiceConfigRequest());
+    dispatch(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
   }, [dispatch]);
 
   // Sync local state with Redux store

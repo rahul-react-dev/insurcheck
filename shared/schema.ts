@@ -63,22 +63,6 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Invoice configuration table for dynamic settings
-export const invoiceConfigurations = pgTable('invoice_configurations', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  tenantId: integer('tenant_id').references(() => tenants.id).notNull(),
-  frequency: varchar('frequency', { length: 20 }).notNull().default('monthly'), // monthly, quarterly, yearly
-  startDate: timestamp('start_date').notNull(),
-  billingContactEmail: varchar('billing_contact_email', { length: 255 }).notNull(),
-  timezone: varchar('timezone', { length: 50 }).notNull().default('UTC'),
-  generateOnWeekend: boolean('generate_on_weekend').default(false),
-  autoSend: boolean('auto_send').default(true),
-  reminderDays: integer('reminder_days').default(3),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
-
 // Enhanced users table with multi-tenant support
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -144,10 +128,6 @@ export const invoices = pgTable("invoices", {
   billingPeriodStart: timestamp("billing_period_start").notNull(),
   billingPeriodEnd: timestamp("billing_period_end").notNull(),
   items: jsonb("items").notNull(),
-  generationStatus: varchar('generation_status', { length: 20 }).default('pending'), // pending, success, failed
-  sentAt: timestamp('sent_at'),
-  errorMessage: text('error_message'),
-  retryCount: integer('retry_count').default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -197,14 +177,6 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   payments: many(payments),
   invoices: many(invoices),
   activityLogs: many(activityLogs),
-  invoiceConfigurations: many(invoiceConfigurations),
-}));
-
-export const invoiceConfigurationsRelations = relations(invoiceConfigurations, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [invoiceConfigurations.tenantId],
-    references: [tenants.id],
-  }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -282,18 +254,6 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
 }));
 
 // Zod schemas for validation
-export const insertInvoiceConfigSchema = createInsertSchema(invoiceConfigurations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertInvoiceWithStatusSchema = createInsertSchema(invoices).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertTenantSchema = createInsertSchema(tenants).pick({
   name: true,
   domain: true,

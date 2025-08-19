@@ -37,19 +37,14 @@ const invoiceGenerationSlice = createSlice({
   reducers: {
     // Fetch invoice configurations
     fetchInvoiceConfigRequest: (state) => {
-      console.log('📊 fetchInvoiceConfigRequest reducer called - setting loading state');
+      console.log('📊 fetchInvoiceConfigRequest dispatched');
       state.isLoading = true;
       state.error = null;
     },
     fetchInvoiceConfigSuccess: (state, action) => {
       console.log('📊 fetchInvoiceConfigSuccess dispatched with payload:', action.payload);
       state.isLoading = false;
-      // Handle both array response (direct configurations) and object response with data property
-      if (Array.isArray(action.payload)) {
-        state.configurations = action.payload;
-      } else {
-        state.configurations = action.payload.configurations || action.payload.data || action.payload;
-      }
+      state.configurations = action.payload.configurations || [];
       state.tenants = action.payload.tenants || [];
       state.error = null;
     },
@@ -105,8 +100,7 @@ const invoiceGenerationSlice = createSlice({
 
     // Fetch invoice logs
     fetchInvoiceLogsRequest: (state, action) => {
-      console.log('📊 fetchInvoiceLogsRequest reducer called with payload:', action.payload);
-      console.log('📊 Setting isLoadingLogs to true');
+      console.log('📊 fetchInvoiceLogsRequest dispatched with payload:', action.payload);
       state.isLoadingLogs = true;
       state.error = null;
 
@@ -130,16 +124,7 @@ const invoiceGenerationSlice = createSlice({
       state.isLoadingLogs = false;
       state.hasInitialLoad = true;
       state.logs = action.payload.logs || [];
-      
-      // Handle summary data properly from API response
-      const summary = action.payload.summary || {};
-      state.summary = {
-        totalGenerated: summary.totalInvoices || 0,
-        totalSent: summary.totalPaid || 0,
-        totalFailed: summary.totalOverdue || 0,
-        totalAmount: summary.totalPending || 0
-      };
-      
+      state.summary = { ...state.summary, ...(action.payload.summary || {}) };
       if (action.payload.pagination) {
         state.pagination = { ...state.pagination, ...action.payload.pagination };
       }
