@@ -23,7 +23,7 @@ const initialState = {
   totalCount: 0,
   appliedFilters: {},
   exportLoading: false,
-  actionLoading: false
+  actionLoading: {}
 };
 
 const deletedDocumentsSlice = createSlice({
@@ -105,37 +105,41 @@ const deletedDocumentsSlice = createSlice({
     },
 
     // Restore document
-    restoreDocumentRequest: (state) => {
-      state.actionLoading = true;
+    restoreDocumentRequest: (state, action) => {
+      const documentId = action.payload;
+      state.actionLoading[`recover_${documentId}`] = true;
       state.error = null;
     },
     restoreDocumentSuccess: (state, action) => {
-      state.actionLoading = false;
       const { documentId } = action.payload;
+      state.actionLoading[`recover_${documentId}`] = false;
       state.deletedDocuments = state.deletedDocuments.filter(doc => doc.id !== documentId);
       state.totalCount -= 1;
       state.error = null;
     },
     restoreDocumentFailure: (state, action) => {
-      state.actionLoading = false;
-      state.error = action.payload;
+      const documentId = action.payload.documentId;
+      state.actionLoading[`recover_${documentId}`] = false;
+      state.error = action.payload.error;
     },
 
     // Permanently delete document
-    permanentlyDeleteDocumentRequest: (state) => {
-      state.actionLoading = true;
+    permanentlyDeleteDocumentRequest: (state, action) => {
+      const documentId = action.payload;
+      state.actionLoading[`delete_${documentId}`] = true;
       state.error = null;
     },
     permanentlyDeleteDocumentSuccess: (state, action) => {
-      state.actionLoading = false;
       const documentId = action.payload;
+      state.actionLoading[`delete_${documentId}`] = false;
       state.deletedDocuments = state.deletedDocuments.filter(doc => doc.id !== documentId);
       state.totalCount -= 1;
       state.error = null;
     },
     permanentlyDeleteDocumentFailure: (state, action) => {
-      state.actionLoading = false;
-      state.error = action.payload;
+      const documentId = action.payload.documentId;
+      state.actionLoading[`delete_${documentId}`] = false;
+      state.error = action.payload.error;
     },
 
     // Bulk restore documents

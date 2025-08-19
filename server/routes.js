@@ -2339,4 +2339,428 @@ router.put('/tenant-states/:id', authenticateToken, requireSuperAdmin, async (re
   }
 });
 
+// ===================== DELETED DOCUMENTS MANAGEMENT ROUTES =====================
+
+// Get all deleted documents with filtering and pagination
+router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      searchTerm = '',
+      deletedBy = '',
+      originalOwner = '',
+      dateRange = '',
+      documentType = '',
+      sortBy = 'deletedAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    console.log('📋 Fetching deleted documents with params:', req.query);
+
+    let query = db.select()
+    .from(documents)
+    .leftJoin(tenants, eq(documents.tenantId, tenants.id))
+    .leftJoin(users, eq(documents.userId, users.id))
+    .where(eq(documents.status, 'deleted'));
+
+    const conditions = [eq(documents.status, 'deleted')];
+
+    // Apply filters
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(documents.filename, `%${searchTerm}%`),
+          ilike(documents.originalName, `%${searchTerm}%`),
+          ilike(users.email, `%${searchTerm}%`)
+        )
+      );
+    }
+
+    if (deletedBy) {
+      conditions.push(ilike(sql`deleted_by_user.email`, `%${deletedBy}%`));
+    }
+
+    if (originalOwner) {
+      conditions.push(ilike(users.email, `%${originalOwner}%`));
+    }
+
+    if (documentType) {
+      conditions.push(ilike(documents.mimeType, `%${documentType}%`));
+    }
+
+    // Date range filter
+    if (dateRange) {
+      const [startDate, endDate] = dateRange.split(',');
+      if (startDate) {
+        conditions.push(gte(documents.deletedAt, new Date(startDate)));
+      }
+      if (endDate) {
+        conditions.push(lte(documents.deletedAt, new Date(endDate)));
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Count total records
+    const totalQuery = db.select({ count: count() })
+      .from(documents)
+      .leftJoin(tenants, eq(documents.tenantId, tenants.id))
+      .leftJoin(users, eq(documents.userId, users.id))
+      .where(and(...conditions));
+
+    // Apply sorting
+    const sortField = sortBy === 'deletedAt' ? documents.deletedAt : 
+                     sortBy === 'name' ? documents.filename :
+                     sortBy === 'size' ? documents.fileSize :
+                     documents.deletedAt;
+
+    const orderBy = sortOrder === 'asc' ? sortField : desc(sortField);
+
+    // Execute queries
+    const [deletedDocs, totalCountResult] = await Promise.all([
+      query
+        .orderBy(orderBy)
+        .limit(parseInt(limit))
+        .offset((parseInt(page) - 1) * parseInt(limit)),
+      totalQuery
+    ]);
+
+    const total = totalCountResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    // Flatten the nested structure
+    const flattenedDocs = deletedDocs.map(doc => ({
+      id: doc.documents.id,
+      tenantId: doc.documents.tenantId,
+      tenantName: doc.tenants?.name || 'Unknown Tenant',
+      userId: doc.documents.userId,
+      userEmail: doc.users?.email || 'Unknown User',
+      name: doc.documents.filename,
+      originalName: doc.documents.originalName,
+      mimeType: doc.documents.mimeType,
+      size: doc.documents.fileSize,
+      deletedAt: doc.documents.deletedAt,
+      deletedBy: doc.documents.deletedBy,
+      deletedByEmail: 'N/A', // Can be enhanced later
+      createdAt: doc.documents.createdAt,
+      downloadUrl: `/api/documents/${doc.documents.id}/download`,
+      viewUrl: `/api/documents/${doc.documents.id}/view`
+    }));
+
+    console.log(`✅ Retrieved ${deletedDocs.length} deleted documents (page ${page}/${totalPages}, total: ${total})`);
+
+    return res.json({
+      documents: flattenedDocs,
+      pagination: {
+        currentPage: parseInt(page),
+        pageSize: parseInt(limit),
+        totalPages,
+        hasNextPage: parseInt(page) < totalPages,
+        hasPreviousPage: parseInt(page) > 1,
+        total
+      },
+      totalCount: total,
+      appliedFilters: {
+        searchTerm,
+        deletedBy,
+        originalOwner,
+        dateRange,
+        documentType,
+        sortBy,
+        sortOrder
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching deleted documents:', error);
+    res.status(500).json({
+      error: 'Failed to fetch deleted documents',
+      message: error.message
+    });
+  }
+});
+
+// Restore a deleted document
+router.post('/deleted-documents/:id/restore', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const documentId = req.params.id;
+    console.log(`📤 Restoring document with ID: ${documentId}`);
+
+    // Check if document exists and is deleted
+    const existingDocument = await db.select()
+      .from(documents)
+      .where(and(
+        eq(documents.id, documentId),
+        eq(documents.status, 'deleted')
+      ))
+      .limit(1);
+
+    if (existingDocument.length === 0) {
+      return res.status(404).json({
+        error: 'Document not found',
+        message: 'Document not found or not in deleted status'
+      });
+    }
+
+    // Restore the document
+    const [restoredDocument] = await db.update(documents)
+      .set({
+        status: 'active',
+        deletedAt: null,
+        deletedBy: null,
+        updatedAt: new Date()
+      })
+      .where(eq(documents.id, documentId))
+      .returning();
+
+    console.log('✅ Document restored successfully:', restoredDocument.name);
+
+    res.json({
+      message: 'Document restored successfully',
+      document: restoredDocument
+    });
+  } catch (error) {
+    console.error('❌ Error restoring document:', error);
+    res.status(500).json({
+      error: 'Failed to restore document',
+      message: error.message
+    });
+  }
+});
+
+// Permanently delete a document
+router.delete('/deleted-documents/:id/permanent', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const documentId = req.params.id;
+    console.log(`🗑️ Permanently deleting document with ID: ${documentId}`);
+
+    // Check if document exists and is deleted
+    const existingDocument = await db.select()
+      .from(documents)
+      .where(and(
+        eq(documents.id, documentId),
+        eq(documents.status, 'deleted')
+      ))
+      .limit(1);
+
+    if (existingDocument.length === 0) {
+      return res.status(404).json({
+        error: 'Document not found',
+        message: 'Document not found or not in deleted status'
+      });
+    }
+
+    // Permanently delete the document
+    await db.delete(documents).where(eq(documents.id, documentId));
+
+    console.log('✅ Document permanently deleted');
+
+    res.json({
+      message: 'Document permanently deleted',
+      documentId
+    });
+  } catch (error) {
+    console.error('❌ Error permanently deleting document:', error);
+    res.status(500).json({
+      error: 'Failed to permanently delete document',
+      message: error.message
+    });
+  }
+});
+
+// Bulk restore documents
+router.post('/deleted-documents/bulk-restore', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    console.log(`📤 Bulk restoring ${ids?.length} documents:`, ids);
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'Document IDs array is required'
+      });
+    }
+
+    // Restore multiple documents
+    const restoredDocuments = await db.update(documents)
+      .set({
+        status: 'active',
+        deletedAt: null,
+        deletedBy: null,
+        updatedAt: new Date()
+      })
+      .where(and(
+        sql`${documents.id} = ANY(ARRAY[${ids.map(id => `'${id}'`).join(',')}])`,
+        eq(documents.status, 'deleted')
+      ))
+      .returning();
+
+    console.log(`✅ Bulk restored ${restoredDocuments.length} documents`);
+
+    res.json({
+      message: `Successfully restored ${restoredDocuments.length} documents`,
+      restoredCount: restoredDocuments.length,
+      documents: restoredDocuments
+    });
+  } catch (error) {
+    console.error('❌ Error in bulk restore:', error);
+    res.status(500).json({
+      error: 'Failed to bulk restore documents',
+      message: error.message
+    });
+  }
+});
+
+// Bulk permanently delete documents
+router.post('/deleted-documents/bulk-delete', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    console.log(`🗑️ Bulk permanently deleting ${ids?.length} documents:`, ids);
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'Document IDs array is required'
+      });
+    }
+
+    // Get document info before deletion for logging
+    const documentsToDelete = await db.select()
+      .from(documents)
+      .where(and(
+        sql`${documents.id} = ANY(ARRAY[${ids.map(id => `'${id}'`).join(',')}])`,
+        eq(documents.status, 'deleted')
+      ));
+
+    // Permanently delete multiple documents
+    await db.delete(documents)
+      .where(and(
+        sql`${documents.id} = ANY(ARRAY[${ids.map(id => `'${id}'`).join(',')}])`,
+        eq(documents.status, 'deleted')
+      ));
+
+    console.log(`✅ Bulk permanently deleted ${documentsToDelete.length} documents`);
+
+    res.json({
+      message: `Successfully deleted ${documentsToDelete.length} documents permanently`,
+      deletedCount: documentsToDelete.length,
+      documentIds: ids
+    });
+  } catch (error) {
+    console.error('❌ Error in bulk permanent delete:', error);
+    res.status(500).json({
+      error: 'Failed to bulk delete documents',
+      message: error.message
+    });
+  }
+});
+
+// Export deleted documents
+router.get('/deleted-documents/export', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const {
+      format = 'csv',
+      searchTerm = '',
+      deletedBy = '',
+      originalOwner = '',
+      dateRange = '',
+      documentType = ''
+    } = req.query;
+
+    console.log(`📊 Exporting deleted documents in ${format} format`);
+
+    // Build query with same filters as main endpoint
+    let query = db.select({
+      id: documents.id,
+      tenantName: tenants.name,
+      userEmail: users.email,
+      documentName: documents.name,
+      originalName: documents.originalName,
+      mimeType: documents.mimeType,
+      size: documents.size,
+      deletedAt: documents.deletedAt,
+      deletedByEmail: sql`deleted_by_user.email`,
+      createdAt: documents.createdAt
+    })
+    .from(documents)
+    .leftJoin(tenants, eq(documents.tenantId, tenants.id))
+    .leftJoin(users, eq(documents.userId, users.id))
+    .leftJoin(sql`users AS deleted_by_user`, sql`${documents.deletedBy} = deleted_by_user.id`)
+    .where(eq(documents.status, 'deleted'));
+
+    const conditions = [eq(documents.status, 'deleted')];
+
+    // Apply same filters as main endpoint
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(documents.name, `%${searchTerm}%`),
+          ilike(documents.originalName, `%${searchTerm}%`),
+          ilike(users.email, `%${searchTerm}%`)
+        )
+      );
+    }
+
+    if (deletedBy) {
+      conditions.push(ilike(sql`deleted_by_user.email`, `%${deletedBy}%`));
+    }
+
+    if (originalOwner) {
+      conditions.push(ilike(users.email, `%${originalOwner}%`));
+    }
+
+    if (documentType) {
+      conditions.push(ilike(documents.mimeType, `%${documentType}%`));
+    }
+
+    if (dateRange) {
+      const [startDate, endDate] = dateRange.split(',');
+      if (startDate) {
+        conditions.push(gte(documents.deletedAt, new Date(startDate)));
+      }
+      if (endDate) {
+        conditions.push(lte(documents.deletedAt, new Date(endDate)));
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const exportData = await query.orderBy(desc(documents.deletedAt));
+
+    if (format === 'csv') {
+      // Generate CSV
+      const csvHeader = 'Document ID,Tenant,Original Owner,Document Name,Original Name,File Type,Size (bytes),Deleted At,Deleted By,Created At\n';
+      const csvRows = exportData.map(doc => 
+        `"${doc.id}","${doc.tenantName || ''}","${doc.userEmail || ''}","${doc.documentName || ''}","${doc.originalName || ''}","${doc.mimeType || ''}","${doc.size || 0}","${doc.deletedAt || ''}","${doc.deletedByEmail || ''}","${doc.createdAt || ''}"`
+      ).join('\n');
+
+      const csvContent = csvHeader + csvRows;
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="deleted_documents_${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvContent);
+    } else {
+      // Return JSON for other formats (frontend can handle PDF/Excel generation)
+      res.json({
+        data: exportData,
+        format,
+        exportedAt: new Date().toISOString(),
+        totalRecords: exportData.length
+      });
+    }
+
+    console.log(`✅ Exported ${exportData.length} deleted documents in ${format} format`);
+  } catch (error) {
+    console.error('❌ Error exporting deleted documents:', error);
+    res.status(500).json({
+      error: 'Failed to export deleted documents',
+      message: error.message
+    });
+  }
+});
+
 export default router;

@@ -417,9 +417,12 @@ export const superAdminAPI = {
   exportActivityLogs: (params) => api.post('/activity-logs/export', params),
 
   // Deleted Documents
-  getDeletedDocuments: (params) => api.get('/super-admin/deleted-documents', { params }),
-  restoreDocument: (id) => api.post(`/super-admin/deleted-documents/${id}/restore`),
-  permanentlyDeleteDocument: (id) => api.delete(`/super-admin/deleted-documents/${id}/permanent`),
+  getDeletedDocuments: (params) => api.get('/deleted-documents', { params }),
+  restoreDocument: (id) => api.post(`/deleted-documents/${id}/restore`),
+  permanentlyDeleteDocument: (id) => api.delete(`/deleted-documents/${id}/permanent`),
+  bulkRestoreDocuments: (ids) => api.post('/deleted-documents/bulk-restore', { ids }),
+  bulkDeleteDocuments: (ids) => api.post('/deleted-documents/bulk-delete', { ids }),
+  exportDeletedDocuments: (params) => api.get('/deleted-documents/export', { params, responseType: 'blob' }),
 
   // System Configuration
   getSystemConfig: () => api.get('/super-admin/system-config'),

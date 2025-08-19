@@ -62,8 +62,12 @@ export const DeletedDocumentsFilters = ({
           />
         </div>
         <div className="flex gap-2">
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-            <i className="fas fa-search mr-2"></i>
+          <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+            {loading ? (
+              <i className="fas fa-spinner fa-spin mr-2"></i>
+            ) : (
+              <i className="fas fa-search mr-2"></i>
+            )}
             Search
           </Button>
           {hasActiveFilters && (

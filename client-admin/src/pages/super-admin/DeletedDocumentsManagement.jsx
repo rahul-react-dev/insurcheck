@@ -27,6 +27,7 @@ const DeletedDocumentsManagement = () => {
     pagination,
     totalCount,
     exportLoading,
+    actionLoading,
   } = useSelector((state) => state.deletedDocuments);
 
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -326,6 +327,7 @@ const DeletedDocumentsManagement = () => {
           loading={loading}
           pagination={pagination}
           totalCount={totalCount}
+          actionLoading={actionLoading}
           onSort={handleSort}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}

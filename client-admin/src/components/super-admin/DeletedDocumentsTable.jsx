@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Button from "../ui/Button";
 import Pagination from "../ui/Pagination";
+import { TableSkeleton } from "../ui/SkeletonLoader";
 
 export const DeletedDocumentsTable = ({
   documents,
@@ -14,6 +15,7 @@ export const DeletedDocumentsTable = ({
   onDownloadDocument,
   onRecoverDocument,
   onDeleteDocument,
+  actionLoading = {},
 }) => {
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -77,14 +79,8 @@ export const DeletedDocumentsTable = ({
 
   if (loading) {
     return (
-      <div className="p-8 text-center">
-        <i className="fas fa-spinner fa-spin text-4xl text-gray-300 mb-4"></i>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          Loading Documents
-        </h3>
-        <p className="text-gray-500">
-          Please wait while we fetch the deleted documents...
-        </p>
+      <div className="overflow-hidden">
+        <TableSkeleton rows={5} columns={7} />
       </div>
     );
   }
@@ -229,17 +225,27 @@ export const DeletedDocumentsTable = ({
                       size="sm"
                       variant="outline"
                       onClick={() => onRecoverDocument(document)}
+                      disabled={actionLoading[`recover_${document.id}`]}
                       className="text-yellow-600 hover:text-yellow-800 border-yellow-200 hover:border-yellow-300"
                     >
-                      <i className="fas fa-undo"></i>
+                      {actionLoading[`recover_${document.id}`] ? (
+                        <i className="fas fa-spinner fa-spin"></i>
+                      ) : (
+                        <i className="fas fa-undo"></i>
+                      )}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => onDeleteDocument(document)}
+                      disabled={actionLoading[`delete_${document.id}`]}
                       className="text-red-600 hover:text-red-800 border-red-200 hover:border-red-300"
                     >
-                      <i className="fas fa-trash"></i>
+                      {actionLoading[`delete_${document.id}`] ? (
+                        <i className="fas fa-spinner fa-spin"></i>
+                      ) : (
+                        <i className="fas fa-trash"></i>
+                      )}
                     </Button>
                   </div>
                 </td>
@@ -323,18 +329,28 @@ export const DeletedDocumentsTable = ({
                 size="sm"
                 variant="outline"
                 onClick={() => onRecoverDocument(document)}
+                disabled={actionLoading[`recover_${document.id}`]}
                 className="text-yellow-600 hover:text-yellow-800 border-yellow-200"
               >
-                <i className="fas fa-undo mr-1"></i>
+                {actionLoading[`recover_${document.id}`] ? (
+                  <i className="fas fa-spinner fa-spin mr-1"></i>
+                ) : (
+                  <i className="fas fa-undo mr-1"></i>
+                )}
                 Recover
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => onDeleteDocument(document)}
+                disabled={actionLoading[`delete_${document.id}`]}
                 className="text-red-600 hover:text-red-800 border-red-200"
               >
-                <i className="fas fa-trash mr-1"></i>
+                {actionLoading[`delete_${document.id}`] ? (
+                  <i className="fas fa-spinner fa-spin mr-1"></i>
+                ) : (
+                  <i className="fas fa-trash mr-1"></i>
+                )}
                 Delete
               </Button>
             </div>
