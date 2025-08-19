@@ -4,6 +4,7 @@ import Button from "../ui/Button";
 
 export const DeletedDocumentsFilters = ({
   filters,
+  loading,
   onSearch,
   onFilterChange,
 }) => {

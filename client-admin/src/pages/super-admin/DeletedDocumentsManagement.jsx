@@ -315,6 +315,7 @@ const DeletedDocumentsManagement = () => {
       <Card className="p-6">
         <DeletedDocumentsFilters
           filters={filters}
+          loading={loading}
           onSearch={handleSearch}
           onFilterChange={handleFilterChange}
         />
