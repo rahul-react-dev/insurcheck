@@ -1,21 +1,81 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Switch } from "../ui/switch";
-import { Badge } from "../ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "../ui/dialog";
-import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { CalendarIcon, Clock, Mail, MapPin, Settings, Users, Power, Loader2, Plus, Edit3, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import Card from '../ui/Card';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import { 
+  CalendarIcon, Clock, Mail, MapPin, Settings, Users, Power, 
+  Loader2, Plus, Edit3, CheckCircle, XCircle, AlertCircle 
+} from 'lucide-react';
 import { format } from 'date-fns';
-import { Skeleton } from '../ui/skeleton';
 import {
   fetchInvoiceConfigRequest,
   updateInvoiceConfigRequest,
   generateInvoiceRequest
 } from '../../store/super-admin/invoiceGenerationSlice';
+
+// Simple Badge component
+const Badge = ({ children, className = '' }) => (
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}>
+    {children}
+  </span>
+);
+
+// Simple Switch component
+const Switch = ({ checked, onChange, disabled = false }) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={() => onChange(!checked)}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+      checked ? 'bg-blue-600' : 'bg-gray-200'
+    } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+  >
+    <span
+      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+        checked ? 'translate-x-6' : 'translate-x-1'
+      }`}
+    />
+  </button>
+);
+
+// Simple Select component
+const Select = ({ value, onChange, children, className = '' }) => (
+  <select
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    className={`block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${className}`}
+  >
+    {children}
+  </select>
+);
+
+// Simple Modal component
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const InvoiceGenerationConfig = () => {
   const dispatch = useDispatch();
@@ -118,17 +178,17 @@ const InvoiceGenerationConfig = () => {
 
   const getFrequencyColor = (frequency) => {
     switch (frequency) {
-      case 'monthly': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'quarterly': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      case 'yearly': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      case 'monthly': return 'bg-blue-100 text-blue-800';
+      case 'quarterly': return 'bg-purple-100 text-purple-800';
+      case 'yearly': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusColor = (isActive) => {
     return isActive 
-      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      ? 'bg-green-100 text-green-800'
+      : 'bg-gray-100 text-gray-800';
   };
 
   if (isLoading) {
@@ -137,29 +197,29 @@ const InvoiceGenerationConfig = () => {
         <div className="animate-pulse">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 mb-6">
             <div className="flex-1 max-w-md">
-              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-full"></div>
             </div>
-            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-32"></div>
+            <div className="h-10 bg-gray-200 rounded-lg w-32"></div>
           </div>
         </div>
         {Array.from({ length: 5 }).map((_, index) => (
           <Card key={index} className="p-6 animate-pulse">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 flex-1">
-                <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
                 <div className="flex-1 space-y-3">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                   <div className="flex space-x-4">
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
                   </div>
                 </div>
               </div>
               <div className="flex space-x-2">
-                <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-8 w-20 bg-gray-200 rounded"></div>
               </div>
             </div>
           </Card>
@@ -178,7 +238,6 @@ const InvoiceGenerationConfig = () => {
             placeholder="Search tenants..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-4 pr-4 py-2"
           />
         </div>
         <Button
@@ -192,11 +251,11 @@ const InvoiceGenerationConfig = () => {
 
       {/* Error State */}
       {error && (
-        <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/10">
-          <CardContent className="flex items-center space-x-3 p-4">
+        <Card className="border-red-200 bg-red-50">
+          <div className="flex items-center space-x-3 p-4">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            <p className="text-red-700 dark:text-red-300">{error}</p>
-          </CardContent>
+            <p className="text-red-700">{error}</p>
+          </div>
         </Card>
       )}
 
@@ -207,99 +266,97 @@ const InvoiceGenerationConfig = () => {
           const hasConfig = !!config;
           
           return (
-            <Card key={tenant.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${
-                      hasConfig 
-                        ? 'bg-gradient-to-br from-blue-500 to-purple-600' 
-                        : 'bg-gray-100 dark:bg-gray-700'
-                    }`}>
-                      <Users className={`h-6 w-6 ${
-                        hasConfig ? 'text-white' : 'text-gray-400'
-                      }`} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                          {tenant.name}
-                        </h3>
-                        {hasConfig && (
-                          <Badge className={getStatusColor(config.isActive)}>
-                            {config.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        <Mail className="h-4 w-4" />
-                        <span className="truncate">{tenant.email}</span>
-                      </div>
-                      
-                      {hasConfig && (
-                        <div className="flex flex-wrap gap-3 text-xs">
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
-                            <Badge className={getFrequencyColor(config.frequency)}>
-                              {config.frequency}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center space-x-1 text-gray-500">
-                            <CalendarIcon className="h-3 w-3" />
-                            <span>Next: {config.nextGenerationDate ? 
-                              format(new Date(config.nextGenerationDate), 'MMM dd, yyyy') : 
-                              'Not scheduled'
-                            }</span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-1 text-gray-500">
-                            <MapPin className="h-3 w-3" />
-                            <span>{config.timezone}</span>
-                          </div>
-                          
-                          {config.autoSend && (
-                            <div className="flex items-center space-x-1">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                              <span className="text-green-600 dark:text-green-400">Auto-send</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {!hasConfig && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          No invoice generation configured
-                        </p>
-                      )}
-                    </div>
+            <Card key={tenant.id} className="hover:shadow-md transition-shadow" padding="default">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${
+                    hasConfig 
+                      ? 'bg-gradient-to-br from-blue-500 to-purple-600' 
+                      : 'bg-gray-100'
+                  }`}>
+                    <Users className={`h-6 w-6 ${
+                      hasConfig ? 'text-white' : 'text-gray-400'
+                    }`} />
                   </div>
                   
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(tenant)}
-                    >
-                      {hasConfig ? <Edit3 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                      {hasConfig ? 'Edit' : 'Setup'}
-                    </Button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {tenant.name}
+                      </h3>
+                      {hasConfig && (
+                        <Badge className={getStatusColor(config.isActive)}>
+                          {config.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+                      <Mail className="h-4 w-4" />
+                      <span className="truncate">{tenant.email}</span>
+                    </div>
                     
                     {hasConfig && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleManualGenerate(tenant.id)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <Power className="h-4 w-4 mr-1" />
-                        Generate
-                      </Button>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="h-3 w-3" />
+                          <Badge className={getFrequencyColor(config.frequency)}>
+                            {config.frequency}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1 text-gray-500">
+                          <CalendarIcon className="h-3 w-3" />
+                          <span>Next: {config.nextGenerationDate ? 
+                            format(new Date(config.nextGenerationDate), 'MMM dd, yyyy') : 
+                            'Not scheduled'
+                          }</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1 text-gray-500">
+                          <MapPin className="h-3 w-3" />
+                          <span>{config.timezone}</span>
+                        </div>
+                        
+                        {config.autoSend && (
+                          <div className="flex items-center space-x-1">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <span className="text-green-600">Auto-send</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {!hasConfig && (
+                      <p className="text-sm text-gray-500">
+                        No invoice generation configured
+                      </p>
                     )}
                   </div>
                 </div>
-              </CardContent>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    size="small"
+                    variant="outline"
+                    onClick={() => handleEdit(tenant)}
+                  >
+                    {hasConfig ? <Edit3 className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                    {hasConfig ? 'Edit' : 'Setup'}
+                  </Button>
+                  
+                  {hasConfig && (
+                    <Button
+                      size="small"
+                      variant="success"
+                      onClick={() => handleManualGenerate(tenant.id)}
+                    >
+                      <Power className="h-4 w-4 mr-1" />
+                      Generate
+                    </Button>
+                  )}
+                </div>
+              </div>
             </Card>
           );
         })}
@@ -308,189 +365,181 @@ const InvoiceGenerationConfig = () => {
       {/* Empty State */}
       {filteredTenants.length === 0 && !isLoading && (
         <Card className="text-center py-12">
-          <CardContent>
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              No tenants found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              {searchTerm ? 'Try adjusting your search terms' : 'No tenants available to configure'}
-            </p>
-          </CardContent>
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No tenants found
+          </h3>
+          <p className="text-gray-500">
+            {searchTerm ? 'Try adjusting your search terms' : 'No tenants available to configure'}
+          </p>
         </Card>
       )}
 
       {/* Configuration Modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTenant && configurations.find(c => c.tenantId === editingTenant.id)
-                ? 'Edit Invoice Configuration'
-                : 'Setup Invoice Configuration'
-              }
-            </DialogTitle>
-          </DialogHeader>
-          
-          {editingTenant && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <Users className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                    {editingTenant.name}
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {editingTenant.email}
-                  </p>
-                </div>
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)}
+        title={editingTenant && configurations.find(c => c.tenantId === editingTenant.id)
+          ? 'Edit Invoice Configuration'
+          : 'Setup Invoice Configuration'
+        }
+      >
+        {editingTenant && (
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div>
+                <h4 className="font-semibold text-gray-900">
+                  {editingTenant.name}
+                </h4>
+                <p className="text-sm text-gray-500">
+                  {editingTenant.email}
+                </p>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Billing Frequency</Label>
-                  <Select value={formData.frequency} onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, frequency: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                    className={errors.startDate ? 'border-red-500' : ''}
-                  />
-                  {errors.startDate && (
-                    <p className="text-red-500 text-xs">{errors.startDate}</p>
-                  )}
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Billing Frequency
+                </label>
+                <Select 
+                  value={formData.frequency} 
+                  onChange={(value) => setFormData(prev => ({ ...prev, frequency: value }))}
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="yearly">Yearly</option>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="billingContactEmail">Billing Contact Email</Label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Start Date
+                </label>
                 <Input
-                  id="billingContactEmail"
-                  type="email"
-                  value={formData.billingContactEmail}
-                  onChange={(e) => setFormData(prev => ({ ...prev, billingContactEmail: e.target.value }))}
-                  className={errors.billingContactEmail ? 'border-red-500' : ''}
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  className={errors.startDate ? 'border-red-500' : ''}
                 />
-                {errors.billingContactEmail && (
-                  <p className="text-red-500 text-xs">{errors.billingContactEmail}</p>
+                {errors.startDate && (
+                  <p className="text-red-500 text-xs">{errors.startDate}</p>
                 )}
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select value={formData.timezone} onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, timezone: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Billing Contact Email
+              </label>
+              <Input
+                type="email"
+                value={formData.billingContactEmail}
+                onChange={(e) => setFormData(prev => ({ ...prev, billingContactEmail: e.target.value }))}
+                className={errors.billingContactEmail ? 'border-red-500' : ''}
+              />
+              {errors.billingContactEmail && (
+                <p className="text-red-500 text-xs">{errors.billingContactEmail}</p>
+              )}
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reminderDays">Reminder Days</Label>
-                  <Input
-                    id="reminderDays"
-                    type="number"
-                    min="0"
-                    max="30"
-                    value={formData.reminderDays}
-                    onChange={(e) => setFormData(prev => ({ ...prev, reminderDays: parseInt(e.target.value) || 0 }))}
-                    className={errors.reminderDays ? 'border-red-500' : ''}
-                  />
-                  {errors.reminderDays && (
-                    <p className="text-red-500 text-xs">{errors.reminderDays}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="generateOnWeekend">Generate on Weekends</Label>
-                    <p className="text-sm text-gray-500">Allow invoice generation on weekends</p>
-                  </div>
-                  <Switch
-                    id="generateOnWeekend"
-                    checked={formData.generateOnWeekend}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, generateOnWeekend: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="autoSend">Auto-send Invoices</Label>
-                    <p className="text-sm text-gray-500">Automatically send generated invoices</p>
-                  </div>
-                  <Switch
-                    id="autoSend"
-                    checked={formData.autoSend}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, autoSend: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="isActive">Configuration Active</Label>
-                    <p className="text-sm text-gray-500">Enable automatic invoice generation</p>
-                  </div>
-                  <Switch
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <Button
-                  onClick={handleSave}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                  disabled={isSubmitting}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Timezone
+                </label>
+                <Select 
+                  value={formData.timezone} 
+                  onChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Configuration'
-                  )}
-                </Button>
-                <DialogClose asChild>
-                  <Button variant="outline" className="flex-1">
-                    Cancel
-                  </Button>
-                </DialogClose>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Denver">Mountain Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Reminder Days
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={formData.reminderDays}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reminderDays: parseInt(e.target.value) || 0 }))}
+                  className={errors.reminderDays ? 'border-red-500' : ''}
+                />
+                {errors.reminderDays && (
+                  <p className="text-red-500 text-xs">{errors.reminderDays}</p>
+                )}
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Generate on Weekends
+                  </label>
+                  <p className="text-sm text-gray-500">Allow invoice generation on weekends</p>
+                </div>
+                <Switch
+                  checked={formData.generateOnWeekend}
+                  onChange={(checked) => setFormData(prev => ({ ...prev, generateOnWeekend: checked }))}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Auto-send Invoices
+                  </label>
+                  <p className="text-sm text-gray-500">Automatically send generated invoices</p>
+                </div>
+                <Switch
+                  checked={formData.autoSend}
+                  onChange={(checked) => setFormData(prev => ({ ...prev, autoSend: checked }))}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Configuration Active
+                  </label>
+                  <p className="text-sm text-gray-500">Enable automatic invoice generation</p>
+                </div>
+                <Switch
+                  checked={formData.isActive}
+                  onChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <Button
+                onClick={handleSave}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+              >
+                Save Configuration
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowModal(false)} 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
