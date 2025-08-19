@@ -302,33 +302,44 @@ router.get(
 
       const logs = result.map(log => {
         const isErrorLog = level === 'error';
+        
+        // Create consistent log data structure
+        const logData = {
+          id: log.id,
+          logId: log.id.slice(0, 8), // Short ID for display
+          timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
+          tenantName: log.tenantName || 'System',
+          userEmail: log.userEmail || 'System',
+          user: log.userEmail || 'System',
+          actionPerformed: log.action || 'Unknown Action',
+          ipAddress: log.ipAddress || 'Unknown',
+          severity: log.level === 'critical' ? 'Critical' : 
+                   log.level === 'error' ? 'High' : 
+                   log.level === 'warning' ? 'Medium' : 'Low',
+          status: log.level === 'error' ? 'failed' : 'success',
+          userType: log.userEmail === 'System' ? 'system' : 'user',
+          level: log.level,
+          resource: log.resource || 'System',
+          details: typeof log.details === 'object' ? 
+                  log.details?.message || log.action || 'No details available' : 
+                  log.details || log.action || 'No details available',
+          message: typeof log.details === 'object' ? 
+                  log.details?.message || log.action || 'No details available' : 
+                  log.details || log.action || 'No details available'
+        };
 
         if (isErrorLog) {
           return {
-            id: log.id,
-            timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
+            ...logData,
             errorType: log.action || 'Unknown Error',
-            affectedTenant: log.tenantName || 'System',
-            tenantName: log.tenantName || 'System',
-            userEmail: log.userEmail || 'System',
-            user: log.userEmail || 'System',
-            message: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action,
-            severity: log.level === 'critical' ? 'Critical' : 
-                     log.level === 'error' ? 'High' : 
-                     log.level === 'warning' ? 'Medium' : 'Low'
+            affectedTenant: log.tenantName || 'System'
           };
         } else {
           return {
-            id: log.id,
-            timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
+            ...logData,
             action: log.action,
-            user: log.userEmail || log.user || 'System', 
-            userEmail: log.userEmail || log.user || 'System',
             tenant: log.tenantName || 'System',
-            tenantName: log.tenantName || 'System',
-            affectedTenant: log.tenantName || 'System',
-            resource: log.resource,
-            details: typeof log.details === 'object' ? log.details?.message || log.action : log.details || log.action
+            affectedTenant: log.tenantName || 'System'
           };
         }
       });

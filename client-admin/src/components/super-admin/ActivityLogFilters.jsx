@@ -80,7 +80,11 @@ const ActivityLogFilters = ({
               disabled={isLoading}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 text-sm"
             >
-              <i className={`fas fa-search mr-2 ${isLoading ? 'animate-spin' : ''}`}></i>
+              {isLoading ? (
+                <i className="fas fa-spinner animate-spin mr-2"></i>
+              ) : (
+                <i className="fas fa-search mr-2"></i>
+              )}
               {isLoading ? 'Applying...' : 'Apply Filters'}
             </Button>
             <Button
@@ -89,7 +93,11 @@ const ActivityLogFilters = ({
               variant="secondary"
               className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-4 py-2 text-sm"
             >
-              <i className={`fas fa-times mr-2 ${isLoading ? 'animate-spin' : ''}`}></i>
+              {isLoading ? (
+                <i className="fas fa-spinner animate-spin mr-2"></i>
+              ) : (
+                <i className="fas fa-times mr-2"></i>
+              )}
               {isLoading ? 'Clearing...' : 'Clear All'}
             </Button>
           </div>

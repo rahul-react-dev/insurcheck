@@ -264,7 +264,7 @@ const ActivityLogTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Action:</span>
                   <span className="text-sm font-medium text-gray-900">
-                    {log.actionPerformed}
+                    {log.actionPerformed || log.action || log.errorType || 'Unknown'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -368,10 +368,10 @@ const ActivityLogTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    {log.actionPerformed}
+                    {log.actionPerformed || log.action || log.errorType || 'Unknown Action'}
                   </div>
                   <div className="text-xs text-gray-500 max-w-xs truncate">
-                    {log.actionDetails}
+                    {log.details || log.message || 'No details available'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
