@@ -39,9 +39,30 @@ const InvoiceFilters = ({
   const hasActiveFilters = filters.tenantName || filters.status || filters.dateRange.start || filters.dateRange.end;
 
   return (
-    <div className="bg-gray-50 p-4 sm:p-6 border-b border-gray-200">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="bg-white p-4 sm:p-6 border rounded-lg shadow-sm">
+      <div className="flex flex-col space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Filter Invoices</h3>
+          <div className="flex space-x-2">
+            <Button
+              onClick={onExportAll}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
+            >
+              <i className="fas fa-download mr-2"></i>
+              Export All
+            </Button>
+            {hasActiveFilters && (
+              <Button
+                onClick={handleClearFilters}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
+              >
+                <i className="fas fa-times mr-2"></i>
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Tenant Name Filter */}
           <div>
             <label htmlFor="tenantFilter" className="block text-sm font-medium text-gray-700 mb-1">
@@ -104,26 +125,7 @@ const InvoiceFilters = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 lg:ml-6">
-          <Button
-            onClick={onExportAll}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
-          >
-            <i className="fas fa-download mr-2"></i>
-            Export All
-          </Button>
-          {hasActiveFilters && (
-            <Button
-              onClick={handleClearFilters}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
-            >
-              <i className="fas fa-times mr-2"></i>
-              Clear Filters
-            </Button>
-          )}
         </div>
-      </div>
 
       {/* Active Filters Display */}
       {hasActiveFilters && (

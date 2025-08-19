@@ -256,7 +256,7 @@ const InvoiceTable = ({
                 </div>
                 {invoice.status.toLowerCase() !== "paid" && (
                   <Button
-                    onClick={() => onMarkPaid(invoice.id)}
+                    onClick={() => onMarkPaid(invoice.id, invoice.invoiceNumber || invoice.invoiceId)}
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-xs py-2"
                   >
                     <i className="fas fa-check mr-1"></i>
@@ -359,7 +359,7 @@ const InvoiceTable = ({
                     </Button>
                     {invoice.status.toLowerCase() !== "paid" && (
                       <Button
-                        onClick={() => onMarkPaid(invoice.id)}
+                        onClick={() => onMarkPaid(invoice.id, invoice.invoiceNumber || invoice.invoiceId)}
                         className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
                       >
                         <i className="fas fa-check mr-1"></i>

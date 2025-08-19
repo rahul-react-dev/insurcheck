@@ -80,8 +80,8 @@ const PaymentManagement = () => {
     dispatch(downloadInvoiceRequest(invoiceId));
   };
 
-  const handleMarkPaid = (invoiceId) => {
-    if (window.confirm("Are you sure you want to mark this invoice as paid?")) {
+  const handleMarkPaid = (invoiceId, invoiceNumber = "this invoice") => {
+    if (window.confirm(`Are you sure you want to mark ${invoiceNumber} as paid? This action cannot be undone.`)) {
       dispatch(markInvoicePaidRequest(invoiceId));
     }
   };
@@ -310,15 +310,12 @@ const PaymentManagement = () => {
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
               disabled={isLoading}
             >
-              <i className="fas fa-sync-alt mr-2"></i>
+              {isLoading ? (
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+              ) : (
+                <i className="fas fa-sync-alt mr-2"></i>
+              )}
               Refresh
-            </Button>
-            <Button
-              onClick={handleExportAll}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
-            >
-              <i className="fas fa-download mr-2"></i>
-              Export All
             </Button>
           </div>
         </div>

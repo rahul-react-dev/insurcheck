@@ -219,7 +219,7 @@ const InvoiceModal = ({
               {invoice.status.toLowerCase() !== 'paid' && (
                 <Button
                   onClick={() => {
-                    onMarkPaid(invoice.id);
+                    onMarkPaid(invoice.id, invoice.invoiceNumber || invoice.id);
                     onClose();
                   }}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
@@ -229,7 +229,44 @@ const InvoiceModal = ({
                 </Button>
               )}
               <Button
-                onClick={() => onDownload(invoice.id)}
+                onClick={() => {
+                  // Create a download link for the invoice PDF
+                  const token = localStorage.getItem('token');
+                  const downloadUrl = `/api/super-admin/invoices/${invoice.id}/download`;
+                  
+                  fetch(downloadUrl, {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  })
+                  .then(response => {
+                    if (!response.ok) {
+                      throw new Error('Download failed');
+                    }
+                    return response.blob();
+                  })
+                  .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `invoice_${invoice.invoiceNumber || invoice.id}.pdf`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    if (window.showNotification) {
+                      window.showNotification('Invoice downloaded successfully', 'success');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Download error:', error);
+                    if (window.showNotification) {
+                      window.showNotification('Download failed. Please try again.', 'error');
+                    }
+                  });
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
               >
                 <i className="fas fa-download mr-2"></i>

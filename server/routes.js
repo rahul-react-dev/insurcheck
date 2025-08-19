@@ -1324,11 +1324,11 @@ router.get('/super-admin/invoices', authenticateToken, requireSuperAdmin, async 
 
     const total = parseInt(totalResult[0]?.count || 0);
     
-    // Calculate summary statistics
+    // Calculate summary statistics with correct overdue logic
     const summaryQuery = db.select({
       totalPaid: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'paid'), 0)`,
       totalPending: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'pending'), 0)`,
-      totalOverdue: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'overdue'), 0)`
+      totalOverdue: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'overdue' OR (${invoices.status} != 'paid' AND ${invoices.dueDate} < CURRENT_DATE)), 0)`
     }).from(invoices).leftJoin(tenants, eq(invoices.tenantId, tenants.id));
 
     if (conditions.length > 0) {
