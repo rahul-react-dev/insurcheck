@@ -1,6 +1,6 @@
 
 import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
-import { superAdminAPI } from '../../utils/api';
+import { invoiceAPI, invoiceConfigAPI } from '../../utils/api';
 import {
   generateInvoiceRequest,
   generateInvoiceSuccess,
@@ -25,7 +25,7 @@ function* generateInvoiceSaga(action) {
     const invoiceData = action.payload;
     console.log('📡 generateInvoiceSaga triggered with data:', invoiceData);
 
-    const response = yield call(superAdminAPI.generateInvoice, invoiceData);
+    const response = yield call(invoiceAPI.generate, invoiceData);
     console.log('✅ Generate invoice API response received:', response);
 
     const generatedInvoice = response.invoice || response.data || response;
@@ -53,7 +53,7 @@ function* fetchInvoiceLogsSaga(action) {
     const params = action.payload || { page: 1, limit: 10 };
     console.log('📡 fetchInvoiceLogsSaga triggered with params:', params);
 
-    const response = yield call(superAdminAPI.getInvoices, params);
+    const response = yield call(invoiceAPI.getAll, params);
     console.log('✅ Invoice logs API response received:', response);
 
     const validatedResponse = {
@@ -82,17 +82,10 @@ function* fetchInvoiceConfigSaga() {
   try {
     console.log('📡 fetchInvoiceConfigSaga triggered');
 
-    // Get system config for invoice-related settings
-    const response = yield call(superAdminAPI.getSystemConfig);
+    const response = yield call(invoiceConfigAPI.getAll);
     console.log('✅ Invoice config API response received:', response);
 
-    // Filter for invoice-related configurations
-    const allConfigs = response.configs || response.data || response;
-    const invoiceConfig = Array.isArray(allConfigs) 
-      ? allConfigs.filter(config => config.category === 'invoice' || config.key?.includes('invoice'))
-      : allConfigs;
-
-    yield put(fetchInvoiceConfigSuccess(invoiceConfig));
+    yield put(fetchInvoiceConfigSuccess(response.data || response));
   } catch (error) {
     console.error('❌ Error in fetchInvoiceConfigSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch invoice configuration';
@@ -106,31 +99,27 @@ function* fetchInvoiceConfigSaga() {
 
 function* updateInvoiceConfigSaga(action) {
   try {
-    const { key, value } = action.payload;
-    console.log('📡 updateInvoiceConfigSaga triggered with:', { key, value });
+    const { tenantId, config } = action.payload;
+    console.log('📡 updateInvoiceConfigSaga triggered with:', { tenantId, config });
 
-    const response = yield call(superAdminAPI.updateSystemConfig, key, { 
-      value, 
-      category: 'invoice' 
-    });
-    const updatedConfig = response.data || response;
-    
-    yield put(updateInvoiceConfigSuccess({
-      key,
-      value,
-      updatedConfig
-    }));
+    const response = yield call(invoiceConfigAPI.update, tenantId, config);
+    console.log('✅ Update config API response received:', response);
+
+    yield put(updateInvoiceConfigSuccess({ tenantId, config }));
 
     if (window.showNotification) {
       window.showNotification('Invoice configuration updated successfully', 'success');
     }
+
+    // Refresh configurations
+    yield put(fetchInvoiceConfigRequest());
   } catch (error) {
     console.error('❌ Error in updateInvoiceConfigSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update invoice configuration';
     yield put(updateInvoiceConfigFailure(errorMessage));
 
     if (window.showNotification) {
-      window.showNotification('Failed to update invoice configuration', 'error');
+      window.showNotification('Failed to update configuration. Please try again.', 'error');
     }
   }
 }
@@ -190,6 +179,38 @@ function* watchDownloadInvoice() {
   yield takeEvery(downloadInvoiceRequest.type, downloadInvoiceSaga);
 }
 
+// Add retry functionality for failed invoice generation
+function* retryInvoiceGenerationSaga(action) {
+  try {
+    const invoiceId = action.payload;
+    console.log('📡 retryInvoiceGenerationSaga triggered for invoice:', invoiceId);
+
+    const response = yield call(invoiceAPI.retry, invoiceId);
+    console.log('✅ Retry invoice generation API response:', response);
+
+    yield put(retryInvoiceGenerationSuccess(response.data || response));
+
+    if (window.showNotification) {
+      window.showNotification('Invoice generation retry initiated successfully', 'success');
+    }
+
+    // Refresh invoice logs to show updated status
+    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
+  } catch (error) {
+    console.error('❌ Error in retryInvoiceGenerationSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to retry invoice generation';
+    yield put(retryInvoiceGenerationFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to retry invoice generation. Please try again.', 'error');
+    }
+  }
+}
+
+function* watchRetryInvoiceGeneration() {
+  yield takeEvery(retryInvoiceGenerationRequest.type, retryInvoiceGenerationSaga);
+}
+
 // Root saga
 export default function* invoiceGenerationSaga() {
   yield all([
@@ -197,6 +218,7 @@ export default function* invoiceGenerationSaga() {
     fork(watchFetchInvoiceLogs),
     fork(watchFetchInvoiceConfig),
     fork(watchUpdateInvoiceConfig),
-    fork(watchDownloadInvoice)
+    fork(watchDownloadInvoice),
+    fork(watchRetryInvoiceGeneration)
   ]);
 }

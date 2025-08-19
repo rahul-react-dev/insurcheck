@@ -23,6 +23,8 @@ const InvoiceGenerationConfig = ({
 
   const [errors, setErrors] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadingStates, setLoadingStates] = useState({});
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const handleEdit = (tenant) => {
     const config = configurations.find((c) => c.tenantId === tenant.id) || {};
@@ -39,7 +41,7 @@ const InvoiceGenerationConfig = ({
     setErrors({});
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors = {};
 
     if (!formData.billingContactEmail) {
@@ -59,8 +61,26 @@ const InvoiceGenerationConfig = ({
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      onConfigUpdate(editingTenant.id, formData);
-      setEditingTenant(null);
+      setSavingConfig(true);
+      try {
+        await onConfigUpdate(editingTenant.id, formData);
+        setEditingTenant(null);
+      } catch (error) {
+        console.error('Error saving config:', error);
+      } finally {
+        setSavingConfig(false);
+      }
+    }
+  };
+
+  const handleManualGenerateClick = async (tenantId) => {
+    setLoadingStates(prev => ({ ...prev, [tenantId]: true }));
+    try {
+      await onManualGenerate(tenantId);
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [tenantId]: false }));
     }
   };
 
@@ -306,13 +326,24 @@ const InvoiceGenerationConfig = ({
                     <Button
                       onClick={handleSave}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
+                      disabled={savingConfig}
                     >
-                      <i className="fas fa-check mr-2"></i>
-                      Save Configuration
+                      {savingConfig ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin mr-2"></i>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-check mr-2"></i>
+                          Save Configuration
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={handleCancel}
                       className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2"
+                      disabled={savingConfig}
                     >
                       <i className="fas fa-times mr-2"></i>
                       Cancel
@@ -369,11 +400,21 @@ const InvoiceGenerationConfig = ({
                           Configure
                         </Button>
                         <Button
-                          onClick={() => onManualGenerate(tenant.id)}
+                          onClick={() => handleManualGenerateClick(tenant.id)}
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 text-sm"
+                          disabled={loadingStates[tenant.id]}
                         >
-                          <i className="fas fa-magic mr-1"></i>
-                          Generate Now
+                          {loadingStates[tenant.id] ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin mr-1"></i>
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-magic mr-1"></i>
+                              Generate Now
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>

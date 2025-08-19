@@ -44,7 +44,12 @@ const invoiceGenerationSlice = createSlice({
     fetchInvoiceConfigSuccess: (state, action) => {
       console.log('📊 fetchInvoiceConfigSuccess dispatched with payload:', action.payload);
       state.isLoading = false;
-      state.configurations = action.payload.configurations || [];
+      // Handle both array response (direct configurations) and object response with data property
+      if (Array.isArray(action.payload)) {
+        state.configurations = action.payload;
+      } else {
+        state.configurations = action.payload.configurations || action.payload.data || action.payload;
+      }
       state.tenants = action.payload.tenants || [];
       state.error = null;
     },

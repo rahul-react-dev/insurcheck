@@ -322,9 +322,16 @@ export const invoiceAPI = {
   update: (id, data) => api.put(`/invoices/${id}`, data),
   delete: (id) => api.delete(`/invoices/${id}`),
   send: (id) => api.post(`/invoices/${id}/send`),
+  retry: (id) => api.post(`/invoices/${id}/retry`),
   markPaid: (id) => api.post(`/super-admin/invoices/${id}/paid`),
   downloadPDF: (id) => api.get(`/super-admin/invoices/${id}/download`),
   exportInvoices: (params) => api.get('/super-admin/invoices/export', { params, responseType: 'blob' }),
+};
+
+// Invoice Configuration APIs
+export const invoiceConfigAPI = {
+  getAll: () => api.get('/invoice-configs'),
+  update: (tenantId, config) => api.post('/invoice-configs', { tenantId, config }),
 };
 
 // Activity Logs APIs

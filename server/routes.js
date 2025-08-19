@@ -1468,6 +1468,264 @@ router.post('/payments/:id/refund', authenticateToken, requireSuperAdmin, async 
   }
 });
 
+// Invoice Generation APIs
+
+// Generate invoice manually
+router.post('/invoices/generate', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId } = req.body;
+    console.log(`🔄 Generating invoice manually for tenant ${tenantId}`);
+
+    // Fetch tenant and subscription data
+    const tenant = await db.select()
+      .from(tenants)
+      .leftJoin(subscriptions, eq(tenants.id, subscriptions.tenantId))
+      .leftJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id))
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    if (!tenant.length) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'Tenant does not exist or has no active subscription'
+      });
+    }
+
+    const tenantData = tenant[0];
+    const invoiceNumber = `INV-${Date.now()}`;
+    
+    // Calculate billing period
+    const now = new Date();
+    const billingPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const billingPeriodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    // Calculate amounts
+    const amount = parseFloat(tenantData.subscription_plans?.price || 100);
+    const taxAmount = amount * 0.1; // 10% tax
+    const totalAmount = amount + taxAmount;
+
+    // Create invoice
+    const newInvoice = {
+      invoiceNumber,
+      tenantId: parseInt(tenantId),
+      subscriptionId: tenantData.subscriptions?.id,
+      amount: amount.toString(),
+      taxAmount: taxAmount.toString(),
+      totalAmount: totalAmount.toString(),
+      status: 'draft',
+      issueDate: now,
+      dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      billingPeriodStart,
+      billingPeriodEnd,
+      items: JSON.stringify([{
+        description: `${tenantData.subscription_plans?.name || 'Subscription'} - ${billingPeriodStart.toLocaleDateString()} to ${billingPeriodEnd.toLocaleDateString()}`,
+        amount: amount,
+        quantity: 1
+      }]),
+      generationStatus: 'success'
+    };
+
+    const [createdInvoice] = await db.insert(invoices)
+      .values(newInvoice)
+      .returning();
+
+    console.log('✅ Invoice generated successfully:', createdInvoice.invoiceNumber);
+    res.json({ 
+      message: 'Invoice generated successfully', 
+      invoice: createdInvoice,
+      log: {
+        id: createdInvoice.id,
+        tenantName: tenantData.tenants?.name,
+        status: 'success',
+        generatedAt: now,
+        amount: totalAmount
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error generating invoice:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate invoice',
+      message: error.message 
+    });
+  }
+});
+
+// Get invoice configurations
+router.get('/invoice-configs', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching invoice configurations');
+
+    // Get all tenants with their configurations
+    const tenantsWithConfigs = await db.select({
+      tenantId: tenants.id,
+      tenantName: tenants.name,
+      tenantEmail: tenants.email,
+      configId: sql`invoice_configurations.id`,
+      frequency: sql`invoice_configurations.frequency`,
+      startDate: sql`invoice_configurations.start_date`,
+      billingContactEmail: sql`invoice_configurations.billing_contact_email`,
+      timezone: sql`invoice_configurations.timezone`,
+      generateOnWeekend: sql`invoice_configurations.generate_on_weekend`,
+      autoSend: sql`invoice_configurations.auto_send`,
+      reminderDays: sql`invoice_configurations.reminder_days`,
+      isActive: sql`invoice_configurations.is_active`,
+    })
+    .from(tenants)
+    .leftJoin(sql`invoice_configurations`, eq(tenants.id, sql`invoice_configurations.tenant_id`))
+    .where(eq(tenants.status, 'active'));
+
+    const configurations = tenantsWithConfigs.map(tenant => ({
+      tenantId: tenant.tenantId,
+      frequency: tenant.frequency || 'monthly',
+      startDate: tenant.startDate,
+      billingContactEmail: tenant.billingContactEmail || tenant.tenantEmail,
+      timezone: tenant.timezone || 'UTC',
+      generateOnWeekend: tenant.generateOnWeekend || false,
+      autoSend: tenant.autoSend !== false,
+      reminderDays: tenant.reminderDays || 3,
+      isActive: tenant.isActive !== false
+    }));
+
+    const allTenants = tenantsWithConfigs.map(tenant => ({
+      id: tenant.tenantId,
+      name: tenant.tenantName,
+      email: tenant.tenantEmail
+    }));
+
+    console.log(`✅ Retrieved ${configurations.length} invoice configurations`);
+    res.json({ 
+      configurations,
+      tenants: allTenants
+    });
+  } catch (error) {
+    console.error('❌ Error fetching invoice configurations:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch invoice configurations',
+      message: error.message 
+    });
+  }
+});
+
+// Update invoice configuration
+router.post('/invoice-configs', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId, config } = req.body;
+    console.log(`🔄 Updating invoice configuration for tenant ${tenantId}:`, config);
+
+    // Check if configuration exists
+    const existingConfig = await db.select()
+      .from(sql`invoice_configurations`)
+      .where(eq(sql`invoice_configurations.tenant_id`, tenantId))
+      .limit(1);
+
+    const configData = {
+      tenantId: parseInt(tenantId),
+      frequency: config.frequency,
+      startDate: new Date(config.startDate),
+      billingContactEmail: config.billingContactEmail,
+      timezone: config.timezone,
+      generateOnWeekend: config.generateOnWeekend,
+      autoSend: config.autoSend,
+      reminderDays: parseInt(config.reminderDays),
+      isActive: config.isActive !== false,
+      updatedAt: new Date()
+    };
+
+    let result;
+    if (existingConfig.length > 0) {
+      // Update existing configuration
+      [result] = await db.update(sql`invoice_configurations`)
+        .set(configData)
+        .where(eq(sql`invoice_configurations.tenant_id`, tenantId))
+        .returning();
+    } else {
+      // Create new configuration
+      [result] = await db.insert(sql`invoice_configurations`)
+        .values(configData)
+        .returning();
+    }
+
+    console.log('✅ Invoice configuration updated successfully');
+    res.json({ 
+      message: 'Invoice configuration updated successfully', 
+      configuration: result
+    });
+  } catch (error) {
+    console.error('❌ Error updating invoice configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to update invoice configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Send invoice
+router.post('/invoices/:id/send', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+    console.log(`📧 Sending invoice ${invoiceId}`);
+
+    const [updatedInvoice] = await db.update(invoices)
+      .set({
+        status: 'sent',
+        sentAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(invoices.id, invoiceId))
+      .returning();
+
+    if (!updatedInvoice) {
+      return res.status(404).json({
+        error: 'Invoice not found',
+        message: 'Invoice does not exist'
+      });
+    }
+
+    console.log('✅ Invoice sent successfully:', updatedInvoice);
+    res.json({ message: 'Invoice sent successfully', invoice: updatedInvoice });
+  } catch (error) {
+    console.error('❌ Error sending invoice:', error);
+    res.status(500).json({ 
+      error: 'Failed to send invoice',
+      message: error.message 
+    });
+  }
+});
+
+// Retry failed invoice generation
+router.post('/invoices/:id/retry', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+    console.log(`🔄 Retrying invoice generation for ${invoiceId}`);
+
+    const [updatedInvoice] = await db.update(invoices)
+      .set({
+        generationStatus: 'pending',
+        retryCount: sql`retry_count + 1`,
+        errorMessage: null,
+        updatedAt: new Date()
+      })
+      .where(eq(invoices.id, invoiceId))
+      .returning();
+
+    if (!updatedInvoice) {
+      return res.status(404).json({
+        error: 'Invoice not found',
+        message: 'Invoice does not exist'
+      });
+    }
+
+    console.log('✅ Invoice retry initiated:', updatedInvoice);
+    res.json({ message: 'Invoice retry initiated successfully', invoice: updatedInvoice });
+  } catch (error) {
+    console.error('❌ Error retrying invoice:', error);
+    res.status(500).json({ 
+      error: 'Failed to retry invoice',
+      message: error.message 
+    });
+  }
+});
+
 // Export invoices data
 router.get('/super-admin/invoices/export', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
