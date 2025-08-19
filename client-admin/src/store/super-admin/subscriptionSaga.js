@@ -5,6 +5,7 @@ import {
   fetchPlansRequest,
   fetchPlansSuccess,
   fetchPlansFailure,
+  fetchTenantsRequest,
   createPlanRequest,
   createPlanSuccess,
   createPlanFailure,
@@ -255,6 +256,9 @@ function* assignPlanToTenantSaga(action) {
     const { tenantId, planId } = action.payload;
     const response = yield call(superAdminAPI.assignSubscriptionToTenant, tenantId, { planId });
     yield put(assignPlanToTenantSuccess({ tenantId, planId, subscription: response.data || response }));
+
+    // Refresh tenants data to show updated plan assignment
+    yield put(fetchTenantsRequest());
 
     if (window.showNotification) {
       window.showNotification('Plan assigned to tenant successfully', 'success');
