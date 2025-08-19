@@ -118,6 +118,51 @@ const PaymentManagement = () => {
     dispatch(fetchInvoicesRequest({ ...filters, ...pagination }));
   };
 
+  const handleExportAll = async () => {
+    try {
+      console.log('📊 Exporting invoices with filters:', filters);
+      
+      // Create export parameters from current filters
+      const exportParams = {};
+      if (filters.tenantName) exportParams.tenantName = filters.tenantName;
+      if (filters.status) exportParams.status = filters.status;
+      if (filters.dateRange.start) exportParams.startDate = filters.dateRange.start;
+      if (filters.dateRange.end) exportParams.endDate = filters.dateRange.end;
+      
+      // Call the export API
+      const response = await fetch('/api/super-admin/invoices/export?' + new URLSearchParams(exportParams), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      // Handle the CSV download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoices_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      if (window.showNotification) {
+        window.showNotification('Invoices exported successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      if (window.showNotification) {
+        window.showNotification('Export failed. Please try again.', 'error');
+      }
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -256,6 +301,7 @@ const PaymentManagement = () => {
               filters={filters}
               onFilterChange={handleFilterChange}
               tenants={tenants}
+              onExportAll={handleExportAll}
             />
           </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
@@ -268,7 +314,7 @@ const PaymentManagement = () => {
               Refresh
             </Button>
             <Button
-              onClick={() => dispatch(downloadInvoiceRequest("all"))}
+              onClick={handleExportAll}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
             >
               <i className="fas fa-download mr-2"></i>

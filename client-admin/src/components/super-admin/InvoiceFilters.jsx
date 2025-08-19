@@ -106,6 +106,13 @@ const InvoiceFilters = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 lg:ml-6">
+          <Button
+            onClick={onExportAll}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
+          >
+            <i className="fas fa-download mr-2"></i>
+            Export All
+          </Button>
           {hasActiveFilters && (
             <Button
               onClick={handleClearFilters}

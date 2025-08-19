@@ -324,7 +324,7 @@ export const invoiceAPI = {
   send: (id) => api.post(`/invoices/${id}/send`),
   markPaid: (id) => api.post(`/super-admin/invoices/${id}/paid`),
   downloadPDF: (id) => api.get(`/super-admin/invoices/${id}/download`),
-  exportInvoices: (params) => api.get('/invoices/export', { params, responseType: 'blob' }),
+  exportInvoices: (params) => api.get('/super-admin/invoices/export', { params, responseType: 'blob' }),
 };
 
 // Activity Logs APIs

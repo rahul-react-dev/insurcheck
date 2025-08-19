@@ -1297,15 +1297,11 @@ router.get('/super-admin/invoices', authenticateToken, requireSuperAdmin, async 
     }
 
     if (startDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      conditions.push(gte(invoices.issueDate, start));
+      conditions.push(sql`DATE(${invoices.issueDate}) >= ${startDate}`);
     }
 
     if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      conditions.push(lte(invoices.issueDate, end));
+      conditions.push(sql`DATE(${invoices.issueDate}) <= ${endDate}`);
     }
 
     if (conditions.length > 0) {
@@ -1467,6 +1463,74 @@ router.post('/payments/:id/refund', authenticateToken, requireSuperAdmin, async 
     console.error('❌ Error processing refund:', error);
     res.status(500).json({ 
       error: 'Failed to process refund',
+      message: error.message 
+    });
+  }
+});
+
+// Export invoices data
+router.get('/super-admin/invoices/export', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📊 Exporting invoices data with params:', req.query);
+    
+    const { tenantName, status, startDate, endDate } = req.query;
+    
+    let query = db.select({
+      invoiceNumber: invoices.invoiceNumber,
+      tenantName: tenants.name,
+      amount: invoices.amount,
+      tax: invoices.taxAmount,
+      total: invoices.totalAmount,
+      status: invoices.status,
+      issueDate: invoices.issueDate,
+      dueDate: invoices.dueDate,
+      paidDate: invoices.paidDate,
+      createdAt: invoices.createdAt
+    })
+    .from(invoices)
+    .leftJoin(tenants, eq(invoices.tenantId, tenants.id));
+
+    const conditions = [];
+
+    if (tenantName) {
+      conditions.push(sql`${tenants.name} ILIKE ${'%' + tenantName + '%'}`);
+    }
+
+    if (status) {
+      conditions.push(eq(invoices.status, status));
+    }
+
+    if (startDate) {
+      conditions.push(sql`DATE(${invoices.issueDate}) >= ${startDate}`);
+    }
+
+    if (endDate) {
+      conditions.push(sql`DATE(${invoices.issueDate}) <= ${endDate}`);
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const invoicesData = await query.orderBy(desc(invoices.createdAt));
+
+    // Convert to CSV format
+    const csvHeader = 'Invoice Number,Tenant Name,Amount,Tax,Total,Status,Issue Date,Due Date,Paid Date,Created At\n';
+    const csvData = invoicesData.map(invoice => 
+      `"${invoice.invoiceNumber}","${invoice.tenantName}",${invoice.amount},${invoice.tax},${invoice.total},"${invoice.status}","${new Date(invoice.issueDate).toLocaleDateString()}","${new Date(invoice.dueDate).toLocaleDateString()}","${invoice.paidDate ? new Date(invoice.paidDate).toLocaleDateString() : 'N/A'}","${new Date(invoice.createdAt).toLocaleDateString()}"`
+    ).join('\n');
+
+    const csv = csvHeader + csvData;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="invoices_export_${new Date().toISOString().split('T')[0]}.csv"`);
+    
+    console.log(`✅ Exported ${invoicesData.length} invoices to CSV`);
+    res.send(csv);
+  } catch (error) {
+    console.error('❌ Error exporting invoices:', error);
+    res.status(500).json({ 
+      error: 'Failed to export invoices',
       message: error.message 
     });
   }

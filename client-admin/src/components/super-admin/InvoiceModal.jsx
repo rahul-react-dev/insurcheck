@@ -62,7 +62,7 @@ const InvoiceModal = ({
           <div className="bg-gray-50 px-4 py-3 sm:px-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Invoice Details - #{invoice.invoiceId}
+                Invoice Details - {invoice.invoiceNumber || invoice.invoiceId}
               </h3>
               <button
                 onClick={onClose}
@@ -88,7 +88,7 @@ const InvoiceModal = ({
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoice.amount)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoice.total || invoice.totalAmount || invoice.amount)}</p>
                   <p className="text-sm text-gray-500">Total Amount</p>
                 </div>
               </div>
@@ -101,16 +101,16 @@ const InvoiceModal = ({
                     <h4 className="text-md font-semibold text-gray-900 mb-3">Invoice Information</h4>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Invoice ID:</span>
-                        <span className="text-sm font-medium text-gray-900">#{invoice.invoiceId}</span>
+                        <span className="text-sm text-gray-500">Invoice Number:</span>
+                        <span className="text-sm font-medium text-gray-900">{invoice.invoiceNumber || invoice.invoiceId}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Plan Name:</span>
-                        <span className="text-sm font-medium text-gray-900">{invoice.planName}</span>
+                        <span className="text-sm text-gray-500">Amount:</span>
+                        <span className="text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Billing Period:</span>
-                        <span className="text-sm font-medium text-gray-900">{invoice.billingPeriod}</span>
+                        <span className="text-sm text-gray-500">Tax Amount:</span>
+                        <span className="text-sm font-medium text-gray-900">{formatCurrency(invoice.tax || invoice.taxAmount || 0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-500">Issue Date:</span>
@@ -137,19 +137,15 @@ const InvoiceModal = ({
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-500">Tenant Name:</span>
-                        <span className="text-sm font-medium text-gray-900">{invoice.tenantName}</span>
+                        <span className="text-sm font-medium text-gray-900">{invoice.tenantName || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Email:</span>
-                        <span className="text-sm font-medium text-gray-900">{invoice.tenantEmail}</span>
+                        <span className="text-sm text-gray-500">Tenant ID:</span>
+                        <span className="text-sm font-medium text-gray-900">{invoice.tenantId || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Company:</span>
-                        <span className="text-sm font-medium text-gray-900">{invoice.tenantCompany || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500">Phone:</span>
-                        <span className="text-sm font-medium text-gray-900">{invoice.tenantPhone || 'N/A'}</span>
+                        <span className="text-sm text-gray-500">Created:</span>
+                        <span className="text-sm font-medium text-gray-900">{formatDate(invoice.createdAt)}</span>
                       </div>
                       {invoice.tenantAddress && (
                         <div>
@@ -163,27 +159,27 @@ const InvoiceModal = ({
               </div>
 
               {/* Breakdown Section */}
-              {invoice.breakdown && (
-                <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-3">Cost Breakdown</h4>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="space-y-2">
-                      {invoice.breakdown.map((item, index) => (
-                        <div key={index} className="flex justify-between">
-                          <span className="text-sm text-gray-600">{item.description}</span>
-                          <span className="text-sm font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                        </div>
-                      ))}
-                      <div className="border-t border-gray-200 pt-2 mt-2">
-                        <div className="flex justify-between">
-                          <span className="text-base font-semibold text-gray-900">Total</span>
-                          <span className="text-base font-bold text-gray-900">{formatCurrency(invoice.amount)}</span>
-                        </div>
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mb-3">Cost Breakdown</h4>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Base Amount</span>
+                      <span className="text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Tax Amount</span>
+                      <span className="text-sm font-medium text-gray-900">{formatCurrency(invoice.tax || invoice.taxAmount || 0)}</span>
+                    </div>
+                    <div className="border-t border-gray-200 pt-2 mt-2">
+                      <div className="flex justify-between">
+                        <span className="text-base font-semibold text-gray-900">Total</span>
+                        <span className="text-base font-bold text-gray-900">{formatCurrency(invoice.total || invoice.totalAmount || invoice.amount)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Payment History */}
               {invoice.paymentHistory && invoice.paymentHistory.length > 0 && (
