@@ -23,6 +23,7 @@ import {
   count,
   sql,
   like,
+  ilike,
   or,
   isNull,
   isNotNull,
@@ -208,7 +209,19 @@ router.get(
 
       // Handle tenantName filter - case insensitive search
       if (tenantName) {
-        conditions.push(sql`${tenants.name} ILIKE ${'%' + tenantName + '%'}`);
+        conditions.push(ilike(tenants.name, `%${tenantName}%`));
+      }
+
+      // Handle userEmail filter - search by user's email from joined users table
+      if (req.query.userEmail) {
+        const userEmail = req.query.userEmail;
+        conditions.push(ilike(users.email, `%${userEmail}%`));
+      }
+
+      // Handle actionPerformed filter (maps to action field)
+      if (req.query.actionPerformed) {
+        const actionPerformed = req.query.actionPerformed;
+        conditions.push(ilike(activityLogs.action, `%${actionPerformed}%`));
       }
 
       // Handle errorType filter (maps to action field)

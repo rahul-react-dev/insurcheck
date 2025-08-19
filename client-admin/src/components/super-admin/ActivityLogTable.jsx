@@ -45,14 +45,14 @@ const ActivityLogTable = ({
       },
     };
 
-    const config = statusConfig[status.toLowerCase()] || statusConfig.pending;
+    const config = statusConfig[status?.toLowerCase()] || statusConfig?.pending;
 
     return (
       <span
         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}
       >
         <i className={`${config.icon} mr-1`}></i>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status?.charAt(0)?.toUpperCase() + status?.slice(1)}
       </span>
     );
   };
@@ -111,7 +111,27 @@ const ActivityLogTable = ({
     );
   };
 
-  // Show loading skeleton
+  // Show error state
+  if (!isLoading && (!logs || logs.length === 0) && pagination.total === 0) {
+    return (
+      <div className={`flex items-center justify-center py-12 ${className}`}>
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <i className="fas fa-clipboard-list text-gray-400 text-xl"></i>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Activity Logs Found</h3>
+          <p className="text-gray-500 mb-4">
+            No activity logs match your current filter criteria.
+          </p>
+          <p className="text-sm text-gray-400">
+            Try adjusting your filters or clearing them to see more results.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading skeleton 
   if (isLoading && (!logs || logs.length === 0)) {
     return (
       <div className={`overflow-hidden ${className}`}>
@@ -203,21 +223,9 @@ const ActivityLogTable = ({
     );
   }
 
+  // This will be handled by the error state above, so remove duplicate
   if (!logs || logs.length === 0) {
-    return (
-      <div className="text-center py-12 sm:py-16">
-        <div className="max-w-md mx-auto px-4">
-          <i className="fas fa-clipboard-list text-4xl sm:text-6xl text-gray-300 mb-4 sm:mb-6"></i>
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-            No Activity Logs Found
-          </h3>
-          <p className="text-gray-500 text-sm sm:text-base">
-            No tenant activity logs match your current filters. Try adjusting
-            your search criteria.
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

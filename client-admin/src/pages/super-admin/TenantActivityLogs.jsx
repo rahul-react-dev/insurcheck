@@ -47,8 +47,21 @@ const TenantActivityLogs = () => {
   }, [pagination, activityLogs, isLoading]);
 
   const handleFilterChange = (newFilters) => {
+    console.log('🔍 Applying activity log filters:', newFilters);
     dispatch(setFilters(newFilters));
-    dispatch(fetchActivityLogsRequest(newFilters));
+    
+    // Transform filters to match API expectations
+    const apiFilters = {
+      tenantName: newFilters.tenantName || '',
+      userEmail: newFilters.userEmail || '', 
+      actionPerformed: newFilters.actionPerformed || '',
+      startDate: newFilters.dateRange?.start || '',
+      endDate: newFilters.dateRange?.end || '',
+      page: 1,
+      limit: pagination.limit || 10
+    };
+    
+    dispatch(fetchActivityLogsRequest(apiFilters));
   };
 
   const handleClearFilters = () => {
@@ -62,15 +75,39 @@ const TenantActivityLogs = () => {
   };
 
   const handlePageChange = (newPage) => {
-    console.log('Page change to:', newPage);
+    console.log('📄 Activity logs page change to:', newPage);
     dispatch(setPage(newPage));
-    dispatch(fetchActivityLogsRequest({ page: newPage }));
+    
+    // Transform current filters and add pagination
+    const apiFilters = {
+      tenantName: filters.tenantName || '',
+      userEmail: filters.userEmail || '',
+      actionPerformed: filters.actionPerformed || '',
+      startDate: filters.dateRange?.start || '',
+      endDate: filters.dateRange?.end || '',
+      page: newPage,
+      limit: pagination.limit || 10
+    };
+    
+    dispatch(fetchActivityLogsRequest(apiFilters));
   };
 
   const handlePageSizeChange = (newSize) => {
-    console.log('Page size change to:', newSize);
+    console.log('📊 Activity logs page size change to:', newSize);
     dispatch(setPageSize(newSize));
-    dispatch(fetchActivityLogsRequest({ page: 1, limit: newSize }));
+    
+    // Transform current filters and add pagination
+    const apiFilters = {
+      tenantName: filters.tenantName || '',
+      userEmail: filters.userEmail || '',
+      actionPerformed: filters.actionPerformed || '',
+      startDate: filters.dateRange?.start || '',
+      endDate: filters.dateRange?.end || '',
+      page: 1,
+      limit: newSize
+    };
+    
+    dispatch(fetchActivityLogsRequest(apiFilters));
   };
 
   const handleLogDetails = (log) => {

@@ -24,7 +24,7 @@ const ActivityLogDetailModal = ({ log, isOpen, onClose }) => {
       warning: 'text-yellow-600',
       pending: 'text-blue-600'
     };
-    return statusConfig[status.toLowerCase()] || statusConfig.pending;
+    return statusConfig[status?.toLowerCase()] || statusConfig.pending;
   };
 
   const getSeverityColor = (severity) => {
@@ -113,7 +113,7 @@ const ActivityLogDetailModal = ({ log, isOpen, onClose }) => {
                   <div className="flex justify-between items-start">
                     <span className="text-sm font-medium text-gray-500">Status:</span>
                     <span className={`text-sm font-semibold ${getStatusColor(log.status)}`}>
-                      {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                      {log?.status?.charAt(0)?.toUpperCase() + log?.status?.slice(1)}
                     </span>
                   </div>
                   
