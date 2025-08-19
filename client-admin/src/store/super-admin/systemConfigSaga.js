@@ -20,8 +20,12 @@ function* fetchSystemConfigSaga() {
     const response = yield call(superAdminAPI.getSystemConfig);
     console.log('✅ System config API response received:', response.data);
 
-    // Handle the response structure from our API
-    const { configurations, configsByCategory, summary } = response.data;
+    // Handle the response structure from our API - check if response.data exists
+    const responseData = response.data || response;
+    const configurations = responseData.configurations || [];
+    const configsByCategory = responseData.configsByCategory || {};
+    const summary = responseData.summary || null;
+
     const payload = {
       configuration: configurations, // Array of all configurations
       configsByCategory, // Grouped by category

@@ -32,6 +32,8 @@ InsurCheck is a multi-tenant SaaS insurance management platform. It's designed a
 - Real-time updates: configurations update immediately in frontend
 - Error handling: proper validation and user feedback for all operations
 - Performance: optimized queries and efficient Redux state management
+- Redux saga integration: Fixed destructuring error and confirmed proper data flow
+- Frontend routing: System configuration accessible at `/super-admin/system-config`
 
 ✅ **Architecture Note** - This project requires separate startup processes: backend runs with `npm run dev` (port 5000), while frontend clients require separate commands: `cd client-admin && npm run dev` (port 3000) for admin interface.
 
