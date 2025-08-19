@@ -7,7 +7,7 @@ import { DeletedDocumentsFilters } from "../../components/super-admin/DeletedDoc
 import { DeletedDocumentModal } from "../../components/super-admin/DeletedDocumentModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import {
-  fetchDeletedDocuments,
+  fetchDeletedDocumentsRequest,
   exportDeletedDocuments,
   recoverDocument,
   permanentlyDeleteDocument,
@@ -37,7 +37,8 @@ const DeletedDocumentsManagement = () => {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchDeletedDocuments({ ...filters, ...pagination }));
+    console.log('🔄 Initial load - dispatching fetchDeletedDocumentsRequest');
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, ...pagination }));
   }, [dispatch]); // Remove filters and pagination dependencies to avoid double calls
   
   // Debug logging to check pagination state
@@ -51,34 +52,34 @@ const DeletedDocumentsManagement = () => {
     dispatch(setFilters({ searchTerm }));
     dispatch(setPagination({ page: 1 }));
     // Trigger immediate fetch with new search term
-    dispatch(fetchDeletedDocuments({ ...filters, searchTerm, ...pagination, page: 1 }));
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, searchTerm, ...pagination, page: 1 }));
   };
 
   const handleFilterChange = (newFilters) => {
     dispatch(setFilters(newFilters));
     dispatch(setPagination({ page: 1 }));
     // Trigger immediate fetch with new filters
-    dispatch(fetchDeletedDocuments({ ...filters, ...newFilters, ...pagination, page: 1 }));
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, ...newFilters, ...pagination, page: 1 }));
   };
 
   const handlePageChange = (page) => {
     console.log('Page change requested:', page);
     dispatch(setPagination({ page }));
     // Trigger immediate fetch with new page
-    dispatch(fetchDeletedDocuments({ ...filters, ...pagination, page }));
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, ...pagination, page }));
   };
 
   const handlePageSizeChange = (pageSize) => {
     console.log('Page size change requested:', pageSize);
     dispatch(setPagination({ pageSize, page: 1 }));
     // Trigger immediate fetch with new page size
-    dispatch(fetchDeletedDocuments({ ...filters, pageSize, page: 1 }));
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, pageSize, page: 1 }));
   };
 
   const handleSort = (sortBy, sortOrder) => {
     dispatch(setFilters({ sortBy, sortOrder }));
     // Trigger immediate fetch with new sort parameters
-    dispatch(fetchDeletedDocuments({ ...filters, sortBy, sortOrder, ...pagination }));
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, sortBy, sortOrder, ...pagination }));
   };
 
   const handleExport = (format) => {
