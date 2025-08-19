@@ -320,7 +320,7 @@ const InvoiceGenerationLogs = ({
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-700">Show:</span>
               <select
-                value={pagination.limit}
+                value={pagination.itemsPerPage || pagination.limit}
                 onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               >
@@ -335,15 +335,15 @@ const InvoiceGenerationLogs = ({
             <div className="flex items-center space-x-2">
               <Button
                 onClick={() => onPageChange(1)}
-                disabled={pagination.page === 1}
+                disabled={(pagination.currentPage || pagination.page) === 1}
                 className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
               >
                 <i className="fas fa-angle-double-left"></i>
               </Button>
 
               <Button
-                onClick={() => onPageChange(pagination.page - 1)}
-                disabled={pagination.page === 1}
+                onClick={() => onPageChange((pagination.currentPage || pagination.page) - 1)}
+                disabled={(pagination.currentPage || pagination.page) === 1}
                 className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
               >
                 <i className="fas fa-chevron-left"></i>
@@ -351,14 +351,15 @@ const InvoiceGenerationLogs = ({
 
               <div className="flex items-center space-x-1">
                 {/* Page numbers */}
-                {Array.from({ length: Math.min(5, Math.ceil(pagination.total / pagination.limit)) }, (_, i) => {
-                  const totalPages = Math.ceil(pagination.total / pagination.limit);
+                {Array.from({ length: Math.min(5, pagination.totalPages || 1) }, (_, i) => {
+                  const totalPages = pagination.totalPages || 1;
+                  const currentPage = pagination.currentPage || pagination.page || 1;
                   let pageNumber;
 
                   if (totalPages <= 5) {
                     pageNumber = i + 1;
                   } else {
-                    const start = Math.max(1, pagination.page - 2);
+                    const start = Math.max(1, currentPage - 2);
                     const end = Math.min(totalPages, start + 4);
                     pageNumber = start + i;
 
@@ -370,7 +371,7 @@ const InvoiceGenerationLogs = ({
                       key={pageNumber}
                       onClick={() => onPageChange(pageNumber)}
                       className={`px-3 py-2 text-sm ${
-                        pagination.page === pageNumber
+                        currentPage === pageNumber
                           ? 'bg-purple-600 text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
@@ -382,16 +383,16 @@ const InvoiceGenerationLogs = ({
               </div>
 
               <Button
-                onClick={() => onPageChange(pagination.page + 1)}
-                disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                onClick={() => onPageChange((pagination.currentPage || pagination.page) + 1)}
+                disabled={!(pagination.hasNextPage)}
                 className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
               >
                 <i className="fas fa-chevron-right"></i>
               </Button>
 
               <Button
-                onClick={() => onPageChange(Math.ceil(pagination.total / pagination.limit))}
-                disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                onClick={() => onPageChange(pagination.totalPages || 1)}
+                disabled={!(pagination.hasNextPage)}
                 className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-3 py-2 text-sm"
               >
                 <i className="fas fa-angle-double-right"></i>
@@ -400,9 +401,9 @@ const InvoiceGenerationLogs = ({
 
             {/* Results info */}
             <div className="text-sm text-gray-700">
-              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-              of {pagination.total} entries
+              Showing {((pagination.currentPage || pagination.page || 1) - 1) * (pagination.itemsPerPage || pagination.limit || 5) + 1} to{" "}
+              {Math.min((pagination.currentPage || pagination.page || 1) * (pagination.itemsPerPage || pagination.limit || 5), pagination.totalItems || pagination.total || 0)}{" "}
+              of {pagination.totalItems || pagination.total || 0} entries
             </div>
           </div>
         </Card>

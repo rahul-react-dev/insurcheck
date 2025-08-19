@@ -44,7 +44,17 @@ const InvoiceGeneration = () => {
   useEffect(() => {
     console.log('🔄 InvoiceGeneration component mounted, fetching data...');
     dispatch(fetchInvoiceConfigRequest());
-    dispatch(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
+    
+    // Transform initial parameters for API compatibility
+    const apiFilters = {
+      tenantName: '',
+      status: '',
+      startDate: '',
+      endDate: '',
+      page: 1,
+      limit: 5
+    };
+    dispatch(fetchInvoiceLogsRequest(apiFilters));
   }, [dispatch]);
 
   // Sync local state with Redux store
@@ -74,23 +84,55 @@ const InvoiceGeneration = () => {
   };
 
   const handleFilterChange = (newFilters) => {
+    console.log('🔍 Applying filters:', newFilters);
     setFilters(newFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
-    dispatch(fetchInvoiceLogsRequest({ ...newFilters, page: 1, limit: pagination.limit }));
+    
+    // Transform dateRange to startDate/endDate for API
+    const apiFilters = {
+      tenantName: newFilters.tenantName || '',
+      status: newFilters.status || '',
+      startDate: newFilters.dateRange?.start || '',
+      endDate: newFilters.dateRange?.end || '',
+      page: 1,
+      limit: pagination.limit
+    };
+    
+    dispatch(fetchInvoiceLogsRequest(apiFilters));
   };
 
   const handlePageChange = (newPage) => {
+    console.log('📄 Changing to page:', newPage);
     setPagination(prev => ({ ...prev, page: newPage }));
-    dispatch(fetchInvoiceLogsRequest({ ...filters, page: newPage, limit: pagination.limit }));
+    
+    // Transform dateRange to startDate/endDate for API
+    const apiFilters = {
+      tenantName: filters.tenantName || '',
+      status: filters.status || '',
+      startDate: filters.dateRange?.start || '',
+      endDate: filters.dateRange?.end || '',
+      page: newPage,
+      limit: pagination.limit
+    };
+    
+    dispatch(fetchInvoiceLogsRequest(apiFilters));
   };
 
   const handlePageSizeChange = (newSize) => {
+    console.log('📊 Changing page size to:', newSize);
     setPagination(prev => ({ ...prev, limit: newSize, page: 1 }));
-    dispatch(fetchInvoiceLogsRequest({
-      ...filters,
+    
+    // Transform dateRange to startDate/endDate for API
+    const apiFilters = {
+      tenantName: filters.tenantName || '',
+      status: filters.status || '',
+      startDate: filters.dateRange?.start || '',
+      endDate: filters.dateRange?.end || '',
       page: 1,
       limit: newSize
-    }));
+    };
+    
+    dispatch(fetchInvoiceLogsRequest(apiFilters));
   };
 
   const handleRetryGeneration = (logId) => {
@@ -112,7 +154,17 @@ const InvoiceGeneration = () => {
     if (activeTab === 'configuration') {
       dispatch(fetchInvoiceConfigRequest());
     } else {
-      dispatch(fetchInvoiceLogsRequest({ ...filters, ...pagination }));
+      // Transform dateRange to startDate/endDate for API
+      const apiFilters = {
+        tenantName: filters.tenantName || '',
+        status: filters.status || '',
+        startDate: filters.dateRange?.start || '',
+        endDate: filters.dateRange?.end || '',
+        page: pagination.currentPage || pagination.page || 1,
+        limit: pagination.itemsPerPage || pagination.limit || 5
+      };
+      
+      dispatch(fetchInvoiceLogsRequest(apiFilters));
     }
   };
 
