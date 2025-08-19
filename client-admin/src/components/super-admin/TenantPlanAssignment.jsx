@@ -112,7 +112,7 @@ const TenantPlanAssignment = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="">Choose plan...</option>
-                {plans.filter(plan => plan.isActive).map(plan => (
+                {plans.map(plan => (
                   <option key={plan.id} value={plan.id}>
                     {plan.name} (${plan.price}/{plan.billingCycle.toLowerCase()})
                   </option>
@@ -195,6 +195,7 @@ const TenantPlanAssignment = () => {
                   <button
                     onClick={() => {
                       setSelectedTenant(tenant.id.toString());
+                      setSelectedPlan(''); // Reset plan selection when changing
                       setShowAssignmentSection(true);
                     }}
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium"

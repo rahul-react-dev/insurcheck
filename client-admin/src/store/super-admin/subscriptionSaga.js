@@ -241,8 +241,9 @@ function* fetchTenantsSaga(action) {
   try {
     const params = action.payload || {};
     const response = yield call(superAdminAPI.getTenants, params);
-    const tenants = response.data || response;
-    yield put(fetchTenantsSuccess(tenants));
+    // Handle the API response structure {tenants: [...]}
+    const responseData = response.data || response;
+    yield put(fetchTenantsSuccess(responseData));
   } catch (error) {
     console.error('❌ Error in fetchTenantsSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch tenants';
@@ -253,7 +254,11 @@ function* fetchTenantsSaga(action) {
 function* assignPlanToTenantSaga(action) {
   try {
     const { tenantId, planId } = action.payload;
+    console.log('🔄 Starting plan assignment:', { tenantId, planId });
+    
     const response = yield call(superAdminAPI.assignSubscriptionToTenant, tenantId, { planId });
+    console.log('✅ Assignment API response:', response);
+    
     yield put(assignPlanToTenantSuccess({ tenantId, planId, subscription: response.data || response }));
 
     // Refresh tenants data to show updated plan assignment
@@ -261,6 +266,8 @@ function* assignPlanToTenantSaga(action) {
 
     if (window.showNotification) {
       window.showNotification('Plan assigned to tenant successfully', 'success');
+    } else {
+      console.log('✅ Plan assigned successfully but notification system not available');
     }
   } catch (error) {
     console.error('❌ Error in assignPlanToTenantSaga:', error);
@@ -269,6 +276,8 @@ function* assignPlanToTenantSaga(action) {
 
     if (window.showNotification) {
       window.showNotification(`Failed to assign plan: ${errorMessage}`, 'error');
+    } else {
+      console.error('❌ Plan assignment failed:', errorMessage);
     }
   }
 }

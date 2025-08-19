@@ -398,8 +398,7 @@ export const superAdminAPI = {
   updateSubscriptionPlan: (id, data) => api.put(`/subscription-plans/${id}`, data),
   deleteSubscriptionPlan: (id) => api.delete(`/subscription-plans/${id}`),
   
-  // Tenant Management
-  getTenants: (params) => api.get('/tenants', { params }),
+  // Tenant Plan Assignment
   assignSubscriptionToTenant: (tenantId, data) => api.post(`/tenants/${tenantId}/subscription`, data),
   getSubscriptions: (params) => api.get('/subscriptions', { params }),
   createSubscription: (data) => api.post('/subscriptions', data),
