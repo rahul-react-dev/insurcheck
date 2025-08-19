@@ -367,17 +367,17 @@ const TenantTable = ({
                   <div className="flex items-center justify-end space-x-2">
                     <Button
                       onClick={() => onEditTenant(tenant)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1"
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs px-3 py-1"
                     >
                       <i className="fas fa-edit mr-1"></i>
                       Edit
                     </Button>
                     <Button
                       onClick={() => onSuspendTenant(tenant)}
-                      className={`text-white text-xs px-3 py-1 ${
+                      className={`disabled:opacity-50 text-white text-xs px-3 py-1 ${
                         tenant.status === "active"
-                          ? "bg-orange-600 hover:bg-orange-700"
-                          : "bg-green-600 hover:bg-green-700"
+                          ? "bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300"
+                          : "bg-green-600 hover:bg-green-700 disabled:bg-green-300"
                       }`}
                     >
                       <i className={`${tenant.status === "active" ? "fas fa-pause" : "fas fa-play"} mr-1`}></i>
@@ -385,7 +385,7 @@ const TenantTable = ({
                     </Button>
                     <Button
                       onClick={() => onDeleteTenant(tenant)}
-                      className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1"
+                      className="bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white text-xs px-3 py-1"
                     >
                       <i className="fas fa-trash mr-1"></i>
                       Delete

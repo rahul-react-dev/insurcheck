@@ -362,15 +362,20 @@ const TenantManagement = () => {
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <Button
               onClick={handleRefresh}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
+              className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white px-4 py-2 text-sm"
               disabled={isLoading}
             >
-              <i className="fas fa-sync-alt mr-2"></i>
-              Refresh
+              {isLoading ? (
+                <i className="fas fa-spinner animate-spin mr-2"></i>
+              ) : (
+                <i className="fas fa-sync-alt mr-2"></i>
+              )}
+              {isLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
             <Button
               onClick={handleCreateTenant}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm"
+              className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white px-4 py-2 text-sm"
+              disabled={isLoading}
             >
               <i className="fas fa-plus mr-2"></i>
               Create Tenant
