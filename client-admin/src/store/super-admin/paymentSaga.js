@@ -1,5 +1,5 @@
 import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
-import { superAdminAPI } from '../../utils/api';
+import { paymentAPI, invoiceAPI, tenantAPI } from '../../utils/api';
 import {
   fetchPaymentsRequest,
   fetchPaymentsSuccess,
@@ -27,7 +27,7 @@ function* fetchPaymentsSaga(action) {
     const params = action.payload || { page: 1, limit: 10 };
     console.log('📡 fetchPaymentsSaga triggered with params:', params);
 
-    const response = yield call(superAdminAPI.getPayments, params);
+    const response = yield call(paymentAPI.getAll, params);
     console.log('✅ Payments API response received:', response);
 
     const validatedResponse = {
@@ -65,22 +65,23 @@ function* fetchInvoicesSaga(action) {
     const params = action.payload || { page: 1, limit: 10 };
     console.log('📡 fetchInvoicesSaga triggered with params:', params);
 
-    const response = yield call(superAdminAPI.getInvoices, params);
+    const response = yield call(invoiceAPI.getAll, params);
     console.log('✅ Invoices API response received:', response);
 
+    const responseData = response.data || response;
     const validatedResponse = {
-      invoices: response.invoices || response.data || [],
+      invoices: responseData.invoices || responseData.data || [],
       summary: {
-        totalInvoices: response.summary?.totalInvoices || response.total || 0,
-        totalPaid: response.summary?.totalPaid || 0,
-        totalPending: response.summary?.totalPending || 0,
-        totalOverdue: response.summary?.totalOverdue || 0
+        totalInvoices: responseData.summary?.totalInvoices || responseData.total || 0,
+        totalPaid: responseData.summary?.totalPaid || 0,
+        totalPending: responseData.summary?.totalPending || 0,
+        totalOverdue: responseData.summary?.totalOverdue || 0
       },
-      pagination: response.pagination || {
+      pagination: responseData.pagination || {
         page: params.page || 1,
         limit: params.limit || 10,
-        total: response.total || 0,
-        totalPages: Math.ceil((response.total || 0) / (params.limit || 10))
+        total: responseData.total || 0,
+        totalPages: Math.ceil((responseData.total || 0) / (params.limit || 10))
       }
     };
 
@@ -99,8 +100,9 @@ function* fetchInvoicesSaga(action) {
 
 function* fetchTenantsSaga() {
   try {
-    const response = yield call(superAdminAPI.getTenants, { limit: 100 });
-    const tenants = response.tenants || response.data || [];
+    const response = yield call(tenantAPI.getAll, { limit: 100 });
+    const responseData = response.data || response;
+    const tenants = responseData.tenants || responseData.data || [];
     yield put(fetchTenantsSuccess(tenants));
   } catch (error) {
     console.error('❌ Error in fetchTenantsSaga:', error);
@@ -112,8 +114,9 @@ function* fetchTenantsSaga() {
 function* markInvoicePaidSaga(action) {
   try {
     const { invoiceId, paymentData } = action.payload;
-    const response = yield call(superAdminAPI.updateInvoiceStatus, invoiceId, 'paid');
-    const updatedInvoice = response.data || response;
+    const response = yield call(invoiceAPI.markPaid, invoiceId);
+    const responseData = response.data || response;
+    const updatedInvoice = responseData.invoice || responseData;
 
     yield put(markInvoicePaidSuccess({
       invoiceId,
@@ -138,7 +141,7 @@ function* markInvoicePaidSaga(action) {
 function* processRefundSaga(action) {
   try {
     const { paymentId, refundData } = action.payload;
-    const response = yield call(superAdminAPI.processRefund, paymentId, refundData);
+    const response = yield call(paymentAPI.processRefund, paymentId, refundData);
     const refundResult = response.data || response;
 
     yield put(processRefundSuccess({
@@ -163,7 +166,7 @@ function* processRefundSaga(action) {
 function* exportPaymentsSaga(action) {
   try {
     const params = action.payload || {};
-    const response = yield call(superAdminAPI.exportPayments, params);
+    const response = yield call(paymentAPI.exportPayments, params);
 
     // Handle blob response for CSV download
     const blob = new Blob([response], { type: 'text/csv' });

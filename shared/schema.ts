@@ -257,8 +257,6 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
 export const insertTenantSchema = createInsertSchema(tenants).pick({
   name: true,
   domain: true,
-  maxUsers: true,
-  storageLimit: true,
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -282,9 +280,6 @@ export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).pick({
   tenantId: true,
   planId: true,
-  startDate: true,
-  endDate: true,
-  autoRenew: true,
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).pick({

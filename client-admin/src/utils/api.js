@@ -306,9 +306,9 @@ export const subscriptionAPI = {
   cancelSubscription: (id) => api.put(`/subscriptions/${id}/cancel`),
 };
 
-// Payment Management APIs
+// Payment Management APIs  
 export const paymentAPI = {
-  getAll: (params) => api.get('/payments', { params }),
+  getAll: (params) => api.get('/super-admin/payments', { params }),
   getById: (id) => api.get(`/payments/${id}`),
   processRefund: (id, data) => api.post(`/payments/${id}/refund`, data),
   exportPayments: (params) => api.get('/payments/export', { params, responseType: 'blob' }),
@@ -316,14 +316,14 @@ export const paymentAPI = {
 
 // Invoice Management APIs
 export const invoiceAPI = {
-  getAll: (params) => api.get('/invoices', { params }),
+  getAll: (params) => api.get('/super-admin/invoices', { params }),
   getById: (id) => api.get(`/invoices/${id}`),
   generate: (data) => api.post('/invoices/generate', data),
   update: (id, data) => api.put(`/invoices/${id}`, data),
   delete: (id) => api.delete(`/invoices/${id}`),
   send: (id) => api.post(`/invoices/${id}/send`),
-  markPaid: (id, data) => api.put(`/invoices/${id}/mark-paid`, data),
-  downloadPDF: (id) => api.get(`/invoices/${id}/pdf`, { responseType: 'blob' }),
+  markPaid: (id) => api.post(`/super-admin/invoices/${id}/paid`),
+  downloadPDF: (id) => api.get(`/super-admin/invoices/${id}/download`),
   exportInvoices: (params) => api.get('/invoices/export', { params, responseType: 'blob' }),
 };
 

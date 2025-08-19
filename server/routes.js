@@ -1132,4 +1132,411 @@ router.post('/tenants/:id/subscription', authenticateToken, requireSuperAdmin, a
   }
 });
 
+// ===================== PAYMENT & INVOICE ROUTES =====================
+
+// Get all payments with filtering and pagination
+router.get('/super-admin/payments', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching payments with params:', req.query);
+    
+    const { 
+      page = 1, 
+      limit = 10, 
+      tenantName = '',
+      status = '',
+      startDate = '',
+      endDate = ''
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build query conditions
+    let query = db.select({
+      id: payments.id,
+      tenantId: payments.tenantId,
+      tenantName: tenants.name,
+      amount: payments.amount,
+      currency: payments.currency,
+      status: payments.status,
+      paymentMethod: payments.paymentMethod,
+      transactionId: payments.transactionId,
+      paymentDate: payments.paymentDate,
+      createdAt: payments.createdAt
+    })
+    .from(payments)
+    .leftJoin(tenants, eq(payments.tenantId, tenants.id));
+
+    const conditions = [];
+
+    // Apply filters
+    if (tenantName) {
+      conditions.push(sql`${tenants.name} ILIKE ${'%' + tenantName + '%'}`);
+    }
+
+    if (status) {
+      conditions.push(eq(payments.status, status));
+    }
+
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      conditions.push(gte(payments.createdAt, start));
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      conditions.push(lte(payments.createdAt, end));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count
+    let countQuery = db.select({ count: count() })
+      .from(payments)
+      .leftJoin(tenants, eq(payments.tenantId, tenants.id));
+
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions));
+    }
+
+    const [paymentsData, totalResult] = await Promise.all([
+      query.orderBy(desc(payments.createdAt)).limit(parseInt(limit)).offset(offset),
+      countQuery
+    ]);
+
+    const total = parseInt(totalResult[0]?.count || 0);
+    
+    // Calculate summary statistics
+    const summaryQuery = db.select({
+      totalAmount: sql`coalesce(sum(${payments.amount}), 0)`,
+      successfulCount: sql`count(*) filter (where ${payments.status} = 'completed')`,
+      failedCount: sql`count(*) filter (where ${payments.status} = 'failed')`,
+      pendingCount: sql`count(*) filter (where ${payments.status} = 'pending')`
+    }).from(payments).leftJoin(tenants, eq(payments.tenantId, tenants.id));
+
+    if (conditions.length > 0) {
+      summaryQuery.where(and(...conditions));
+    }
+    
+    const [summaryData] = await summaryQuery;
+
+    const response = {
+      payments: paymentsData,
+      summary: {
+        totalPayments: total,
+        totalAmount: parseFloat(summaryData?.totalAmount || 0),
+        successfulPayments: parseInt(summaryData?.successfulCount || 0),
+        failedPayments: parseInt(summaryData?.failedCount || 0),
+        pendingRefunds: parseInt(summaryData?.pendingCount || 0)
+      },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    };
+
+    console.log(`✅ Retrieved ${paymentsData.length} payments (page ${page}/${response.pagination.totalPages}, total: ${total})`);
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error fetching payments:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch payments',
+      message: error.message 
+    });
+  }
+});
+
+// Get all invoices with filtering and pagination
+router.get('/super-admin/invoices', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching invoices with params:', req.query);
+    
+    const { 
+      page = 1, 
+      limit = 10, 
+      tenantName = '',
+      status = '',
+      startDate = '',
+      endDate = ''
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build query conditions
+    let query = db.select({
+      id: invoices.id,
+      invoiceNumber: invoices.invoiceNumber,
+      tenantId: invoices.tenantId,
+      tenantName: tenants.name,
+      amount: invoices.amount,
+      tax: invoices.taxAmount,
+      total: invoices.totalAmount,
+      status: invoices.status,
+      issueDate: invoices.issueDate,
+      dueDate: invoices.dueDate,
+      paidDate: invoices.paidDate,
+      createdAt: invoices.createdAt
+    })
+    .from(invoices)
+    .leftJoin(tenants, eq(invoices.tenantId, tenants.id));
+
+    const conditions = [];
+
+    // Apply filters
+    if (tenantName) {
+      conditions.push(sql`${tenants.name} ILIKE ${'%' + tenantName + '%'}`);
+    }
+
+    if (status) {
+      conditions.push(eq(invoices.status, status));
+    }
+
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      conditions.push(gte(invoices.issueDate, start));
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      conditions.push(lte(invoices.issueDate, end));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count
+    let countQuery = db.select({ count: count() })
+      .from(invoices)
+      .leftJoin(tenants, eq(invoices.tenantId, tenants.id));
+
+    if (conditions.length > 0) {
+      countQuery = countQuery.where(and(...conditions));
+    }
+
+    const [invoicesData, totalResult] = await Promise.all([
+      query.orderBy(desc(invoices.createdAt)).limit(parseInt(limit)).offset(offset),
+      countQuery
+    ]);
+
+    const total = parseInt(totalResult[0]?.count || 0);
+    
+    // Calculate summary statistics
+    const summaryQuery = db.select({
+      totalPaid: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'paid'), 0)`,
+      totalPending: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'pending'), 0)`,
+      totalOverdue: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'overdue'), 0)`
+    }).from(invoices).leftJoin(tenants, eq(invoices.tenantId, tenants.id));
+
+    if (conditions.length > 0) {
+      summaryQuery.where(and(...conditions));
+    }
+    
+    const [summaryData] = await summaryQuery;
+
+    const response = {
+      invoices: invoicesData,
+      summary: {
+        totalInvoices: total,
+        totalPaid: parseFloat(summaryData?.totalPaid || 0),
+        totalPending: parseFloat(summaryData?.totalPending || 0),
+        totalOverdue: parseFloat(summaryData?.totalOverdue || 0)
+      },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    };
+
+    console.log(`✅ Retrieved ${invoicesData.length} invoices (page ${page}/${response.pagination.totalPages}, total: ${total})`);
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error fetching invoices:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch invoices',
+      message: error.message 
+    });
+  }
+});
+
+// Mark invoice as paid
+router.post('/super-admin/invoices/:id/paid', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+    console.log(`💳 Marking invoice ${invoiceId} as paid`);
+
+    const [updatedInvoice] = await db.update(invoices)
+      .set({
+        status: 'paid',
+        paidDate: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(invoices.id, invoiceId))
+      .returning();
+
+    if (!updatedInvoice) {
+      return res.status(404).json({
+        error: 'Invoice not found',
+        message: 'Invoice does not exist'
+      });
+    }
+
+    console.log('✅ Invoice marked as paid successfully:', updatedInvoice);
+    res.json({ message: 'Invoice marked as paid successfully', invoice: updatedInvoice });
+  } catch (error) {
+    console.error('❌ Error marking invoice as paid:', error);
+    res.status(500).json({ 
+      error: 'Failed to mark invoice as paid',
+      message: error.message 
+    });
+  }
+});
+
+// Download invoice (placeholder for PDF generation)
+router.get('/super-admin/invoices/:id/download', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+    console.log(`📄 Downloading invoice ${invoiceId}`);
+
+    const invoice = await db.select()
+      .from(invoices)
+      .leftJoin(tenants, eq(invoices.tenantId, tenants.id))
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
+
+    if (!invoice.length) {
+      return res.status(404).json({
+        error: 'Invoice not found',
+        message: 'Invoice does not exist'
+      });
+    }
+
+    // For now, return invoice data as JSON (PDF generation can be added later)
+    console.log('✅ Invoice data retrieved for download:', invoice[0]);
+    res.json({ message: 'Invoice download initiated', invoice: invoice[0] });
+  } catch (error) {
+    console.error('❌ Error downloading invoice:', error);
+    res.status(500).json({ 
+      error: 'Failed to download invoice',
+      message: error.message 
+    });
+  }
+});
+
+// Process payment refund
+router.post('/payments/:id/refund', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const paymentId = req.params.id;
+    const { amount, reason } = req.body;
+    console.log(`💰 Processing refund for payment ${paymentId}:`, { amount, reason });
+
+    const [updatedPayment] = await db.update(payments)
+      .set({
+        status: 'refunded',
+        updatedAt: new Date()
+      })
+      .where(eq(payments.id, paymentId))
+      .returning();
+
+    if (!updatedPayment) {
+      return res.status(404).json({
+        error: 'Payment not found',
+        message: 'Payment does not exist'
+      });
+    }
+
+    console.log('✅ Payment refund processed successfully:', updatedPayment);
+    res.json({ 
+      message: 'Refund processed successfully', 
+      payment: updatedPayment,
+      refundResult: {
+        amount: amount || updatedPayment.amount,
+        refundDate: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error processing refund:', error);
+    res.status(500).json({ 
+      error: 'Failed to process refund',
+      message: error.message 
+    });
+  }
+});
+
+// Export payments data
+router.get('/payments/export', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📊 Exporting payments data with params:', req.query);
+    
+    const { tenantName, status, startDate, endDate } = req.query;
+    
+    let query = db.select({
+      id: payments.id,
+      tenantName: tenants.name,
+      amount: payments.amount,
+      currency: payments.currency,
+      status: payments.status,
+      paymentMethod: payments.paymentMethod,
+      transactionId: payments.transactionId,
+      paymentDate: payments.paymentDate,
+      createdAt: payments.createdAt
+    })
+    .from(payments)
+    .leftJoin(tenants, eq(payments.tenantId, tenants.id));
+
+    const conditions = [];
+
+    if (tenantName) {
+      conditions.push(sql`${tenants.name} ILIKE ${'%' + tenantName + '%'}`);
+    }
+
+    if (status) {
+      conditions.push(eq(payments.status, status));
+    }
+
+    if (startDate) {
+      conditions.push(gte(payments.createdAt, new Date(startDate)));
+    }
+
+    if (endDate) {
+      conditions.push(lte(payments.createdAt, new Date(endDate)));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const paymentsData = await query.orderBy(desc(payments.createdAt));
+
+    // Convert to CSV format
+    const csvHeader = 'ID,Tenant Name,Amount,Currency,Status,Payment Method,Transaction ID,Payment Date,Created At\n';
+    const csvData = paymentsData.map(payment => 
+      `${payment.id},"${payment.tenantName}",${payment.amount},${payment.currency},${payment.status},"${payment.paymentMethod}","${payment.transactionId}","${payment.paymentDate}","${payment.createdAt}"`
+    ).join('\n');
+
+    const csv = csvHeader + csvData;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="payments_export_${new Date().toISOString().split('T')[0]}.csv"`);
+    
+    console.log(`✅ Exported ${paymentsData.length} payments to CSV`);
+    res.send(csv);
+  } catch (error) {
+    console.error('❌ Error exporting payments:', error);
+    res.status(500).json({ 
+      error: 'Failed to export payments',
+      message: error.message 
+    });
+  }
+});
+
 export default router;
