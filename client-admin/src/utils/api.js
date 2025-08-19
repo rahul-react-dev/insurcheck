@@ -345,10 +345,12 @@ export const deletedDocumentAPI = {
 
 // System Configuration APIs
 export const systemConfigAPI = {
-  getAll: () => api.get('/system-config'),
-  update: (key, data) => api.put(`/system-config/${key}`, data),
-  create: (data) => api.post('/system-config', data),
-  delete: (key) => api.delete(`/system-config/${key}`),
+  getAll: () => api.get('/super-admin/system-config'),
+  getByKey: (key) => api.get(`/super-admin/system-config/${key}`),
+  update: (key, data) => api.put(`/super-admin/system-config/${key}`, data),
+  create: (data) => api.post('/super-admin/system-config', data),
+  delete: (key) => api.delete(`/super-admin/system-config/${key}`),
+  bulkUpdate: (configurations) => api.put('/super-admin/system-config', { configurations }),
 };
 
 // Analytics & Metrics APIs
@@ -383,6 +385,14 @@ export const superAdminAPI = {
   // System metrics and dashboard
   getSystemMetrics: () => api.get('/system-metrics'),
   getErrorLogs: (params) => api.get('/activity-logs', { params: { ...params, level: 'error' } }),
+  
+  // System Configuration
+  getSystemConfig: () => api.get('/super-admin/system-config'),
+  getSystemConfigByKey: (key) => api.get(`/super-admin/system-config/${key}`),
+  updateSystemConfig: (key, data) => api.put(`/super-admin/system-config/${key}`, data),
+  createSystemConfig: (data) => api.post('/super-admin/system-config', data),
+  deleteSystemConfig: (key) => api.delete(`/super-admin/system-config/${key}`),
+  bulkUpdateSystemConfig: (configurations) => api.put('/super-admin/system-config', { configurations }),
   exportErrorLogs: (data) => api.post('/activity-logs/export', data),
 
   // Tenants
@@ -424,9 +434,7 @@ export const superAdminAPI = {
   bulkDeleteDocuments: (ids) => api.post('/deleted-documents/bulk-delete', { ids }),
   exportDeletedDocuments: (params) => api.get('/deleted-documents/export', { params, responseType: 'blob' }),
 
-  // System Configuration
-  getSystemConfig: () => api.get('/super-admin/system-config'),
-  updateSystemConfig: (key, value) => api.put(`/super-admin/system-config/${key}`, { value }),
+
 
   // Analytics
   getAnalytics: (params) => api.get('/super-admin/analytics', { params }),

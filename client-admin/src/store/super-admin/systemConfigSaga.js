@@ -18,14 +18,22 @@ function* fetchSystemConfigSaga() {
     console.log('📡 fetchSystemConfigSaga triggered');
 
     const response = yield call(superAdminAPI.getSystemConfig);
-    console.log('✅ System config API response received:', response);
+    console.log('✅ System config API response received:', response.data);
 
-    const configs = response.configs || response.data || response;
-    yield put(fetchSystemConfigSuccess(configs));
+    // Handle the response structure from our API
+    const { configurations, configsByCategory, summary } = response.data;
+    const payload = {
+      configuration: configurations, // Array of all configurations
+      configsByCategory, // Grouped by category
+      summary,
+      auditLogs: [] // Initialize empty audit logs for now
+    };
+
+    yield put(fetchSystemConfigSuccess(payload));
   } catch (error) {
     console.error('❌ Error in fetchSystemConfigSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch system configuration';
-    yield put(fetchSystemConfigFailure(errorMessage));
+    yield put(fetchSystemConfigFailure({ message: errorMessage }));
 
     if (window.showNotification) {
       window.showNotification('Failed to load system configuration. Please try again.', 'error');
@@ -35,17 +43,21 @@ function* fetchSystemConfigSaga() {
 
 function* updateSystemConfigSaga(action) {
   try {
-    const { key, value, category } = action.payload;
-    console.log('📡 updateSystemConfigSaga triggered with:', { key, value, category });
+    const { key, value, description, category, isActive } = action.payload;
+    console.log('📡 updateSystemConfigSaga triggered with:', { key, value, description, category, isActive });
 
-    const response = yield call(superAdminAPI.updateSystemConfig, key, { value, category });
-    const updatedConfig = response.data || response;
+    const updateData = {};
+    if (value !== undefined) updateData.value = value;
+    if (description !== undefined) updateData.description = description;
+    if (category !== undefined) updateData.category = category;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const response = yield call(superAdminAPI.updateSystemConfig, key, updateData);
+    console.log('✅ System config update response:', response.data);
 
     yield put(updateSystemConfigSuccess({
-      key,
-      value,
-      category,
-      updatedConfig
+      configuration: response.data.configuration,
+      auditLog: null // We can add audit log functionality later
     }));
 
     if (window.showNotification) {
@@ -54,7 +66,7 @@ function* updateSystemConfigSaga(action) {
   } catch (error) {
     console.error('❌ Error in updateSystemConfigSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update system configuration';
-    yield put(updateSystemConfigFailure(errorMessage));
+    yield put(updateSystemConfigFailure({ message: errorMessage }));
 
     if (window.showNotification) {
       window.showNotification('Failed to update configuration', 'error');

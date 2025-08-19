@@ -1,7 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  configuration: null,
+  configuration: [],
+  configsByCategory: {},
+  summary: null,
   tenantConfigurations: {},
   availableTenants: [],
   auditLogs: [],
@@ -26,7 +28,9 @@ const systemConfigSlice = createSlice({
     },
     fetchSystemConfigSuccess: (state, action) => {
       state.isLoading = false;
-      state.configuration = action.payload.configuration;
+      state.configuration = action.payload.configuration || action.payload;
+      state.configsByCategory = action.payload.configsByCategory || {};
+      state.summary = action.payload.summary || null;
       state.auditLogs = action.payload.auditLogs || [];
       state.lastFetch = new Date().toISOString();
       state.error = null;
@@ -45,7 +49,14 @@ const systemConfigSlice = createSlice({
     },
     updateSystemConfigSuccess: (state, action) => {
       state.isUpdating = false;
-      state.configuration = action.payload.configuration;
+      // Update the specific configuration in the array
+      if (action.payload.configuration && Array.isArray(state.configuration)) {
+        const updatedConfig = action.payload.configuration;
+        const index = state.configuration.findIndex(config => config.key === updatedConfig.key);
+        if (index !== -1) {
+          state.configuration[index] = updatedConfig;
+        }
+      }
       state.updateSuccess = true;
       state.error = null;
 
