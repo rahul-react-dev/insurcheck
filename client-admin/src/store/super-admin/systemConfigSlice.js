@@ -1,36 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  configuration: {},
-  configs: [],
-  totalConfigs: 0,
-  pagination: {
-    currentPage: 1,
-    pageSize: 50,
-    totalItems: 0,
-    totalPages: 0,
-    hasNext: false,
-    hasPrevious: false
-  },
-  filters: {
-    search: '',
-    category: '',
-    isActive: '',
-    sortBy: 'category',
-    sortOrder: 'asc',
-    availableCategories: []
-  },
+  configuration: null,
   tenantConfigurations: {},
   availableTenants: [],
   auditLogs: [],
   isLoading: false,
   isUpdating: false,
-  isCreating: false,
-  isDeleting: false,
   error: null,
   updateSuccess: false,
-  createSuccess: false,
-  deleteSuccess: false,
   lastFetch: null,
   selectedConfig: null, // Added for new details fetching
   updateError: null, // Added for update errors
@@ -48,12 +26,8 @@ const systemConfigSlice = createSlice({
     },
     fetchSystemConfigSuccess: (state, action) => {
       state.isLoading = false;
-      state.configuration = action.payload.configuration || {};
+      state.configuration = action.payload.configuration;
       state.auditLogs = action.payload.auditLogs || [];
-      state.configs = action.payload.configs || [];
-      state.totalConfigs = action.payload.totalConfigs || 0;
-      state.pagination = action.payload.pagination || state.pagination;
-      state.filters.availableCategories = action.payload.filters?.availableCategories || [];
       state.lastFetch = new Date().toISOString();
       state.error = null;
     },
@@ -172,13 +146,13 @@ const systemConfigSlice = createSlice({
 
     // Create Configuration
     createSystemConfigRequest: (state) => {
-      state.isCreating = true;
+      state.isUpdating = true;
       state.error = null;
-      state.createSuccess = false;
+      state.updateSuccess = false;
     },
     createSystemConfigSuccess: (state, action) => {
-      state.isCreating = false;
-      state.createSuccess = true;
+      state.isUpdating = false;
+      state.updateSuccess = true;
       state.error = null;
 
       // Add the new config to the configuration object
@@ -189,33 +163,9 @@ const systemConfigSlice = createSlice({
       }
     },
     createSystemConfigFailure: (state, action) => {
-      state.isCreating = false;
+      state.isUpdating = false;
       state.error = action.payload;
-      state.createSuccess = false;
-    },
-
-    // Update filters
-    updateFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-
-    // Clear filters
-    clearFilters: (state) => {
-      state.filters = {
-        search: '',
-        category: '',
-        isActive: '',
-        sortBy: 'category',
-        sortOrder: 'asc',
-        availableCategories: state.filters.availableCategories
-      };
-    },
-
-    // Reset success states
-    resetSuccessStates: (state) => {
       state.updateSuccess = false;
-      state.createSuccess = false;
-      state.deleteSuccess = false;
     },
 
     // Clear configuration errors
@@ -246,9 +196,6 @@ export const {
   createSystemConfigRequest,
   createSystemConfigSuccess,
   createSystemConfigFailure,
-  updateFilters,
-  clearFilters,
-  resetSuccessStates,
   createBackupRequest,
   createBackupSuccess,
   createBackupFailure,
