@@ -1,107 +1,73 @@
 import React from 'react';
 
-const SkeletonLoader = ({ 
-  className = '', 
-  type = 'rectangle', 
-  width = '100%', 
-  height = '20px',
-  count = 1,
-  animate = true 
-}) => {
-  const baseClasses = `
-    ${animate ? 'animate-pulse' : ''} 
-    bg-gray-200 dark:bg-gray-700 
-    ${type === 'circle' ? 'rounded-full' : 'rounded-md'}
-    ${className}
-  `;
-
-  const skeletonStyle = {
-    width,
-    height: type === 'circle' ? width : height,
-  };
-
-  if (count === 1) {
-    return <div className={baseClasses} style={skeletonStyle} />;
-  }
-
+export const TableSkeleton = ({ rows = 5, columns = 6 }) => {
   return (
-    <div className="space-y-2">
-      {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className={baseClasses} style={skeletonStyle} />
+    <div className="animate-pulse">
+      {/* Header skeleton */}
+      <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+        <div className="grid grid-cols-6 gap-4">
+          {Array.from({ length: columns }).map((_, index) => (
+            <div key={index} className="h-4 bg-gray-300 rounded"></div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Rows skeleton */}
+      {Array.from({ length: rows }).map((_, rowIndex) => (
+        <div key={rowIndex} className="px-6 py-4 border-b border-gray-200">
+          <div className="grid grid-cols-6 gap-4">
+            {Array.from({ length: columns }).map((_, colIndex) => (
+              <div key={colIndex} className="h-4 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
 };
 
-// Preset skeleton components for common use cases
-export const TableRowSkeleton = ({ columns = 4 }) => (
-  <tr className="border-b border-gray-200 dark:border-gray-700">
-    {Array.from({ length: columns }).map((_, index) => (
-      <td key={index} className="px-6 py-4">
-        <SkeletonLoader height="16px" />
-      </td>
-    ))}
-  </tr>
-);
-
-export const TableSkeleton = ({ rows = 5, columns = 4 }) => (
-  <div className="animate-pulse">
-    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead className="bg-gray-50 dark:bg-gray-700">
-        <tr>
-          {Array.from({ length: columns }).map((_, index) => (
-            <th key={index} className="px-6 py-3">
-              <SkeletonLoader height="16px" />
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-        {Array.from({ length: rows }).map((_, rowIndex) => (
-          <TableRowSkeleton key={rowIndex} columns={columns} />
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-export const CardSkeleton = ({ className = '' }) => (
-  <div className={`p-6 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4 ${className}`}>
-    <SkeletonLoader height="24px" width="60%" />
-    <SkeletonLoader height="16px" count={3} />
-    <div className="flex space-x-2">
-      <SkeletonLoader height="32px" width="80px" />
-      <SkeletonLoader height="32px" width="80px" />
-    </div>
-  </div>
-);
-
-export const SystemConfigSkeleton = () => (
-  <div className="space-y-6">
-    {/* Header skeleton */}
-    <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-6">
-      <SkeletonLoader height="32px" width="250px" className="mb-2" />
-      <SkeletonLoader height="16px" width="400px" />
-    </div>
-
-    {/* Configuration sections skeleton */}
-    {Array.from({ length: 4 }).map((_, index) => (
-      <div key={index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <SkeletonLoader height="24px" width="200px" className="mb-4" />
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, configIndex) => (
-            <div key={configIndex} className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="space-y-2 flex-1">
-                <SkeletonLoader height="16px" width="150px" />
-                <SkeletonLoader height="14px" width="250px" />
-              </div>
-              <SkeletonLoader height="24px" width="60px" />
+export const CardSkeleton = ({ count = 1 }) => {
+  return (
+    <div className="animate-pulse">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="bg-white p-6 rounded-lg shadow mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="h-12 w-12 bg-gray-300 rounded-lg"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
-export default SkeletonLoader;
+export const FilterSkeleton = () => {
+  return (
+    <div className="animate-pulse space-y-4">
+      {/* Search bar skeleton */}
+      <div className="flex gap-4">
+        <div className="flex-1 h-10 bg-gray-200 rounded-lg"></div>
+        <div className="h-10 w-24 bg-gray-300 rounded-lg"></div>
+      </div>
+      
+      {/* Filters skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-24"></div>
+            <div className="h-10 bg-gray-200 rounded-lg"></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default {
+  TableSkeleton,
+  CardSkeleton,
+  FilterSkeleton
+};
