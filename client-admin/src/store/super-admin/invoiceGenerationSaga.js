@@ -22,13 +22,14 @@ import {
 // Saga functions
 function* generateInvoiceSaga(action) {
   try {
-    const invoiceData = action.payload;
-    console.log('📡 generateInvoiceSaga triggered with data:', invoiceData);
+    const tenantId = action.payload;
+    console.log('📡 generateInvoiceSaga triggered for tenant:', tenantId);
 
-    const response = yield call(invoiceAPI.generate, invoiceData);
+    const response = yield call(invoiceAPI.generate, { tenantId, type: 'manual' });
     console.log('✅ Generate invoice API response received:', response);
 
-    const generatedInvoice = response.invoice || response.data || response;
+    const responseData = response.data || response;
+    const generatedInvoice = responseData.invoice || responseData;
     yield put(generateInvoiceSuccess(generatedInvoice));
 
     if (window.showNotification) {
@@ -36,7 +37,7 @@ function* generateInvoiceSaga(action) {
     }
 
     // Refresh invoice logs
-    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 10 }));
+    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
   } catch (error) {
     console.error('❌ Error in generateInvoiceSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to generate invoice';
@@ -56,13 +57,16 @@ function* fetchInvoiceLogsSaga(action) {
     const response = yield call(invoiceAPI.getAll, params);
     console.log('✅ Invoice logs API response received:', response);
 
+    // Handle response structure from the API
+    const responseData = response.data || response;
     const validatedResponse = {
-      logs: response.invoices || response.data || [],
-      pagination: response.pagination || {
+      logs: responseData.invoices || responseData.data || [],
+      summary: responseData.summary || {},
+      pagination: responseData.pagination || {
         page: params.page || 1,
         limit: params.limit || 10,
-        total: response.total || 0,
-        totalPages: Math.ceil((response.total || 0) / (params.limit || 10))
+        total: responseData.total || 0,
+        totalPages: Math.ceil((responseData.total || 0) / (params.limit || 10))
       }
     };
 
@@ -85,7 +89,9 @@ function* fetchInvoiceConfigSaga() {
     const response = yield call(invoiceConfigAPI.getAll);
     console.log('✅ Invoice config API response received:', response);
 
-    yield put(fetchInvoiceConfigSuccess(response.data || response));
+    // Handle the response structure correctly
+    const responseData = response.data || response;
+    yield put(fetchInvoiceConfigSuccess(responseData));
   } catch (error) {
     console.error('❌ Error in fetchInvoiceConfigSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch invoice configuration';
@@ -164,10 +170,12 @@ function* watchGenerateInvoice() {
 }
 
 function* watchFetchInvoiceLogs() {
+  console.log('👀 Setting up watcher for fetchInvoiceLogsRequest');
   yield takeLatest(fetchInvoiceLogsRequest.type, fetchInvoiceLogsSaga);
 }
 
 function* watchFetchInvoiceConfig() {
+  console.log('👀 Setting up watcher for fetchInvoiceConfigRequest');
   yield takeLatest(fetchInvoiceConfigRequest.type, fetchInvoiceConfigSaga);
 }
 
@@ -213,6 +221,7 @@ function* watchRetryInvoiceGeneration() {
 
 // Root saga
 export default function* invoiceGenerationSaga() {
+  console.log('🔄 Starting invoice generation saga watchers...');
   yield all([
     fork(watchGenerateInvoice),
     fork(watchFetchInvoiceLogs),
@@ -221,4 +230,5 @@ export default function* invoiceGenerationSaga() {
     fork(watchDownloadInvoice),
     fork(watchRetryInvoiceGeneration)
   ]);
+  console.log('✅ All invoice generation saga watchers initialized');
 }

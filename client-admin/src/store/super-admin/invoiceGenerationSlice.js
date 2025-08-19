@@ -37,7 +37,7 @@ const invoiceGenerationSlice = createSlice({
   reducers: {
     // Fetch invoice configurations
     fetchInvoiceConfigRequest: (state) => {
-      console.log('📊 fetchInvoiceConfigRequest dispatched');
+      console.log('📊 fetchInvoiceConfigRequest reducer called - setting loading state');
       state.isLoading = true;
       state.error = null;
     },
@@ -105,7 +105,8 @@ const invoiceGenerationSlice = createSlice({
 
     // Fetch invoice logs
     fetchInvoiceLogsRequest: (state, action) => {
-      console.log('📊 fetchInvoiceLogsRequest dispatched with payload:', action.payload);
+      console.log('📊 fetchInvoiceLogsRequest reducer called with payload:', action.payload);
+      console.log('📊 Setting isLoadingLogs to true');
       state.isLoadingLogs = true;
       state.error = null;
 
@@ -129,7 +130,16 @@ const invoiceGenerationSlice = createSlice({
       state.isLoadingLogs = false;
       state.hasInitialLoad = true;
       state.logs = action.payload.logs || [];
-      state.summary = { ...state.summary, ...(action.payload.summary || {}) };
+      
+      // Handle summary data properly from API response
+      const summary = action.payload.summary || {};
+      state.summary = {
+        totalGenerated: summary.totalInvoices || 0,
+        totalSent: summary.totalPaid || 0,
+        totalFailed: summary.totalOverdue || 0,
+        totalAmount: summary.totalPending || 0
+      };
+      
       if (action.payload.pagination) {
         state.pagination = { ...state.pagination, ...action.payload.pagination };
       }

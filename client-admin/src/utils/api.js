@@ -330,8 +330,14 @@ export const invoiceAPI = {
 
 // Invoice Configuration APIs
 export const invoiceConfigAPI = {
-  getAll: () => api.get('/invoice-configs'),
-  update: (tenantId, config) => api.post('/invoice-configs', { tenantId, config }),
+  getAll: () => {
+    console.log('📡 Making API call to /invoice-configs');
+    return api.get('/invoice-configs');
+  },
+  update: (tenantId, config) => {
+    console.log('📡 Making API call to update invoice config for tenant:', tenantId);
+    return api.post('/invoice-configs', { tenantId, config });
+  },
 };
 
 // Activity Logs APIs

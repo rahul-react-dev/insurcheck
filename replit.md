@@ -1,6 +1,6 @@
 # Overview
 
-InsurCheck is a multi-tenant SaaS insurance management platform built as a monorepo with separate React frontends for different user roles and a shared Node.js backend. The system supports three user types: Super Admins, Tenant Admins, and Tenant Users, each with their dedicated frontend application while sharing common backend services and database resources.
+InsurCheck is a multi-tenant SaaS insurance management platform. It uses a monorepo structure with distinct React frontends for different user roles (Super Admins, Tenant Admins, and Tenant Users) and a shared Node.js backend. The platform provides comprehensive insurance management capabilities, including tenant and subscription management, payment processing, and invoice generation, all built on a robust and scalable architecture.
 
 # User Preferences
 
@@ -9,188 +9,75 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## Monorepo Structure
-The project follows a monorepo pattern with clear separation of concerns:
-- **client-admin**: React frontend for Super Admins and Tenant Admins (run independently with `npm run dev`)
-- **client-user**: React frontend for Tenant Users (run independently with `npm run dev`)  
-- **server**: Express.js backend API (Port 5000, started via workflow)
-- **shared**: Common schema and type definitions
+The project is organized as a monorepo containing:
+- `client-admin`: React frontend for Super Admins and Tenant Admins.
+- `client-user`: React frontend for Tenant Users.
+- `server`: Express.js backend API.
+- `shared`: Common schema and type definitions.
 
 ## Development Workflow
-- Backend: Run via "Start application" workflow (starts Express server on port 5000)
-- Admin Frontend: `cd client-admin && npm run dev` (typically runs on port 3000)
-- User Frontend: `cd client-user && npm run dev` (typically runs on port 3001)
-- Each frontend runs independently and connects to the backend API
-- **Important**: Backend and frontend run separately in development mode
-- Backend serves API endpoints only; frontends must be started independently
+The backend and frontends run independently during development:
+- Backend: Started via a workflow (Port 5000).
+- Frontends: `client-admin` (Port 3000) and `client-user` (Port 3001) are started separately.
 
 ## Frontend Architecture
-All React frontends use a modern stack:
-- **Build System**: Vite for fast development and optimized builds
-- **Styling**: Tailwind CSS with custom design system featuring blue gradient themes
-- **State Management**: Redux Toolkit with Redux-Saga for side effects
-- **Routing**: React Router for client-side navigation
-- **HTTP Client**: Axios with interceptors for authentication and error handling
-- **UI Components**: shadcn/ui component library for consistent design
-
-The design system implements a professional blue color palette with CSS custom properties for theming consistency across all applications.
+All React frontends leverage:
+- **Build System**: Vite.
+- **Styling**: Tailwind CSS with a custom design system focusing on blue gradient themes and a professional color palette.
+- **State Management**: Redux Toolkit with Redux-Saga.
+- **Routing**: React Router.
+- **HTTP Client**: Axios with interceptors.
+- **UI Components**: shadcn/ui library, built on Radix UI.
 
 ## Backend Architecture
-- **Framework**: Express.js with TypeScript support
-- **Database ORM**: Drizzle ORM for type-safe database operations
-- **Database**: PostgreSQL with real data (tenants, users, activity_logs, documents, payments)
-- **Authentication**: JWT-based authentication with role-based access control
-- **Multi-tenancy**: Single database with tenant isolation via tenant_id fields
-- **API Design**: RESTful endpoints with /api prefix
-- **Middleware**: CORS, helmet for security, rate limiting, and comprehensive error handling
-- **Test Credentials**: superadmin@insurcheck.com / admin123
-
-## Current Status (August 19, 2025)
-- ✅ Database schema deployed with all required tables  
-- ✅ Sample data loaded (15 tenants, 8+ users, 15+ activity logs, documents, payments)
-- ✅ All API endpoints working with real database data
-- ✅ Authentication system functional
-- ✅ System metrics API returning real data ($299.98 revenue, 15 error logs)
-- ✅ Backend running independently on port 5000
-- ✅ **Critical Database & API Issues Fixed (August 18, 2025)**:
-  - Fixed missing subscription_plans table with 4 working plans (Basic, Professional, Enterprise, Starter)
-  - Fixed missing email field in tenants table, updated all 15 tenants with email addresses
-  - Fixed missing status field in tenants table, all tenants now have 'active' status
-  - Fixed missing subscriptions table linking tenants to subscription plans
-  - Resolved Drizzle ORM schema mismatches causing "column does not exist" errors
-  - Fixed tenants API field selection issues that caused "Cannot convert undefined or null to object" errors
-- ✅ **Subscription Plans API - Full CRUD Operations Working**:
-  - CREATE: Add new subscription plans with validation
-  - READ: Get all subscription plans with proper data
-  - UPDATE: Modify existing subscription plans 
-  - DELETE: Remove subscription plans (prevents deletion if in use)
-- ✅ **Tenants API - Fixed and Working**:
-  - Proper tenant listing with pagination
-  - Search functionality by tenant name (case-insensitive)  
-  - Status filtering (active, inactive, suspended, pending)
-  - Enriched data showing subscription plan associations
-- ✅ **Comprehensive Tenant Management System Completed (August 18, 2025)**:
-  - Tenant Users API working perfectly (3 users per tenant with real data structure)
-  - Complete filtering system: name, status, subscription plan, date range
-  - Skeleton loading states for cards and tables matching dashboard design patterns
-  - Redux store properly handling tenant users data with correct API response format
-  - Edit, suspend, delete tenant actions fully implemented
-  - Reusable pagination component consistent with super-admin design
-  - All 15 tenants displaying with proper pagination (5 pages, 3 per page)
-  - Real tenant users data (names, emails, phone numbers) from database
-- ✅ **All Critical Tenant Management Issues Fixed (August 18, 2025)**:
-  - Phone number display cleaned (removed UUID contamination with regex filtering)
-  - Edit functionality implemented with prefilled modal data using correct field names (tenant.name, tenant.email)
-  - Suspend button confirmation popup added (consistent with delete confirmation)  
-  - Suspend functionality working properly with full tenant data API calls
-  - Delete confirmation shows proper tenant name instead of "undefined"
-  - Filtering system fully functional (API confirmed: name, status, plan filters working)
-  - Toast notification system implemented for all CRUD operations
-  - Tenant users modal header shows correct tenant name
-  - User count accuracy fixed with actualUserCount field updated from API responses
-  - Loading skeleton implemented for table with proper mobile/desktop responsive design
-  - Both mobile and desktop views properly handle all actions
-- ✅ **Complete Subscription Management System Fixed (August 18, 2025)**:
-  - Delete confirmation popup implemented (matches tenant management pattern)
-  - Button loading spinners added for all Create/Update/Delete operations
-  - Tenant assignment functionality fully working with dedicated API endpoint (/api/tenants/:id/subscription)
-  - Redux state management optimized with proper loading states
-  - API field mapping corrected between frontend and backend
-  - Toast notification system integrated for all subscription operations
-  - Edge case handling implemented for all CRUD operations
-  - Real-time data updates after all operations
-  - Comprehensive error handling with user-friendly messages
-  - **CRITICAL BUG FIX**: Fixed "isLoading is not defined" error in PlanModal.jsx by correcting Redux state selector from isLoadingPlans to isLoading
-- ✅ **Tenant Assignment Flow Completely Fixed (August 18, 2025)**:
-  - Fixed API function calls in subscription saga (assignSubscriptionToTenant vs assignSubscription)  
-  - Corrected data structure handling for tenants API response ({tenants: [...]} format)
-  - Implemented proper loading states with spinners for assignment button
-  - Added automatic form reset after successful assignment using useEffect
-  - Enhanced error handling and user feedback with toast notifications
-  - Fixed tenant status display (active, suspended, pending) with proper color coding
-  - Added empty state handling when no tenants are found
-  - Improved UI with loading skeletons during data fetch
-  - All assignment operations tested and working with real database data
-- ✅ **Complete Subscription Management Review & Fixes (August 19, 2025)**:
-  - **Plan Modal Loading Spinner**: Already correctly implemented with disabled state during create/update
-  - **Plan Deletion Logic**: Working as designed - plans in active use cannot be deleted (proper business logic)
-  - **Improved Error Messages**: Clear messaging for plans that cannot be deleted due to active subscriptions
-  - **Tenant Assignment Flow**: Completely fixed and tested with automatic data refresh after assignment
-  - **Notification Integration**: Toast notifications working through window.showNotification global function
-  - **Data Synchronization**: Assignment saga now refreshes tenant data after successful plan assignment
-  - **Comprehensive Testing**: All subscription management features tested and verified working correctly
-- ✅ **Tenant Assignment Flow Completely Fixed (August 19, 2025)**:
-  - **Critical Syntax Error Fixed**: Removed duplicate fetchTenantsRequest import causing JavaScript compilation failure
-  - **API Structure Issues Resolved**: Fixed duplicate getTenants API function and proper response handling for {tenants: [...]} structure
-  - **Plan Filtering Fixed**: Removed isActive filter that was preventing plan selection
-  - **Change Plan Functionality**: Enhanced with proper form reset and tenant pre-selection
-  - **Data Refresh Mechanism**: Automatic tenant data refresh after successful plan assignment
-  - **Enhanced Error Handling**: Added comprehensive logging and notification integration
-  - **Backend API Verification**: All assignment and plan change operations tested and working with real database
-  - **Frontend Compilation**: Builds successfully without any syntax errors
-  - **Complete Flow Testing**: Both "Assign Plan" and "Change Plan" operations fully functional
-- ✅ **Payment & Invoice Management System Completed (August 19, 2025)**:
-  - **Database Infrastructure**: Created missing invoices table with proper foreign key relationships to tenants and subscriptions
-  - **Backend API Implementation**: Complete payment/invoice API endpoints with filtering, pagination, and CRUD operations
-  - **API Endpoints Working**: `/super-admin/payments`, `/super-admin/invoices`, mark as paid, download, refund processing
-  - **Frontend API Integration**: Updated all frontend API calls to use correct backend endpoints  
-  - **Redux Saga Integration**: Fixed all saga functions to use proper API imports (paymentAPI, invoiceAPI, tenantAPI)
-  - **Database Testing**: 11 invoices with various statuses (paid, pending, overdue), 2 completed payments
-  - **Filtering System**: Tenant name search, status filtering, date range filters all working
-  - **Business Logic**: Mark invoice as paid functionality tested and confirmed working
-  - **Data Validation**: Proper error handling, loading states, and summary statistics working
-  - **Export Functionality**: CSV export capability implemented for payments data
-  - **Refund Processing**: Payment refund system implemented and tested
-- ✅ **Critical Payment Module UI/UX Fixes (August 19, 2025)**:
-  - **Duplicate Export Button**: Removed blue "Export All" button, kept only green one in filter section
-  - **Loading States**: Added comprehensive skeleton loading for table during refresh operations
-  - **Overdue Calculation**: Fixed overdue logic to include past due dates regardless of status
-  - **PDF Download**: Implemented working PDF download functionality in invoice view popup
-  - **Confirmation Dialogs**: Enhanced mark as paid with confirmation popup showing invoice number
-  - **Filter UI Design**: Completely redesigned filter layout with improved spacing and organization
-  - **Real-time Data**: All filtering, pagination, and CRUD operations working with 11 test invoices
-  - **Summary Statistics**: Corrected overdue calculation logic for accurate dashboard metrics
+The backend is built with:
+- **Framework**: Express.js with TypeScript.
+- **Database ORM**: Drizzle ORM.
+- **Database**: PostgreSQL.
+- **Authentication**: JWT-based with role-based access control.
+- **Multi-tenancy**: Single database with tenant isolation using `tenant_id`.
+- **API Design**: RESTful endpoints, `/api` prefix.
+- **Middleware**: CORS, helmet, rate limiting, error handling.
 
 ## Database Design
-Uses PostgreSQL with Drizzle ORM providing:
-- **Schema Management**: Type-safe schema definitions in shared directory
-- **Multi-tenant Support**: Tenant isolation through tenant_id foreign keys
-- **User Management**: Role-based user system (super-admin, tenant-admin, user)
-- **Migration Support**: Drizzle Kit for database migrations
+- **Type**: PostgreSQL with Drizzle ORM.
+- **Features**: Type-safe schema definitions, multi-tenant support via `tenant_id`, role-based user management, and Drizzle Kit for migrations.
 
 ## Security & Authentication
-- **JWT Tokens**: Stateless authentication with configurable expiration
-- **Role-based Access**: Three-tier permission system
-- **Password Security**: bcrypt for password hashing
-- **Request Validation**: express-validator for input sanitization
-- **CORS Configuration**: Restricted to allowed origins with credentials support
+- **Authentication**: JWT tokens with configurable expiration.
+- **Access Control**: Three-tier role-based permission system.
+- **Password Security**: bcrypt for hashing.
+- **Input Validation**: `express-validator`.
+- **CORS**: Configured for allowed origins.
 
 # External Dependencies
 
 ## Database
-- **PostgreSQL**: Primary database with connection pooling via @neondatabase/serverless
-- **Drizzle ORM**: Type-safe database operations and migrations
+- **PostgreSQL**: Primary database.
+- **Drizzle ORM**: For database operations and migrations.
+- **@neondatabase/serverless**: For PostgreSQL connection pooling.
 
 ## UI Libraries
-- **Radix UI**: Accessible component primitives for complex UI elements
-- **Tailwind CSS**: Utility-first CSS framework with custom design tokens
-- **Lucide React**: Icon library for consistent iconography
-- **shadcn/ui**: Pre-built component library built on Radix UI
+- **Radix UI**: Accessible component primitives.
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Lucide React**: Icon library.
+- **shadcn/ui**: Component library.
 
 ## Development Tools
-- **Vite**: Fast build tool and development server
-- **TypeScript**: Type safety across frontend and backend
-- **ESLint**: Code linting and formatting
-- **PostCSS**: CSS processing with Tailwind CSS
+- **Vite**: Build tool and development server.
+- **TypeScript**: For type safety.
+- **ESLint**: For code linting.
+- **PostCSS**: For CSS processing.
 
 ## Backend Dependencies
-- **Express.js**: Web application framework
-- **cors**: Cross-origin resource sharing middleware
-- **helmet**: Security middleware for HTTP headers
-- **express-rate-limit**: API rate limiting
-- **jsonwebtoken**: JWT token generation and verification
-- **bcryptjs**: Password hashing utility
+- **Express.js**: Web framework.
+- **cors**: CORS middleware.
+- **helmet**: Security middleware.
+- **express-rate-limit**: API rate limiting.
+- **jsonwebtoken**: JWT handling.
+- **bcryptjs**: Password hashing.
 
 ## State Management
-- **Redux Toolkit**: Modern Redux with reduced boilerplate
-- **Redux-Saga**: Side effect management for async operations
-- **TanStack Query**: Server state management for the main client application
+- **Redux Toolkit**: For state management.
+- **Redux-Saga**: For handling side effects.
+- **TanStack Query**: For server state management (main client application).
