@@ -345,10 +345,14 @@ export const deletedDocumentAPI = {
 
 // System Configuration APIs
 export const systemConfigAPI = {
-  getAll: () => api.get('/system-config'),
-  update: (key, data) => api.put(`/system-config/${key}`, data),
-  create: (data) => api.post('/system-config', data),
-  delete: (key) => api.delete(`/system-config/${key}`),
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const url = queryString ? `/super-admin/system-config?${queryString}` : '/super-admin/system-config';
+    return api.get(url);
+  },
+  update: (key, data) => api.put(`/super-admin/system-config/${key}`, data),
+  create: (data) => api.post('/super-admin/system-config', data),
+  delete: (key) => api.delete(`/super-admin/system-config/${key}`),
 };
 
 // Analytics & Metrics APIs
@@ -425,8 +429,14 @@ export const superAdminAPI = {
   exportDeletedDocuments: (params) => api.get('/deleted-documents/export', { params, responseType: 'blob' }),
 
   // System Configuration
-  getSystemConfig: () => api.get('/super-admin/system-config'),
-  updateSystemConfig: (key, value) => api.put(`/super-admin/system-config/${key}`, { value }),
+  getSystemConfig: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const url = queryString ? `/super-admin/system-config?${queryString}` : '/super-admin/system-config';
+    return api.get(url);
+  },
+  updateSystemConfig: (key, data) => api.put(`/super-admin/system-config/${key}`, data),
+  createSystemConfig: (data) => api.post('/super-admin/system-config', data),
+  deleteSystemConfig: (key) => api.delete(`/super-admin/system-config/${key}`),
 
   // Analytics
   getAnalytics: (params) => api.get('/super-admin/analytics', { params }),

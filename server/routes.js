@@ -13,6 +13,7 @@ import {
   activityLogs,
   invoiceGenerationConfigs,
   invoiceGenerationLogs,
+  systemConfig,
 } from "../shared/schema.js";
 import {
   eq,
@@ -2817,6 +2818,293 @@ router.get('/documents/:id/download', authenticateToken, async (req, res) => {
     console.error('❌ Error downloading document:', error);
     res.status(500).json({
       error: 'Failed to download document',
+      message: error.message
+    });
+  }
+});
+
+// ================================
+// SYSTEM CONFIGURATION ROUTES
+// ================================
+
+// Get all system configurations with search, filter, and pagination
+router.get('/super-admin/system-config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const {
+      search = '',
+      category = '',
+      isActive = '',
+      page = 1,
+      pageSize = 50,
+      sortBy = 'category',
+      sortOrder = 'asc'
+    } = req.query;
+
+    console.log(`📊 Fetching system configurations with filters:`, {
+      search, category, isActive, page, pageSize, sortBy, sortOrder
+    });
+
+    // Build base query
+    let query = db.select().from(systemConfig);
+
+    // Apply search filter
+    if (search) {
+      query = query.where(
+        or(
+          like(systemConfig.key, `%${search}%`),
+          like(systemConfig.description, `%${search}%`),
+          like(systemConfig.category, `%${search}%`)
+        )
+      );
+    }
+
+    // Apply category filter
+    if (category) {
+      query = query.where(eq(systemConfig.category, category));
+    }
+
+    // Apply active status filter
+    if (isActive !== '') {
+      const activeStatus = isActive === 'true';
+      query = query.where(eq(systemConfig.isActive, activeStatus));
+    }
+
+    // Apply sorting
+    const sortColumn = systemConfig[sortBy] || systemConfig.category;
+    const sortDirection = sortOrder === 'desc' ? desc(sortColumn) : sortColumn;
+    query = query.orderBy(sortDirection, systemConfig.key);
+
+    // Get total count for pagination
+    const totalCountQuery = db.select({ count: count() }).from(systemConfig);
+    
+    // Apply same filters to count query
+    let countQuery = totalCountQuery;
+    if (search) {
+      countQuery = countQuery.where(
+        or(
+          like(systemConfig.key, `%${search}%`),
+          like(systemConfig.description, `%${search}%`),
+          like(systemConfig.category, `%${search}%`)
+        )
+      );
+    }
+    if (category) {
+      countQuery = countQuery.where(eq(systemConfig.category, category));
+    }
+    if (isActive !== '') {
+      const activeStatus = isActive === 'true';
+      countQuery = countQuery.where(eq(systemConfig.isActive, activeStatus));
+    }
+
+    // Execute queries
+    const [configs, totalResult] = await Promise.all([
+      query.limit(parseInt(pageSize)).offset((parseInt(page) - 1) * parseInt(pageSize)),
+      countQuery
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+    const totalPages = Math.ceil(total / parseInt(pageSize));
+
+    // Group configurations by category for easier frontend handling
+    const groupedConfigs = configs.reduce((acc, config) => {
+      if (!acc[config.category]) {
+        acc[config.category] = {};
+      }
+      acc[config.category][config.key] = {
+        value: config.value,
+        description: config.description,
+        updatedAt: config.updatedAt,
+        updatedBy: config.updatedBy,
+        isActive: config.isActive
+      };
+      return acc;
+    }, {});
+
+    // Get available categories for filtering
+    const categoriesResult = await db.selectDistinct({ category: systemConfig.category })
+      .from(systemConfig)
+      .where(eq(systemConfig.isActive, true));
+    const availableCategories = categoriesResult.map(item => item.category);
+
+    console.log(`✅ Retrieved ${configs.length} of ${total} system configurations`);
+    res.json({
+      success: true,
+      data: {
+        configuration: groupedConfigs,
+        configs: configs,
+        totalConfigs: configs.length,
+        pagination: {
+          currentPage: parseInt(page),
+          pageSize: parseInt(pageSize),
+          totalItems: total,
+          totalPages: totalPages,
+          hasNext: parseInt(page) < totalPages,
+          hasPrevious: parseInt(page) > 1
+        },
+        filters: {
+          availableCategories,
+          appliedFilters: { search, category, isActive, sortBy, sortOrder }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching system configurations:', error);
+    res.status(500).json({
+      error: 'Failed to fetch system configurations',
+      message: error.message
+    });
+  }
+});
+
+// Update a specific system configuration
+router.put('/super-admin/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const configKey = req.params.key;
+    const { value, category, description } = req.body;
+    const updatedBy = req.user.email;
+
+    console.log(`🔧 Updating system config: ${configKey}`, { value, category });
+
+    // Validate required fields
+    if (value === undefined) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Value is required'
+      });
+    }
+
+    // Update or insert configuration
+    const result = await db.insert(systemConfig)
+      .values({
+        key: configKey,
+        value: value,
+        category: category || 'general',
+        description: description,
+        updatedBy: updatedBy,
+        updatedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: systemConfig.key,
+        set: {
+          value: value,
+          category: category || 'general',
+          description: description,
+          updatedBy: updatedBy,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+
+    console.log(`✅ System config updated: ${configKey}`);
+    res.json({
+      success: true,
+      message: 'Configuration updated successfully',
+      data: {
+        key: configKey,
+        value: value,
+        category: category || 'general',
+        updatedAt: new Date().toISOString(),
+        updatedBy: updatedBy
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error updating system configuration:', error);
+    res.status(500).json({
+      error: 'Failed to update system configuration',
+      message: error.message
+    });
+  }
+});
+
+// Create a new system configuration
+router.post('/super-admin/system-config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { key, value, category, description } = req.body;
+    const updatedBy = req.user.email;
+
+    console.log(`➕ Creating system config: ${key}`, { value, category });
+
+    // Validate required fields
+    if (!key || value === undefined || !category) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Key, value, and category are required'
+      });
+    }
+
+    // Check if key already exists
+    const existingConfig = await db.select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key))
+      .limit(1);
+
+    if (existingConfig.length > 0) {
+      return res.status(409).json({
+        error: 'Conflict',
+        message: 'Configuration with this key already exists'
+      });
+    }
+
+    // Create new configuration
+    const result = await db.insert(systemConfig)
+      .values({
+        key,
+        value,
+        category,
+        description,
+        updatedBy,
+        updatedAt: new Date()
+      })
+      .returning();
+
+    console.log(`✅ System config created: ${key}`);
+    res.status(201).json({
+      success: true,
+      message: 'Configuration created successfully',
+      data: result[0]
+    });
+  } catch (error) {
+    console.error('❌ Error creating system configuration:', error);
+    res.status(500).json({
+      error: 'Failed to create system configuration',
+      message: error.message
+    });
+  }
+});
+
+// Delete a system configuration
+router.delete('/super-admin/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const configKey = req.params.key;
+    console.log(`🗑️ Deleting system config: ${configKey}`);
+
+    // Check if configuration exists
+    const existingConfig = await db.select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, configKey))
+      .limit(1);
+
+    if (existingConfig.length === 0) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Configuration not found'
+      });
+    }
+
+    // Delete configuration
+    await db.delete(systemConfig)
+      .where(eq(systemConfig.key, configKey));
+
+    console.log(`✅ System config deleted: ${configKey}`);
+    res.json({
+      success: true,
+      message: 'Configuration deleted successfully',
+      key: configKey
+    });
+  } catch (error) {
+    console.error('❌ Error deleting system configuration:', error);
+    res.status(500).json({
+      error: 'Failed to delete system configuration',
       message: error.message
     });
   }

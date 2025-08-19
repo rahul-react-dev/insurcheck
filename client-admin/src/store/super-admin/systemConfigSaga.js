@@ -13,15 +13,26 @@ import {
 } from './systemConfigSlice';
 
 // Saga functions
-function* fetchSystemConfigSaga() {
+function* fetchSystemConfigSaga(action) {
   try {
-    console.log('📡 fetchSystemConfigSaga triggered');
+    console.log('📡 fetchSystemConfigSaga triggered with params:', action.payload);
 
-    const response = yield call(superAdminAPI.getSystemConfig);
+    const params = action.payload || {};
+    const response = yield call(superAdminAPI.getSystemConfig, params);
     console.log('✅ System config API response received:', response);
 
-    const configs = response.configs || response.data || response;
-    yield put(fetchSystemConfigSuccess(configs));
+    // Handle the structured response from backend
+    const responseData = response.data?.data || response.data || response;
+    const payload = {
+      configuration: responseData.configuration || {},
+      auditLogs: responseData.auditLogs || [],
+      configs: responseData.configs || [],
+      totalConfigs: responseData.totalConfigs || 0,
+      pagination: responseData.pagination || {},
+      filters: responseData.filters || {}
+    };
+    
+    yield put(fetchSystemConfigSuccess(payload));
   } catch (error) {
     console.error('❌ Error in fetchSystemConfigSaga:', error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch system configuration';
@@ -35,18 +46,22 @@ function* fetchSystemConfigSaga() {
 
 function* updateSystemConfigSaga(action) {
   try {
-    const { key, value, category } = action.payload;
-    console.log('📡 updateSystemConfigSaga triggered with:', { key, value, category });
+    const { key, value, category, description } = action.payload;
+    console.log('📡 updateSystemConfigSaga triggered with:', { key, value, category, description });
 
-    const response = yield call(superAdminAPI.updateSystemConfig, key, { value, category });
-    const updatedConfig = response.data || response;
+    const response = yield call(superAdminAPI.updateSystemConfig, key, { value, category, description });
+    const updatedConfig = response.data?.data || response.data || response;
 
     yield put(updateSystemConfigSuccess({
       key,
       value,
       category,
+      description,
       updatedConfig
     }));
+
+    // Refresh the configuration data
+    yield put(fetchSystemConfigRequest());
 
     if (window.showNotification) {
       window.showNotification('Configuration updated successfully', 'success');
@@ -68,7 +83,7 @@ function* createSystemConfigSaga(action) {
     console.log('📡 createSystemConfigSaga triggered with:', configData);
 
     const response = yield call(superAdminAPI.createSystemConfig, configData);
-    const newConfig = response.data || response;
+    const newConfig = response.data?.data || response.data || response;
 
     yield put(createSystemConfigSuccess(newConfig));
 
