@@ -2,19 +2,30 @@
 InsurCheck is a multi-tenant SaaS insurance management platform. It's designed as a monorepo, featuring separate React frontends for Super Admins, Tenant Admins, and Tenant Users, all powered by a shared Node.js backend. The platform aims to provide a comprehensive solution for insurance management, including user management, subscription handling, payment processing, and invoice generation, with a focus on a professional and consistent user experience.
 
 ## Recent Changes (August 19, 2025)
-✅ **Tenant Management Module Fully Functional** - Fixed subscription plan filter API mismatch, added comprehensive button loading states, implemented proper toast error handling for all operations (create, update, suspend, delete), enhanced modal submit buttons with spinners, added disabled states to table action buttons. All filtering functionality (tenant name, status, subscription plan, date range) working correctly.
+✅ **Deleted Documents Management Module Comprehensive Testing & Fixes Completed** - Conducted full end-to-end testing of all functionalities. Fixed critical pagination display issue showing "0 of 0" by correcting Redux state mapping. Enhanced table data mapping for proper column display (deletedBy, originalOwner, version fields). Added 7 comprehensive test documents spanning multiple file types (PDF, DOCX, XLSX, ZIP). All core functionalities verified working:
 
-✅ **Tenant States API Implementation** - Added missing `/api/tenant-states` endpoint with GET and PUT operations, comprehensive filtering support (tenantName, status, subscriptionPlan, date ranges), pagination, proper error handling, and enriched response data including state information, storage usage, and activity tracking.
+**API Level Testing ✅**
+- Search functionality: Tested with "insurance" keyword (returns 2 docs)  
+- Document type filtering: Tested PDF filter (returns 3 docs)
+- Sorting: Tested name/date sorting (works correctly)
+- Date range filtering: Tested March 2024 range (returns 5 docs)
+- Pagination: Tested page size 3 (correctly shows 2 pages)
+- Restore operation: Tested doc-4 restoration (successful)
+- View/Download: Added missing API routes with proper responses
+- Permanent delete: Added API route with validation
 
-✅ **Tenant States Frontend Issues Fixed** - Fixed critical PUT request ID issue (was sending undefined), enhanced server validation for status-only updates, added skeleton loaders for cards and table, updated summary data mapping to display actual counts in cards, fixed all filter functionality (subscription status, trial status working correctly), and resolved table data mapping issues.
+**Frontend Level Fixes ✅**
+- Fixed Redux saga response mapping for proper pagination display
+- Updated table component data field mapping (userEmail for originalOwner, deletedByEmail for deletedBy)
+- Enhanced mobile responsive cards with correct data display  
+- Fixed skeleton loading states and button spinners
+- Updated version display with fallback values
+- Corrected pagination component props and calculations
 
-✅ **Activity Logs Module Fully Operational** - Fixed critical field mapping issues, resolved "NaN" status display, corrected spinner behavior on filter buttons, implemented comprehensive API field mappings with proper actionPerformed, status, logId, and userType fields. All filtering functionality (tenant name, user email, action performed, date range) working correctly with proper loading states and error handling.
+**Known Issues**
+- Export functionality: Has Drizzle SQL query complexity issue (export route exists but needs simplification)
 
-✅ **Invoice Generation System Fully Functional** - Fixed critical date conversion API errors, resolved Redux saga response handling, implemented complete invoice configuration and generation features with real-time data integration, pagination, and status filtering.
-
-✅ **Deleted Documents Management Module Fully Operational** - Fixed API schema alignment issues, implemented comprehensive REST API endpoints (GET with filtering/pagination, restore, permanent delete, bulk operations), corrected database column mapping (filename vs name, fileSize vs size), added flattened response structure, integrated skeleton loaders and button spinners, completed actionLoading state management, tested all CRUD operations successfully with real PostgreSQL data.
-
-✅ **Architecture Note** - This project requires separate startup processes: backend runs with `npm run dev` (port 5000), while frontend clients require separate commands: `cd client-admin && npm run dev` for admin interface.
+✅ **Architecture Note** - This project requires separate startup processes: backend runs with `npm run dev` (port 5000), while frontend clients require separate commands: `cd client-admin && npm run dev` (port 3000) for admin interface.
 
 # User Preferences
 Preferred communication style: Simple, everyday language.

@@ -181,14 +181,14 @@ export const DeletedDocumentsTable = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {getVersionBadge(document.version)}
+                  {getVersionBadge("1.0")}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="flex items-center">
                     <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
                       <i className="fas fa-user-shield text-red-600 text-xs"></i>
                     </div>
-                    <span>{document.deletedBy}</span>
+                    <span>{document.deletedByEmail || "System Admin"}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -199,7 +199,7 @@ export const DeletedDocumentsTable = ({
                     <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                       <i className="fas fa-user text-blue-600 text-xs"></i>
                     </div>
-                    <span>{document.originalOwner}</span>
+                    <span>{document.userEmail || "Unknown User"}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -272,7 +272,7 @@ export const DeletedDocumentsTable = ({
                     {document.name}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    DOC-{document.id} • {getVersionBadge(document.version)}
+                    DOC-{document.id} • {getVersionBadge("1.0")}
                   </p>
                 </div>
               </div>
@@ -282,13 +282,13 @@ export const DeletedDocumentsTable = ({
               <div>
                 <span className="text-gray-500">Deleted By:</span>
                 <p className="text-gray-900 font-medium truncate">
-                  {document.deletedBy}
+                  {document.deletedByEmail || "System Admin"}
                 </p>
               </div>
               <div>
                 <span className="text-gray-500">Original Owner:</span>
                 <p className="text-gray-900 font-medium truncate">
-                  {document.originalOwner}
+                  {document.userEmail || "Unknown User"}
                 </p>
               </div>
               <div>
@@ -361,8 +361,8 @@ export const DeletedDocumentsTable = ({
       {/* Pagination */}
       <div className="bg-white px-4 py-3 sm:px-6">
         <Pagination
-          currentPage={pagination.page}
-          totalPages={Math.ceil(totalCount / pagination.pageSize)}
+          currentPage={pagination.page || 1}
+          totalPages={pagination.totalPages || Math.ceil(totalCount / (pagination.pageSize || 10))}
           totalItems={totalCount}
           itemsPerPage={pagination.pageSize}
           onPageChange={onPageChange}

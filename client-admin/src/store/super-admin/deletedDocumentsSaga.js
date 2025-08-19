@@ -27,16 +27,19 @@ function* fetchDeletedDocumentsSaga(action) {
     const response = yield call(superAdminAPI.getDeletedDocuments, params);
     console.log('✅ Deleted documents API response received:', response);
 
-    // Ensure response structure is consistent, prioritizing common patterns
+    // Ensure response structure is consistent with API response
     const validatedResponse = {
       documents: response.documents || response.data || [],
+      totalCount: response.totalCount || response.total || 0,
       pagination: response.pagination || {
-        page: params.page || 1,
-        limit: params.limit || 10,
-        total: response.total || 0,
-        // Calculate totalPages based on total and limit, ensuring it's a number
-        totalPages: Math.ceil((response.total || 0) / (params.limit || 10)) || 1
-      }
+        currentPage: params.page || 1,
+        pageSize: params.limit || 10,
+        total: response.totalCount || response.total || 0,
+        totalPages: Math.ceil((response.totalCount || response.total || 0) / (params.limit || 10)) || 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      },
+      appliedFilters: response.appliedFilters || {}
     };
 
     console.log('📤 Dispatching deleted documents success with:', validatedResponse);
