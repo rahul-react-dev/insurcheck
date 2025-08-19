@@ -29,12 +29,12 @@ function* generateInvoiceSaga(action) {
     console.log('📡 generateInvoiceSaga triggered for tenant:', tenantId);
 
     const response = yield call(superAdminAPI.generateInvoice, tenantId);
-    console.log('✅ Generate invoice API response received:', response.data);
+    console.log('✅ Generate invoice API response received:', response);
 
-    yield put(generateInvoiceSuccess(response.data));
+    yield put(generateInvoiceSuccess(response));
 
     if (window.showNotification) {
-      window.showNotification(response.data.message || 'Invoice generation started successfully', 'success');
+      window.showNotification(response.message || 'Invoice generation started successfully', 'success');
     }
 
     // Refresh invoice logs after a short delay
@@ -43,7 +43,7 @@ function* generateInvoiceSaga(action) {
     }, 2000);
   } catch (error) {
     console.error('❌ Error in generateInvoiceSaga:', error);
-    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to generate invoice';
+    const errorMessage = error?.message || 'Failed to generate invoice';
     yield put(generateInvoiceFailure(errorMessage));
 
     if (window.showNotification) {
@@ -58,12 +58,12 @@ function* fetchInvoiceLogsSaga(action) {
     console.log('📡 fetchInvoiceLogsSaga triggered with params:', params);
 
     const response = yield call(superAdminAPI.getInvoiceLogs, params);
-    console.log('✅ Invoice logs API response received:', response.data);
+    console.log('✅ Invoice logs API response received:', response);
 
-    yield put(fetchInvoiceLogsSuccess(response.data));
+    yield put(fetchInvoiceLogsSuccess(response));
   } catch (error) {
     console.error('❌ Error in fetchInvoiceLogsSaga:', error);
-    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch invoice logs';
+    const errorMessage = error?.message || 'Failed to fetch invoice logs';
     yield put(fetchInvoiceLogsFailure(errorMessage));
 
     if (window.showNotification) {
@@ -77,12 +77,12 @@ function* fetchInvoiceConfigSaga() {
     console.log('📡 fetchInvoiceConfigSaga triggered');
 
     const response = yield call(superAdminAPI.getInvoiceConfig);
-    console.log('✅ Invoice config API response received:', response.data);
+    console.log('✅ Invoice config API response received:', response);
 
-    yield put(fetchInvoiceConfigSuccess(response.data));
+    yield put(fetchInvoiceConfigSuccess(response));
   } catch (error) {
     console.error('❌ Error in fetchInvoiceConfigSaga:', error);
-    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch invoice configuration';
+    const errorMessage = error?.message || 'Failed to fetch invoice configuration';
     yield put(fetchInvoiceConfigFailure(errorMessage));
 
     if (window.showNotification) {
@@ -97,9 +97,9 @@ function* updateInvoiceConfigSaga(action) {
     console.log('📡 updateInvoiceConfigSaga triggered with:', { tenantId, config });
 
     const response = yield call(superAdminAPI.updateInvoiceConfig, { tenantId, ...config });
-    console.log('✅ Update invoice config API response received:', response.data);
+    console.log('✅ Update invoice config API response received:', response);
     
-    yield put(updateInvoiceConfigSuccess(response.data));
+    yield put(updateInvoiceConfigSuccess(response));
 
     if (window.showNotification) {
       window.showNotification('Invoice configuration updated successfully', 'success');
@@ -109,7 +109,7 @@ function* updateInvoiceConfigSaga(action) {
     yield put(fetchInvoiceConfigRequest());
   } catch (error) {
     console.error('❌ Error in updateInvoiceConfigSaga:', error);
-    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update invoice configuration';
+    const errorMessage = error?.message || 'Failed to update invoice configuration';
     yield put(updateInvoiceConfigFailure(errorMessage));
 
     if (window.showNotification) {
@@ -124,9 +124,9 @@ function* retryInvoiceGenerationSaga(action) {
     console.log('📡 retryInvoiceGenerationSaga triggered for log:', logId);
 
     const response = yield call(superAdminAPI.retryInvoiceGeneration, logId);
-    console.log('✅ Retry invoice generation API response received:', response.data);
+    console.log('✅ Retry invoice generation API response received:', response);
 
-    yield put(retryInvoiceGenerationSuccess(response.data));
+    yield put(retryInvoiceGenerationSuccess(response));
 
     if (window.showNotification) {
       window.showNotification('Invoice generation retry started successfully', 'success');
@@ -138,7 +138,7 @@ function* retryInvoiceGenerationSaga(action) {
     }, 2000);
   } catch (error) {
     console.error('❌ Error in retryInvoiceGenerationSaga:', error);
-    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to retry invoice generation';
+    const errorMessage = error?.message || 'Failed to retry invoice generation';
     yield put(retryInvoiceGenerationFailure(errorMessage));
 
     if (window.showNotification) {
