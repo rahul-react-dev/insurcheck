@@ -1,11 +1,46 @@
 // API configuration for admin frontend
-export const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? window.location.origin 
-  : 'http://localhost:5000';
+// In Replit environment, construct the correct backend URL
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // If running in Replit dev environment
+    if (hostname.includes('replit.dev') || hostname.includes('repl.co')) {
+      // Extract the base hostname and construct backend URL
+      // Example: from "4714f73d-c452-465c-a879-41dfeee32c0d-00-3hj62dyd2avxv.janeway.replit.dev:3000"
+      // to "4714f73d-c452-465c-a879-41dfeee32c0d-00-3hj62dyd2avxv.janeway.replit.dev:5000"
+      const baseHostname = hostname.split(':')[0]; // Remove any existing port
+      const backendUrl = `${protocol}//${baseHostname}:5000`;
+      console.log('[API] Replit backend URL:', backendUrl);
+      return backendUrl;
+    }
+    
+    // Local development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+    
+    // Production - same origin
+    return window.location.origin;
+  }
+  
+  // Fallback for server-side rendering
+  return 'http://localhost:5000';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+console.log('[API] Configured API_BASE_URL:', API_BASE_URL);
 
 // Helper function for making authenticated API calls
 export const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('adminToken');
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  
+  // Debug logging
+  console.log('[API] Making request to:', fullUrl);
+  console.log('[API] Base URL:', API_BASE_URL);
+  console.log('[API] Endpoint:', endpoint);
   
   const defaultHeaders = {
     'Content-Type': 'application/json',
@@ -15,7 +50,7 @@ export const apiCall = async (endpoint, options = {}) => {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(fullUrl, {
     headers: defaultHeaders,
     ...options,
     headers: {
@@ -24,8 +59,12 @@ export const apiCall = async (endpoint, options = {}) => {
     },
   });
 
+  console.log('[API] Response status:', response.status);
+  console.log('[API] Response ok:', response.ok);
+
   if (!response.ok) {
     const error = await response.json();
+    console.error('[API] Error response:', error);
     throw new Error(JSON.stringify(error));
   }
 
