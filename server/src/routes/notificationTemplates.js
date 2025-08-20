@@ -93,21 +93,14 @@ router.post(
   createNotificationTemplate
 );
 
-// Update notification template
+// Update notification template (only editable fields as per requirements)
 router.put(
   '/:id',
   authMiddleware,
   adminRoleMiddleware,
   [
     param('id').isUUID().withMessage('Invalid template ID'),
-    body('templateType')
-      .isIn(['compliance_result', 'audit_log', 'user_notification', 'system_alert'])
-      .withMessage('Template type must be one of: compliance_result, audit_log, user_notification, system_alert'),
-    body('name')
-      .notEmpty()
-      .withMessage('Template name is required')
-      .isLength({ min: 2, max: 100 })
-      .withMessage('Template name must be between 2 and 100 characters'),
+    // Only validate editable fields: Subject, Header, Body, Footer
     body('subject')
       .notEmpty()
       .withMessage('Subject is required')
@@ -126,11 +119,6 @@ router.put(
       .optional()
       .isLength({ max: 1000 })
       .withMessage('Footer must not exceed 1000 characters'),
-    body('variables')
-      .optional()
-      .isArray()
-      .withMessage('Variables must be an array'),
-    body('isActive').isBoolean().withMessage('isActive must be boolean')
   ],
   handleValidationErrors,
   updateNotificationTemplate

@@ -1,44 +1,26 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   fetchTemplatesRequest,
-  fetchStatsRequest,
-  deleteTemplateRequest,
-  updateFilters,
-  clearCreateState,
+  updateTemplateRequest,
+  previewTemplateRequest,
   clearUpdateState,
-  clearDeleteState,
-  setSelectedTemplate,
+  clearPreviewState,
 } from '../../store/admin/notificationTemplatesSlice';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useToast } from '../../hooks/use-toast';
-import NotificationTemplateEditor from '../../components/admin/NotificationTemplateEditor';
-import NotificationTemplatePreview from '../../components/admin/NotificationTemplatePreview';
-import NotificationTemplateAuditLogs from '../../components/admin/NotificationTemplateAuditLogs';
 import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  History, 
   Mail,
-  Filter,
-  RefreshCw,
-  ChevronUp,
-  ChevronDown,
-  MoreHorizontal,
-  Activity,
-  Bell,
   Shield,
   AlertTriangle,
-  CheckCircle2,
-  Calendar
+  Eye,
+  Save,
+  RefreshCw
 } from 'lucide-react';
 
-const  NotificationTemplates = () => {
+const NotificationTemplates = () => {
   const { toast } = useToast();
   const dispatch = useDispatch();
   
@@ -47,597 +29,342 @@ const  NotificationTemplates = () => {
     templates,
     templatesLoading,
     templatesError,
-    templatesMeta,
-    stats,
-    statsLoading,
-    statsError,
-    deleteLoading,
-    deleteSuccess,
-    createSuccess,
+    updateLoading,
     updateSuccess,
-    filters
+    updateError,
+    previewData,
+    previewLoading,
+    previewError,
   } = useSelector(state => state.notificationTemplates);
 
   // State management
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [templateType, setTemplateType] = useState('');
-  const [isActive, setIsActive] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [editedTemplate, setEditedTemplate] = useState(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Dialog states
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState(null);
-  const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
-  const [auditTemplateId, setAuditTemplateId] = useState(null);
-  const [deleteTemplateId, setDeleteTemplateId] = useState(null);
+  // Sample data for preview
+  const sampleData = {
+    organizationName: 'InsurCheck Corporation',
+    userName: 'John Smith',
+    documentName: 'Policy Document XYZ-123',
+    complianceScore: '95%',
+    issues: '2 minor issues found',
+    reviewDate: new Date().toLocaleDateString(),
+  };
 
-  // Template type configurations
+  // Template type configurations (only compliance and audit as required)
   const templateTypeConfig = {
     compliance_result: {
       icon: Shield,
       label: 'Compliance Result',
+      description: 'Notifications sent after document compliance checks',
       color: 'bg-blue-100 text-blue-800',
-      description: 'Notifications sent when compliance checks are completed'
     },
     audit_log: {
-      icon: Activity,
-      label: 'Audit Log',
-      color: 'bg-purple-100 text-purple-800',
-      description: 'Notifications for audit trail events and security logs'
-    },
-    user_notification: {
-      icon: Bell,
-      label: 'User Notification',
-      color: 'bg-green-100 text-green-800',
-      description: 'General user notifications and account updates'
-    },
-    system_alert: {
       icon: AlertTriangle,
-      label: 'System Alert',
-      color: 'bg-red-100 text-red-800',
-      description: 'System maintenance and critical alerts'
-    }
+      label: 'Audit Log',
+      description: 'Notifications for audit events and changes',
+      color: 'bg-orange-100 text-orange-800',
+    },
   };
 
-  // Query parameters object
-  const queryParams = useMemo(() => ({
-    page: currentPage,
-    limit: pageSize,
-    search: search.trim(),
-    sortBy,
-    sortOrder,
-    templateType,
-    isActive,
-  }), [currentPage, pageSize, search, sortBy, sortOrder, templateType, isActive]);
-
-  // Load data on component mount and when parameters change
+  // Fetch templates on component mount
   useEffect(() => {
-    dispatch(fetchTemplatesRequest(queryParams));
-  }, [dispatch, currentPage, pageSize, search, sortBy, sortOrder, templateType, isActive]);
-
-  useEffect(() => {
-    dispatch(fetchStatsRequest());
+    dispatch(fetchTemplatesRequest({
+      templateType: 'compliance_result,audit_log', // Only these two types
+      limit: 10
+    }));
   }, [dispatch]);
 
   // Handle success/error states
   useEffect(() => {
-    if (deleteSuccess) {
-      toast({
-        title: 'Template deleted',
-        description: 'The notification template has been successfully deleted.',
-      });
-      dispatch(clearDeleteState());
-      setDeleteTemplateId(null);
-      // Refresh data
-      dispatch(fetchTemplatesRequest(queryParams));
-      dispatch(fetchStatsRequest());
-    }
-  }, [deleteSuccess, dispatch, queryParams]);
-
-  useEffect(() => {
-    if (createSuccess) {
-      toast({
-        title: 'Template created',
-        description: 'The notification template has been successfully created.',
-      });
-      dispatch(clearCreateState());
-      setIsEditorOpen(false);
-      setEditingTemplate(null);
-      // Refresh data
-      dispatch(fetchTemplatesRequest(queryParams));
-      dispatch(fetchStatsRequest());
-    }
-  }, [createSuccess, dispatch, queryParams]);
-
-  useEffect(() => {
     if (updateSuccess) {
       toast({
-        title: 'Template updated',
-        description: 'The notification template has been successfully updated.',
+        title: 'Template updated successfully.',
+        description: 'Changes have been applied to all future notifications.',
+        variant: 'default',
+      });
+      setHasChanges(false);
+      dispatch(clearUpdateState());
+      // Refresh templates list
+      dispatch(fetchTemplatesRequest({
+        templateType: 'compliance_result,audit_log',
+        limit: 10
+      }));
+    }
+  }, [updateSuccess, dispatch, toast]);
+
+  useEffect(() => {
+    if (updateError) {
+      toast({
+        title: 'Invalid template format. Please check inputs.',
+        description: updateError,
+        variant: 'destructive',
       });
       dispatch(clearUpdateState());
-      setIsEditorOpen(false);
-      setEditingTemplate(null);
-      // Refresh data
-      dispatch(fetchTemplatesRequest(queryParams));
-      dispatch(fetchStatsRequest());
     }
-  }, [updateSuccess, dispatch, queryParams]);
+  }, [updateError, dispatch, toast]);
 
-  // Handler functions
-  const handleCreateTemplate = () => {
-    setEditingTemplate(null);
-    setIsEditorOpen(true);
-  };
-
-  const handleEditTemplate = (template) => {
-    setEditingTemplate(template);
-    setIsEditorOpen(true);
-  };
-
-  const handlePreviewTemplate = (template) => {
-    setPreviewTemplate(template);
-    setIsPreviewOpen(true);
-  };
-
-  const handleShowAuditLogs = (templateId = null) => {
-    setAuditTemplateId(templateId);
-    setIsAuditLogsOpen(true);
-  };
-
-  const handleDeleteTemplate = (templateId) => {
-    setDeleteTemplateId(templateId);
-  };
-
-  const confirmDelete = () => {
-    if (deleteTemplateId) {
-      dispatch(deleteTemplateRequest(deleteTemplateId));
-    }
-  };
-
-  const resetFilters = () => {
-    setSearch('');
-    setTemplateType('');
-    setIsActive('');
-    setSortBy('createdAt');
-    setSortOrder('desc');
-    setCurrentPage(1);
-  };
-
-  const refreshData = () => {
-    dispatch(fetchTemplatesRequest(queryParams));
-    dispatch(fetchStatsRequest());
-  };
-
-  const handleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-    setCurrentPage(1);
-  };
-
-  // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1);
-  }, [search, templateType, isActive]);
+    if (previewError) {
+      toast({
+        title: 'Failed to preview template. Please try again.',
+        description: previewError,
+        variant: 'destructive',
+      });
+    }
+  }, [previewError, toast]);
 
-  // Data from Redux store
-  const meta = templatesMeta;
+  // Handle template selection
+  const handleSelectTemplate = (template) => {
+    setSelectedTemplate(template);
+    setEditedTemplate({ ...template });
+    setIsPreviewMode(false);
+    setHasChanges(false);
+  };
 
-  const SortButton = ({ field, children }) => (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleSort(field)}
-      className="h-auto p-0 font-medium hover:bg-transparent"
-    >
-      <span className="flex items-center gap-1">
-        {children}
-        {sortBy === field && (
-          sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
-        )}
-      </span>
-    </Button>
+  // Handle field changes
+  const handleFieldChange = (field, value) => {
+    setEditedTemplate(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setHasChanges(true);
+  };
+
+  // Handle save template
+  const handleSaveTemplate = () => {
+    if (!editedTemplate || !hasChanges) return;
+
+    dispatch(updateTemplateRequest({
+      id: editedTemplate.id,
+      templateData: {
+        subject: editedTemplate.subject,
+        header: editedTemplate.header,
+        body: editedTemplate.body,
+        footer: editedTemplate.footer,
+      }
+    }));
+  };
+
+  // Handle preview template
+  const handlePreviewTemplate = () => {
+    if (!editedTemplate) return;
+
+    dispatch(previewTemplateRequest({
+      ...editedTemplate,
+      variables: sampleData
+    }));
+    setIsPreviewMode(true);
+  };
+
+  // Filter templates to only show compliance and audit types
+  const filteredTemplates = templates.filter(t => 
+    t.templateType === 'compliance_result' || t.templateType === 'audit_log'
   );
+
+  if (templatesLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="h-4 w-4 animate-spin" />
+          <span>Loading notification templates...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notification Templates</h1>
-          <p className="text-gray-600">
-            Create and manage email templates for compliance results, audit logs, and system notifications
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={refreshData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={handleCreateTemplate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Template
-          </Button>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Configure Notification Templates</h1>
+        <p className="text-gray-600">
+          Customize email notifications for compliance results and audit logs to align with organizational branding.
+        </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Total Templates</h3>
-            <Mail className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold">
-            {statsLoading ? (
-              <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              stats.total || 0
-            )}
-          </div>
-          <p className="text-xs text-gray-500">Across all types</p>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Active Templates</h3>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-          </div>
-          <div className="text-2xl font-bold">
-            {statsLoading ? (
-              <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              stats.active || 0
-            )}
-          </div>
-          <p className="text-xs text-gray-500">Ready to use</p>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Inactive Templates</h3>
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
-          </div>
-          <div className="text-2xl font-bold">
-            {statsLoading ? (
-              <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              stats.inactive || 0
-            )}
-          </div>
-          <p className="text-xs text-gray-500">Disabled templates</p>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Compliance Templates</h3>
-            <Shield className="h-4 w-4 text-blue-600" />
-          </div>
-          <div className="text-2xl font-bold">
-            {statsLoading ? (
-              <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              (stats.byType?.compliance_result || 0) + (stats.byType?.audit_log || 0)
-            )}
-          </div>
-          <p className="text-xs text-gray-500">Compliance related</p>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Filter Templates</h3>
-        <p className="text-sm text-gray-500 mb-4">Search and filter notification templates</p>
-        
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Search</label>
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name, subject, or type..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Template Type</label>
-            <select 
-              value={templateType} 
-              onChange={(e) => setTemplateType(e.target.value)}
-              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All types</option>
-              <option value="compliance_result">Compliance Result</option>
-              <option value="audit_log">Audit Log</option>
-              <option value="user_notification">User Notification</option>
-              <option value="system_alert">System Alert</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Status</label>
-            <select 
-              value={isActive} 
-              onChange={(e) => setIsActive(e.target.value)}
-              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All statuses</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <Button variant="outline" onClick={resetFilters} className="w-full">
-              <Filter className="h-4 w-4 mr-2" />
-              Reset Filters
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Templates List */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Templates ({meta.total || 0})</h3>
-            <p className="text-sm text-gray-500">
-              {meta.total ? `Page ${meta.page} of ${meta.totalPages}` : 'No templates found'}
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => handleShowAuditLogs(null)}>
-            <History className="h-4 w-4 mr-2" />
-            View All Audit Logs
-          </Button>
-        </div>
-
-        {templatesError && (
-          <div className="text-center py-6 text-red-600">
-            Error loading templates: {templatesError.message}
-          </div>
-        )}
-
-        {/* Templates Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left p-4 font-medium text-gray-600">
-                  <SortButton field="name">Name</SortButton>
-                </th>
-                <th className="text-left p-4 font-medium text-gray-600">
-                  <SortButton field="templateType">Type</SortButton>
-                </th>
-                <th className="text-left p-4 font-medium text-gray-600">
-                  <SortButton field="subject">Subject</SortButton>
-                </th>
-                <th className="text-left p-4 font-medium text-gray-600">Status</th>
-                <th className="text-left p-4 font-medium text-gray-600">
-                  <SortButton field="createdAt">Created</SortButton>
-                </th>
-                <th className="text-left p-4 font-medium text-gray-600">Created By</th>
-                <th className="text-right p-4 font-medium text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {templatesLoading ? (
-                Array.from({ length: pageSize }).map((_, index) => (
-                  <tr key={index} className="border-b border-gray-100">
-                    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></td>
-                    <td className="p-4"><div className="h-6 w-24 bg-gray-200 rounded animate-pulse" /></td>
-                    <td className="p-4"><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></td>
-                    <td className="p-4"><div className="h-6 w-16 bg-gray-200 rounded animate-pulse" /></td>
-                    <td className="p-4"><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></td>
-                    <td className="p-4"><div className="h-4 w-28 bg-gray-200 rounded animate-pulse" /></td>
-                    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded animate-pulse ml-auto" /></td>
-                  </tr>
-                ))
-              ) : templates.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-500">
-                    No notification templates found. Create your first template to get started.
-                  </td>
-                </tr>
-              ) : (
-                templates.map((template) => {
-                  const typeConfig = templateTypeConfig[template.templateType] || templateTypeConfig.user_notification;
-                  const IconComponent = typeConfig.icon;
-
-                  return (
-                    <tr key={template.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="p-4 font-medium">{template.name}</td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeConfig.color}`}>
-                          <IconComponent className="h-3 w-3 mr-1" />
-                          {typeConfig.label}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Template Selection */}
+        <div className="lg:col-span-1">
+          <Card className="p-4">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Templates
+            </h2>
+            
+            <div className="space-y-3">
+              {filteredTemplates.map((template) => {
+                const config = templateTypeConfig[template.templateType];
+                const IconComponent = config?.icon || Mail;
+                
+                return (
+                  <div
+                    key={template.id}
+                    onClick={() => handleSelectTemplate(template)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedTemplate?.id === template.id 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <IconComponent className="h-5 w-5 text-gray-600 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm text-gray-900 truncate">
+                          {config?.label || template.templateType}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {config?.description}
+                        </p>
+                        <span className={`inline-block text-xs px-2 py-1 rounded-full mt-2 ${config?.color}`}>
+                          {template.templateType}
                         </span>
-                      </td>
-                      <td className="p-4 max-w-xs truncate">
-                        {template.subject}
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          template.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {template.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(template.createdAt).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm text-gray-500">
-                        {template.createdByName || 'Unknown'}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handlePreviewTemplate(template)}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditTemplate(template)}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleShowAuditLogs(template.id)}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
-                            <History className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteTemplate(template.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-sm text-gray-500">
-              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, meta.total)} of {meta.total} templates
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === meta.totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Delete Confirmation Modal */}
-      {deleteTemplateId && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+            
+            {filteredTemplates.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No templates found</p>
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Delete Template</h3>
-            </div>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this notification template? This action cannot be undone.
-              All future notifications using this template will be affected.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-end gap-3">
-              <Button
-                onClick={() => setDeleteTemplateId(null)}
-                variant="outline"
-                disabled={deleteLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmDelete}
-                disabled={deleteLoading}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {deleteLoading ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete Template'
-                )}
-              </Button>
-            </div>
-          </div>
+            )}
+          </Card>
         </div>
-      )}
 
-      {/* Template Editor Modal */}
-      {isEditorOpen && (
-        <NotificationTemplateEditor
-          template={editingTemplate}
-          isOpen={isEditorOpen}
-          onClose={() => {
-            setIsEditorOpen(false);
-            setEditingTemplate(null);
-          }}
-          onSave={() => {
-            setIsEditorOpen(false);
-            setEditingTemplate(null);
-          }}
-        />
-      )}
+        {/* Template Editor */}
+        <div className="lg:col-span-2">
+          {selectedTemplate ? (
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold">Edit Template</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviewTemplate}
+                    disabled={previewLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    {previewLoading ? 'Generating...' : 'Preview'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveTemplate}
+                    disabled={!hasChanges || updateLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {updateLoading ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </div>
 
-      {/* Template Preview Modal */}
-      {isPreviewOpen && previewTemplate && (
-        <NotificationTemplatePreview
-          template={previewTemplate}
-          isOpen={isPreviewOpen}
-          onClose={() => {
-            setIsPreviewOpen(false);
-            setPreviewTemplate(null);
-          }}
-        />
-      )}
+              {isPreviewMode && previewData ? (
+                // Preview Mode
+                <div className="space-y-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2 text-gray-700">Email Preview</h3>
+                    <div className="bg-white border rounded-lg p-4">
+                      <div className="border-b pb-3 mb-4">
+                        <h4 className="font-medium text-gray-900">{previewData.subject}</h4>
+                      </div>
+                      <div className="space-y-4 text-sm">
+                        <div className="font-medium">{previewData.header}</div>
+                        <div className="whitespace-pre-wrap">{previewData.body}</div>
+                        <div className="pt-4 border-t text-gray-600">{previewData.footer}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsPreviewMode(false)}
+                    className="w-full"
+                  >
+                    Back to Editor
+                  </Button>
+                </div>
+              ) : (
+                // Edit Mode  
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject Line
+                    </label>
+                    <Input
+                      value={editedTemplate?.subject || ''}
+                      onChange={(e) => handleFieldChange('subject', e.target.value)}
+                      placeholder="Enter email subject..."
+                      className="w-full"
+                    />
+                  </div>
 
-      {/* Audit Logs Modal */}
-      {isAuditLogsOpen && (
-        <NotificationTemplateAuditLogs
-          templateId={auditTemplateId}
-          isOpen={isAuditLogsOpen}
-          onClose={() => {
-            setIsAuditLogsOpen(false);
-            setAuditTemplateId(null);
-          }}
-        />
-      )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Header
+                    </label>
+                    <textarea
+                      value={editedTemplate?.header || ''}
+                      onChange={(e) => handleFieldChange('header', e.target.value)}
+                      placeholder="Enter email header..."
+                      className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Body
+                    </label>
+                    <textarea
+                      value={editedTemplate?.body || ''}
+                      onChange={(e) => handleFieldChange('body', e.target.value)}
+                      placeholder="Enter email body..."
+                      className="w-full min-h-[150px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Footer
+                    </label>
+                    <textarea
+                      value={editedTemplate?.footer || ''}
+                      onChange={(e) => handleFieldChange('footer', e.target.value)}
+                      placeholder="Enter email footer..."
+                      className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      <strong>Available Variables:</strong> {{organizationName}}, {{userName}}, {{documentName}}, {{complianceScore}}, {{issues}}, {{reviewDate}}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </Card>
+          ) : (
+            <Card className="p-8">
+              <div className="text-center text-gray-500">
+                <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">Select a Template</h3>
+                <p className="text-sm">
+                  Choose a notification template from the left to start editing.
+                </p>
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
+};
 
-export default NotificationTemplates
+export default NotificationTemplates;

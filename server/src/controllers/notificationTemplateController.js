@@ -256,12 +256,12 @@ export const createNotificationTemplate = async (req, res) => {
   }
 };
 
-// Update notification template
+// Update notification template (only Subject, Header, Body, Footer as per requirements)
 export const updateNotificationTemplate = async (req, res) => {
   try {
     const { tenantId, userId } = req.user;
     const { id } = req.params;
-    const { templateType, name, subject, header, body, footer, variables, isActive } = req.body;
+    const { subject, header, body, footer } = req.body;
 
     // First, get the current template for audit logging
     const [currentTemplate] = await db
@@ -281,15 +281,12 @@ export const updateNotificationTemplate = async (req, res) => {
 
     console.log(`👤 Updating notification template: ${currentTemplate.name} for tenant ${tenantId}`);
 
+    // Only update the editable fields as per exact requirements
     const updateData = {
-      templateType,
-      name,
       subject,
-      header,
+      header: header || '',
       body,
-      footer,
-      variables: variables ? JSON.stringify(variables) : '[]',
-      isActive,
+      footer: footer || '',
       updatedBy: userId,
       updatedAt: new Date()
     };
@@ -318,27 +315,20 @@ export const updateNotificationTemplate = async (req, res) => {
       `Template updated by user`
     );
 
-    console.log(`✅ Notification template updated: ${name}`);
+    console.log(`✅ Notification template updated: ${updatedTemplate.name}`);
 
     res.json({
       success: true,
-      message: 'Template updated successfully',
+      message: 'Template updated successfully.',
       data: updatedTemplate
     });
 
   } catch (error) {
     console.error('Update notification template error:', error);
     
-    if (error.code === '23505') { // Unique constraint violation
-      return res.status(400).json({
-        success: false,
-        message: 'A template with this name and type already exists for your organization.'
-      });
-    }
-    
     res.status(500).json({
       success: false,
-      message: 'Failed to update notification template. Please try again.'
+      message: 'Invalid template format. Please check inputs.'
     });
   }
 };
