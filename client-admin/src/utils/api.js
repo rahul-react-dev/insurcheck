@@ -161,6 +161,36 @@ export const adminAuthApi = {
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/api/admin/notification-templates/audit-logs?${queryString}`);
   },
+
+  // Admin Invoices Management API
+  getInvoices: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/invoices?${queryString}`);
+  },
+
+  getInvoiceDetails: (invoiceId) => apiCall(`/api/admin/invoices/${invoiceId}`),
+
+  processPayment: (paymentData) => apiCall('/api/admin/invoices/pay', {
+    method: 'POST',
+    body: JSON.stringify(paymentData),
+  }),
+
+  downloadReceipt: (invoiceId) => {
+    return fetch(`${API_BASE_URL}/api/admin/invoices/${invoiceId}/receipt`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+  },
+
+  exportInvoices: (format = 'csv', filters = {}) => {
+    const queryString = new URLSearchParams({ format, ...filters }).toString();
+    return fetch(`${API_BASE_URL}/api/admin/invoices/export?${queryString}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+  },
 };
 
 // Super Admin API (comprehensive - all required methods)

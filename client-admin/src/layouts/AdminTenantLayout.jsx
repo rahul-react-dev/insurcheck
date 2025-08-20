@@ -54,6 +54,12 @@ const AdminTenantLayout = ({ children }) => {
       roles: ["tenant-admin", "admin"],
     },
     {
+      name: "Invoices",
+      path: "/admin/invoices",
+      icon: "fas fa-file-invoice-dollar",
+      roles: ["tenant-admin", "admin"],
+    },
+    {
       name: "Settings",
       path: "/admin/settings",
       icon: "fas fa-cogs",
