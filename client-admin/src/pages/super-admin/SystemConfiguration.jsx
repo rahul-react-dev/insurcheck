@@ -14,7 +14,8 @@ import {
   resetConfigurationState,
   clearConfigurationErrors,
   fetchTenantConfigRequest,
-  updateTenantConfigRequest
+  updateTenantConfigRequest,
+  fetchTenantsListRequest
 } from '../../store/super-admin/systemConfigSlice';
 
 const SystemConfiguration = () => {
@@ -282,9 +283,72 @@ const SystemConfiguration = () => {
       }));
       
     } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
-      dispatch(updateTenantConfigRequest({ 
-        tenantId: selectedTenantId, 
-        configuration: formData 
+      // Convert form data to tenant config updates format similar to system config
+      const configUpdates = [];
+      
+      // Security Settings
+      configUpdates.push({
+        key: 'email_2fa_enabled',
+        value: formData.twoFactorAuth?.emailEnabled || false,
+        category: 'security'
+      });
+      configUpdates.push({
+        key: 'sms_2fa_enabled',
+        value: formData.twoFactorAuth?.smsEnabled || false,
+        category: 'security'
+      });
+      
+      // File & Storage Settings
+      configUpdates.push({
+        key: 'max_file_size_mb',
+        value: formData.maxFileSize || 10,
+        category: 'storage'
+      });
+      configUpdates.push({
+        key: 'max_users_per_tenant',
+        value: formData.maxUsersPerTenant || 50,
+        category: 'storage'
+      });
+      configUpdates.push({
+        key: 'max_documents_per_tenant',
+        value: formData.maxDocumentsPerTenant || 1000,
+        category: 'storage'
+      });
+      
+      // Email & Communication Settings
+      configUpdates.push({
+        key: 'email_retry_limits',
+        value: formData.emailRetryLimits || 3,
+        category: 'email'
+      });
+      
+      // Backup & Maintenance Settings
+      configUpdates.push({
+        key: 'backup_frequency',
+        value: formData.backupFrequency,
+        category: 'backup'
+      });
+      configUpdates.push({
+        key: 'auto_delete_interval',
+        value: formData.autoDeleteInterval,
+        category: 'backup'
+      });
+      
+      // Feature Toggles
+      if (formData.featureToggles) {
+        Object.keys(formData.featureToggles).forEach(featureKey => {
+          configUpdates.push({
+            key: `feature_${featureKey}`,
+            value: formData.featureToggles[featureKey],
+            category: 'features'
+          });
+        });
+      }
+      
+      // Dispatch tenant-specific batch update
+      dispatch(updateTenantConfigRequest({
+        tenantId: selectedTenantId,
+        updates: configUpdates
       }));
     }
   };
@@ -320,6 +384,11 @@ const SystemConfiguration = () => {
     setHasUnsavedChanges(false);
     setValidationErrors({});
     dispatch(clearConfigurationErrors());
+    
+    // Fetch tenants list when switching to tenant-specific scope
+    if (scope === 'tenant-specific') {
+      dispatch(fetchTenantsListRequest());
+    }
   };
 
   const handleTenantSelect = (tenantId) => {
@@ -332,6 +401,45 @@ const SystemConfiguration = () => {
       dispatch(fetchTenantConfigRequest(tenantId));
     }
   };
+
+  // Effect to handle tenant-specific configuration loading
+  useEffect(() => {
+    if (configurationScope === 'tenant-specific' && selectedTenantId && tenantConfigurations[selectedTenantId]) {
+      // Convert tenant configuration format to form format
+      const tenantConfig = tenantConfigurations[selectedTenantId];
+      const formConfig = {
+        // Security Settings
+        twoFactorAuth: {
+          emailEnabled: tenantConfig.security?.find(c => c.key === 'email_2fa_enabled')?.value || false,
+          smsEnabled: tenantConfig.security?.find(c => c.key === 'sms_2fa_enabled')?.value || false
+        },
+        
+        // File & Storage Settings
+        maxFileSize: tenantConfig.storage?.find(c => c.key === 'max_file_size_mb')?.value || 10,
+        maxUsersPerTenant: tenantConfig.storage?.find(c => c.key === 'max_users_per_tenant')?.value || 50,
+        maxDocumentsPerTenant: tenantConfig.storage?.find(c => c.key === 'max_documents_per_tenant')?.value || 1000,
+        
+        // Email & Communication Settings
+        emailRetryLimits: tenantConfig.email?.find(c => c.key === 'email_retry_limits')?.value || 3,
+        
+        // Backup & Maintenance Settings
+        backupFrequency: tenantConfig.backup?.find(c => c.key === 'backup_frequency')?.value || 'Daily',
+        autoDeleteInterval: tenantConfig.backup?.find(c => c.key === 'auto_delete_interval')?.value || 60,
+        
+        // Feature Toggles
+        featureToggles: {
+          trialExtensions: tenantConfig.features?.find(c => c.key === 'feature_trialExtensions')?.value !== false,
+          autoInvoicing: tenantConfig.features?.find(c => c.key === 'feature_autoInvoicing')?.value !== false,
+          documentVersioning: tenantConfig.features?.find(c => c.key === 'feature_documentVersioning')?.value || false,
+          advancedAnalytics: tenantConfig.features?.find(c => c.key === 'feature_advancedAnalytics')?.value || false,
+          apiAccess: tenantConfig.features?.find(c => c.key === 'feature_apiAccess')?.value !== false
+        }
+      };
+      
+      setFormData(formConfig);
+      setHasUnsavedChanges(false);
+    }
+  }, [configurationScope, selectedTenantId, tenantConfigurations]);
 
   const filteredTenants = availableTenants?.filter(tenant =>
     tenant.name.toLowerCase().includes(tenantSearchTerm.toLowerCase()) ||

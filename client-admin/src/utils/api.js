@@ -431,6 +431,13 @@ export const superAdminAPI = {
   createSystemConfig: (data) => api.post('/super-admin/system-config', data),
   deleteSystemConfig: (key) => api.delete(`/super-admin/system-config/${key}`),
 
+  // Tenant-Specific Configuration
+  getTenantConfig: (tenantId) => api.get(`/super-admin/tenant/${tenantId}/config`),
+  batchUpdateTenantConfig: (tenantId, updates) => api.put(`/super-admin/tenant/${tenantId}/config/batch`, { updates }),
+  
+  // Tenants List (for selection)
+  getTenantsList: () => api.get('/super-admin/tenants/list'),
+
   // Analytics
   getAnalytics: (params) => api.get('/super-admin/analytics', { params }),
   getDashboardStats: () => api.get('/super-admin/dashboard-stats'),

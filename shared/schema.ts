@@ -162,6 +162,19 @@ export const systemConfig = pgTable("system_config", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Tenant-specific configuration table
+export const tenantConfig = pgTable("tenant_config", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  key: text("key").notNull(),
+  value: jsonb("value").notNull(),
+  category: text("category").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // System Metrics table
 export const systemMetrics = pgTable("system_metrics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -180,6 +193,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   payments: many(payments),
   invoices: many(invoices),
   activityLogs: many(activityLogs),
+  tenantConfigs: many(tenantConfig),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -253,6 +267,13 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   user: one(users, {
     fields: [activityLogs.userId],
     references: [users.id],
+  }),
+}));
+
+export const tenantConfigRelations = relations(tenantConfig, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantConfig.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -418,6 +439,14 @@ export const insertSystemConfigSchema = createInsertSchema(systemConfig).pick({
   category: true,
 });
 
+export const insertTenantConfigSchema = createInsertSchema(tenantConfig).pick({
+  tenantId: true,
+  key: true,
+  value: true,
+  description: true,
+  category: true,
+});
+
 // TypeScript types
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -428,6 +457,7 @@ export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
+export type InsertTenantConfig = z.infer<typeof insertTenantConfigSchema>;
 export type InsertInvoiceGenerationConfig = z.infer<typeof insertInvoiceGenerationConfigSchema>;
 export type InsertInvoiceGenerationLog = z.infer<typeof insertInvoiceGenerationLogSchema>;
 
@@ -442,4 +472,5 @@ export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InvoiceGenerationConfig = typeof invoiceGenerationConfigs.$inferSelect;
 export type InvoiceGenerationLog = typeof invoiceGenerationLogs.$inferSelect;
 export type SystemConfig = typeof systemConfig.$inferSelect;
+export type TenantConfig = typeof tenantConfig.$inferSelect;
 export type SystemMetric = typeof systemMetrics.$inferSelect;

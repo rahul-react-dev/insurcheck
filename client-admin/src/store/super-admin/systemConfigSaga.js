@@ -9,7 +9,16 @@ import {
   updateSystemConfigFailure,
   createSystemConfigRequest,
   createSystemConfigSuccess,
-  createSystemConfigFailure
+  createSystemConfigFailure,
+  fetchTenantsListRequest,
+  fetchTenantsListSuccess,
+  fetchTenantsListFailure,
+  fetchTenantConfigRequest,
+  fetchTenantConfigSuccess,
+  fetchTenantConfigFailure,
+  updateTenantConfigRequest,
+  updateTenantConfigSuccess,
+  updateTenantConfigFailure,
 } from './systemConfigSlice';
 
 // Saga functions
@@ -109,6 +118,77 @@ function* createSystemConfigSaga(action) {
   }
 }
 
+// Tenant-specific sagas
+function* fetchTenantsListSaga() {
+  try {
+    console.log('📡 fetchTenantsListSaga triggered');
+
+    const response = yield call(superAdminAPI.getTenantsList);
+    console.log('✅ Tenants list API response received:', response);
+
+    yield put(fetchTenantsListSuccess(response));
+  } catch (error) {
+    console.error('❌ Error in fetchTenantsListSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch tenants list';
+    yield put(fetchTenantsListFailure({ message: errorMessage }));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to load tenants list. Please try again.', 'error');
+    }
+  }
+}
+
+function* fetchTenantConfigSaga(action) {
+  try {
+    const tenantId = action.payload;
+    console.log('📡 fetchTenantConfigSaga triggered for tenant:', tenantId);
+
+    const response = yield call(superAdminAPI.getTenantConfig, tenantId);
+    console.log('✅ Tenant config API response received:', response);
+
+    yield put(fetchTenantConfigSuccess({
+      tenantId,
+      configuration: response.configuration || response.data || response
+    }));
+  } catch (error) {
+    console.error('❌ Error in fetchTenantConfigSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch tenant configuration';
+    yield put(fetchTenantConfigFailure({ message: errorMessage }));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to load tenant configuration. Please try again.', 'error');
+    }
+  }
+}
+
+function* updateTenantConfigSaga(action) {
+  try {
+    const { tenantId, updates } = action.payload;
+    console.log('📡 updateTenantConfigSaga triggered for tenant:', tenantId, 'with updates:', updates);
+
+    const response = yield call(superAdminAPI.batchUpdateTenantConfig, tenantId, updates);
+    console.log('✅ Tenant config update response:', response);
+
+    // Refresh tenant configuration after update
+    yield put(fetchTenantConfigRequest(tenantId));
+    
+    // Mark update as successful
+    yield put(updateTenantConfigSuccess({}));
+
+    if (window.showNotification) {
+      window.showNotification(`Tenant configuration updated successfully (${updates.length} settings)`, 'success');
+    }
+  } catch (error) {
+    console.error('❌ Error in updateTenantConfigSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to update tenant configuration';
+    yield put(updateTenantConfigFailure({ message: errorMessage }));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to update tenant configuration', 'error');
+    }
+  }
+}
+
 // Watcher sagas
 function* watchFetchSystemConfig() {
   yield takeLatest(fetchSystemConfigRequest.type, fetchSystemConfigSaga);
@@ -122,11 +202,26 @@ function* watchCreateSystemConfig() {
   yield takeEvery(createSystemConfigRequest.type, createSystemConfigSaga);
 }
 
+function* watchFetchTenantsList() {
+  yield takeLatest(fetchTenantsListRequest.type, fetchTenantsListSaga);
+}
+
+function* watchFetchTenantConfig() {
+  yield takeEvery(fetchTenantConfigRequest.type, fetchTenantConfigSaga);
+}
+
+function* watchUpdateTenantConfig() {
+  yield takeEvery(updateTenantConfigRequest.type, updateTenantConfigSaga);
+}
+
 // Root saga
 export default function* systemConfigSaga() {
   yield all([
     fork(watchFetchSystemConfig),
     fork(watchUpdateSystemConfig),
-    fork(watchCreateSystemConfig)
+    fork(watchCreateSystemConfig),
+    fork(watchFetchTenantsList),
+    fork(watchFetchTenantConfig),
+    fork(watchUpdateTenantConfig)
   ]);
 }

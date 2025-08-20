@@ -14,6 +14,7 @@ import {
   invoiceGenerationConfigs,
   invoiceGenerationLogs,
   systemConfig,
+  tenantConfig,
 } from "../shared/schema.js";
 import {
   eq,
@@ -3684,6 +3685,206 @@ router.post('/super-admin/system-config', authenticateToken, requireSuperAdmin, 
   }
 });
 
+// Tenant-Specific Configuration Management API Routes
+// =================================================
 
+// Get tenant-specific configuration
+router.get('/super-admin/tenant/:tenantId/config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    
+    console.log(`📋 Fetching tenant configuration for tenant: ${tenantId}`);
+
+    const configurations = await db.select({
+      id: tenantConfig.id,
+      key: tenantConfig.key,
+      value: tenantConfig.value,
+      description: tenantConfig.description,
+      category: tenantConfig.category,
+      isActive: tenantConfig.isActive,
+      createdAt: tenantConfig.createdAt,
+      updatedAt: tenantConfig.updatedAt,
+    })
+    .from(tenantConfig)
+    .where(and(
+      eq(tenantConfig.tenantId, parseInt(tenantId)),
+      eq(tenantConfig.isActive, true)
+    ))
+    .orderBy(tenantConfig.category, tenantConfig.key);
+
+    // Group configurations by category
+    const configsByCategory = configurations.reduce((acc, config) => {
+      if (!acc[config.category]) {
+        acc[config.category] = [];
+      }
+      acc[config.category].push(config);
+      return acc;
+    }, {});
+
+    console.log(`✅ Found ${configurations.length} tenant configurations in ${Object.keys(configsByCategory).length} categories`);
+    
+    res.json({ 
+      configuration: configsByCategory,
+      tenantId: parseInt(tenantId),
+      summary: {
+        totalConfigurations: configurations.length,
+        categories: Object.keys(configsByCategory).length,
+        activeConfigurations: configurations.filter(c => c.isActive).length,
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching tenant configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch tenant configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Batch update tenant configurations
+router.put('/super-admin/tenant/:tenantId/config/batch', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { updates } = req.body;
+    
+    console.log(`📝 Batch updating tenant configurations for tenant ${tenantId}:`, req.body);
+
+    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Updates array is required and must not be empty'
+      });
+    }
+
+    console.log(`📝 Processing ${updates.length} tenant configuration updates`);
+
+    const results = [];
+    const activityLogs_batch = [];
+
+    // Process each update
+    for (const update of updates) {
+      const { key, value, category } = update;
+
+      if (!key || value === undefined) {
+        console.warn(`⚠️ Skipping invalid update: ${JSON.stringify(update)}`);
+        continue;
+      }
+
+      // Get existing configuration
+      const existingConfig = await db.select()
+        .from(tenantConfig)
+        .where(and(
+          eq(tenantConfig.tenantId, parseInt(tenantId)),
+          eq(tenantConfig.key, key)
+        ))
+        .limit(1);
+
+      let result;
+      let action = 'UPDATE';
+
+      if (existingConfig.length === 0) {
+        // Create new configuration
+        action = 'CREATE';
+        result = await db.insert(tenantConfig)
+          .values({
+            tenantId: parseInt(tenantId),
+            key,
+            value: JSON.stringify(value),
+            category: category || 'general',
+            isActive: true,
+          })
+          .returning();
+      } else {
+        // Update existing configuration
+        result = await db.update(tenantConfig)
+          .set({
+            value: JSON.stringify(value),
+            category: category || existingConfig[0].category,
+            updatedAt: new Date(),
+          })
+          .where(and(
+            eq(tenantConfig.tenantId, parseInt(tenantId)),
+            eq(tenantConfig.key, key)
+          ))
+          .returning();
+      }
+
+      results.push({
+        key,
+        action,
+        configuration: result[0]
+      });
+
+      // Prepare activity log entry
+      activityLogs_batch.push({
+        tenantId: parseInt(tenantId),
+        userId: req.user.id,
+        action: `TENANT_CONFIG_${action}`,
+        resource: 'tenant-config',
+        resourceId: key,
+        details: {
+          key,
+          oldValue: existingConfig[0]?.value || null,
+          newValue: value,
+          category: category || 'general'
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        level: 'info',
+      });
+    }
+
+    // Batch insert activity logs
+    if (activityLogs_batch.length > 0) {
+      await db.insert(activityLogs).values(activityLogs_batch);
+    }
+
+    console.log(`✅ Batch updated ${results.length} tenant configurations`);
+    
+    res.json({
+      success: true,
+      results,
+      tenantId: parseInt(tenantId),
+      message: `${results.length} configurations updated successfully`
+    });
+  } catch (error) {
+    console.error('❌ Error batch updating tenant configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to batch update tenant configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Get all tenants (for tenant selection dropdown)
+router.get('/super-admin/tenants/list', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching tenants list for selection');
+
+    const tenantsList = await db.select({
+      id: tenants.id,
+      name: tenants.name,
+      email: tenants.email,
+      status: tenants.status,
+      createdAt: tenants.createdAt,
+    })
+    .from(tenants)
+    .where(eq(tenants.status, 'active'))
+    .orderBy(tenants.name);
+
+    console.log(`✅ Found ${tenantsList.length} active tenants`);
+    
+    res.json({ 
+      tenants: tenantsList,
+      total: tenantsList.length
+    });
+  } catch (error) {
+    console.error('❌ Error fetching tenants list:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch tenants list',
+      message: error.message 
+    });
+  }
+});
 
 export default router;

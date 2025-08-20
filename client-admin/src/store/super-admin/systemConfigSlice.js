@@ -4,6 +4,7 @@ const initialState = {
   configuration: null,
   tenantConfigurations: {},
   availableTenants: [],
+  isFetchingTenants: false,
   auditLogs: [],
   isLoading: false,
   isUpdating: false,
@@ -119,6 +120,21 @@ const systemConfigSlice = createSlice({
       state.updateSuccess = false;
     },
 
+    // Fetch Tenants List
+    fetchTenantsListRequest: (state) => {
+      state.isFetchingTenants = true;
+      state.error = null;
+    },
+    fetchTenantsListSuccess: (state, action) => {
+      state.isFetchingTenants = false;
+      state.availableTenants = action.payload.tenants || [];
+      state.error = null;
+    },
+    fetchTenantsListFailure: (state, action) => {
+      state.isFetchingTenants = false;
+      state.error = action.payload.message || "Failed to fetch tenants list";
+    },
+
     // Set Available Tenants
     setAvailableTenants: (state, action) => {
       state.availableTenants = action.payload;
@@ -207,6 +223,9 @@ export const {
   clearErrors,
   clearConfigurationErrors,
   setAvailableTenants,
+  fetchTenantsListRequest,
+  fetchTenantsListSuccess,
+  fetchTenantsListFailure,
   fetchAuditLogsRequest,
   fetchAuditLogsSuccess,
   fetchAuditLogsFailure,
