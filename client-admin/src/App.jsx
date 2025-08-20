@@ -30,6 +30,7 @@ import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import ComplianceRules from './pages/admin/ComplianceRules';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 // Notification Component
@@ -238,6 +239,14 @@ function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminUsers />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/compliance-rules"
+              element={
+                <AdminProtectedRoute>
+                  <ComplianceRules />
                 </AdminProtectedRoute>
               }
             />

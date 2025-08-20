@@ -5,6 +5,7 @@ import { db } from './db';
 import routes from './routes.js';
 import authRoutes from './src/routes/auth.js';
 import adminUserRoutes from './src/routes/adminUsers.js';
+import complianceRuleRoutes from './src/routes/complianceRules.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -96,6 +97,7 @@ app.use('/api/auth', authRoutes);
 
 // Admin routes
 app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/compliance-rules', complianceRuleRoutes);
 
 // API routes
 app.use('/api', routes);

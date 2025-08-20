@@ -97,6 +97,38 @@ export const adminAuthApi = {
   },
   
   getUserStats: () => apiCall('/api/admin/users/stats'),
+  
+  // Compliance Rules Management API
+  getComplianceRules: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/compliance-rules?${queryString}`);
+  },
+  
+  getComplianceRuleStats: () => apiCall('/api/admin/compliance-rules/stats'),
+  
+  createComplianceRule: (ruleData) => apiCall('/api/admin/compliance-rules', {
+    method: 'POST',
+    body: JSON.stringify(ruleData),
+  }),
+  
+  updateComplianceRule: (id, ruleData) => apiCall(`/api/admin/compliance-rules/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(ruleData),
+  }),
+  
+  deleteComplianceRule: (id) => apiCall(`/api/admin/compliance-rules/${id}`, {
+    method: 'DELETE',
+  }),
+  
+  previewComplianceRule: (ruleData) => apiCall('/api/admin/compliance-rules/preview', {
+    method: 'POST',
+    body: JSON.stringify(ruleData),
+  }),
+  
+  getComplianceRuleAuditLogs: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/compliance-rules/audit-logs?${queryString}`);
+  },
 };
 
 // Super Admin API (comprehensive - all required methods)

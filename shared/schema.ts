@@ -25,6 +25,9 @@ export const invoiceStatusEnum = pgEnum('invoice_status', ['draft', 'sent', 'pai
 // Activity log level enum
 export const logLevelEnum = pgEnum('log_level', ['info', 'warning', 'error', 'critical']);
 
+// Compliance rule type enum
+export const ruleTypeEnum = pgEnum('rule_type', ['required', 'format', 'range', 'length', 'custom']);
+
 // Invoice generation status enum
 export const invoiceGenerationStatusEnum = pgEnum('generation_status', ['scheduled', 'processing', 'completed', 'failed', 'retrying']);
 
@@ -319,6 +322,37 @@ export const invoiceGenerationLogs = pgTable("invoice_generation_logs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Compliance Rules table
+export const complianceRules = pgTable("compliance_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  ruleId: text("rule_id").notNull(), // User-friendly rule identifier (e.g., "REQ-001")
+  fieldName: text("field_name").notNull(), // Field this rule applies to
+  ruleType: ruleTypeEnum("rule_type").notNull(), // required, format, range, etc.
+  value: text("value").notNull(), // Rule value/pattern (e.g., regex, min/max values)
+  description: text("description").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Compliance Rule Audit Logs table
+export const complianceRuleAuditLogs = pgTable("compliance_rule_audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  ruleId: varchar("rule_id").references(() => complianceRules.id).notNull(),
+  action: text("action").notNull(), // 'created', 'updated', 'deleted', 'activated', 'deactivated'
+  oldValues: jsonb("old_values"), // Previous values before change
+  newValues: jsonb("new_values"), // New values after change
+  changedBy: varchar("changed_by").references(() => users.id).notNull(),
+  changeReason: text("change_reason"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations for new tables
 export const invoiceGenerationConfigsRelations = relations(invoiceGenerationConfigs, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -340,6 +374,37 @@ export const invoiceGenerationLogsRelations = relations(invoiceGenerationLogs, (
   invoice: one(invoices, {
     fields: [invoiceGenerationLogs.invoiceId],
     references: [invoices.id],
+  }),
+}));
+
+export const complianceRulesRelations = relations(complianceRules, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [complianceRules.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [complianceRules.createdBy],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [complianceRules.updatedBy],
+    references: [users.id],
+  }),
+  auditLogs: many(complianceRuleAuditLogs),
+}));
+
+export const complianceRuleAuditLogsRelations = relations(complianceRuleAuditLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [complianceRuleAuditLogs.tenantId],
+    references: [tenants.id],
+  }),
+  rule: one(complianceRules, {
+    fields: [complianceRuleAuditLogs.ruleId],
+    references: [complianceRules.id],
+  }),
+  changedBy: one(users, {
+    fields: [complianceRuleAuditLogs.changedBy],
+    references: [users.id],
   }),
 }));
 
@@ -434,6 +499,37 @@ export const insertInvoiceGenerationLogSchema = createInsertSchema(invoiceGenera
   amount: true,
   billingPeriodStart: true,
   billingPeriodEnd: true,
+});
+
+export const insertComplianceRuleSchema = createInsertSchema(complianceRules).pick({
+  tenantId: true,
+  ruleId: true,
+  fieldName: true,
+  ruleType: true,
+  value: true,
+  description: true,
+  createdBy: true,
+});
+
+export const updateComplianceRuleSchema = createInsertSchema(complianceRules).pick({
+  fieldName: true,
+  ruleType: true,
+  value: true,
+  description: true,
+  isActive: true,
+  updatedBy: true,
+});
+
+export const insertComplianceRuleAuditLogSchema = createInsertSchema(complianceRuleAuditLogs).pick({
+  tenantId: true,
+  ruleId: true,
+  action: true,
+  oldValues: true,
+  newValues: true,
+  changedBy: true,
+  changeReason: true,
+  ipAddress: true,
+  userAgent: true,
 });
 
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).pick({

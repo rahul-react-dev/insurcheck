@@ -42,6 +42,12 @@ const AdminTenantLayout = ({ children }) => {
       roles: ["tenant-admin", "admin"],
     },
     {
+      name: "Compliance Rules",
+      path: "/admin/compliance-rules",
+      icon: "fas fa-shield-check",
+      roles: ["tenant-admin", "admin"],
+    },
+    {
       name: "Settings",
       path: "/admin/settings",
       icon: "fas fa-cogs",
@@ -177,13 +183,15 @@ const AdminTenantLayout = ({ children }) => {
                       ? "Document Management"
                       : location.pathname.includes("users")
                         ? "User Management"
-                        : location.pathname.includes("settings")
-                          ? "Settings"
-                          : location.pathname.includes("reports")
-                            ? "Reports"
-                            : location.pathname.includes("activity-logs")
-                              ? "Activity Logs"
-                              : "Admin Panel"}
+                        : location.pathname.includes("compliance-rules")
+                          ? "Compliance Rules"
+                          : location.pathname.includes("settings")
+                            ? "Settings"
+                            : location.pathname.includes("reports")
+                              ? "Reports"
+                              : location.pathname.includes("activity-logs")
+                                ? "Activity Logs"
+                                : "Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Manage your organization's documents and settings
