@@ -6,6 +6,7 @@ const Modal = ({
   onClose, 
   title, 
   children, 
+  size = 'lg',
   maxWidth = 'lg',
   showCloseButton = true 
 }) => {
@@ -31,6 +32,9 @@ const Modal = ({
   if (!isOpen) return null;
 
   const maxWidthClasses = {
+    small: 'max-w-sm',
+    medium: 'max-w-md',
+    large: 'max-w-2xl',
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
@@ -51,7 +55,7 @@ const Modal = ({
       {/* Modal container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
-          className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white rounded-lg shadow-xl transform transition-all`}
+          className={`relative w-full ${maxWidthClasses[size] || maxWidthClasses[maxWidth]} bg-white rounded-lg shadow-xl transform transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
