@@ -46,3 +46,23 @@ export const adminAuthApi = {
   
   getDashboardStats: () => apiCall('/api/admin/dashboard-stats'),
 };
+
+// Super Admin API (for backward compatibility)
+export const superAdminAPI = {
+  login: (credentials) => apiCall('/api/auth/super-admin/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
+  }),
+  
+  getSystemMetrics: () => apiCall('/api/system-metrics'),
+  
+  getErrorLogs: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/activity-logs?${queryString}`);
+  },
+  
+  exportErrorLogs: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/activity-logs/export?${queryString}`);
+  },
+};
