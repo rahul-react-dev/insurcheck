@@ -191,13 +191,15 @@ const AdminTenantLayout = ({ children }) => {
                         ? "User Management"
                         : location.pathname.includes("compliance-rules")
                           ? "Compliance Rules"
-                          : location.pathname.includes("settings")
-                            ? "Settings"
-                            : location.pathname.includes("reports")
-                              ? "Reports"
-                              : location.pathname.includes("activity-logs")
-                                ? "Activity Logs"
-                                : "Admin Panel"}
+                          : location.pathname.includes("notification-templates")
+                            ? "Notification Templates"
+                            : location.pathname.includes("settings")
+                              ? "Settings"
+                              : location.pathname.includes("reports")
+                                ? "Reports"
+                                : location.pathname.includes("activity-logs")
+                                  ? "Activity Logs"
+                                  : "Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Manage your organization's documents and settings

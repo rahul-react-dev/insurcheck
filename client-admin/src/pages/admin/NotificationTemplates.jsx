@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminAPI } from '../../utils/api';
+import { adminAuthApi } from '../../utils/api';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useToast } from '../../hooks/use-toast';
+import NotificationTemplateEditor from '../../components/admin/NotificationTemplateEditor';
+import NotificationTemplatePreview from '../../components/admin/NotificationTemplatePreview';
+import NotificationTemplateAuditLogs from '../../components/admin/NotificationTemplateAuditLogs';
 import { 
   Search, 
   Plus, 
@@ -95,7 +98,7 @@ export function NotificationTemplates() {
     refetch: refetchTemplates
   } = useQuery({
     queryKey: ['notificationTemplates', queryParams],
-    queryFn: () => adminAPI.getNotificationTemplates(queryParams),
+    queryFn: () => adminAuthApi.getNotificationTemplates(queryParams),
     keepPreviousData: true,
   });
 
@@ -106,12 +109,12 @@ export function NotificationTemplates() {
     refetch: refetchStats
   } = useQuery({
     queryKey: ['notificationTemplateStats'],
-    queryFn: () => adminAPI.getNotificationTemplateStats(),
+    queryFn: () => adminAuthApi.getNotificationTemplateStats(),
   });
 
   // Delete template mutation
   const deleteTemplateMutation = useMutation({
-    mutationFn: (templateId) => adminAPI.deleteNotificationTemplate(templateId),
+    mutationFn: (templateId) => adminAuthApi.deleteNotificationTemplate(templateId),
     onSuccess: () => {
       toast({
         title: 'Template deleted',
@@ -557,6 +560,49 @@ export function NotificationTemplates() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Template Editor Modal */}
+      {isEditorOpen && (
+        <NotificationTemplateEditor
+          template={editingTemplate}
+          isOpen={isEditorOpen}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditingTemplate(null);
+          }}
+          onSave={() => {
+            // Refetch templates and stats after saving
+            refetchTemplates();
+            refetchStats();
+            setIsEditorOpen(false);
+            setEditingTemplate(null);
+          }}
+        />
+      )}
+
+      {/* Template Preview Modal */}
+      {isPreviewOpen && previewTemplate && (
+        <NotificationTemplatePreview
+          template={previewTemplate}
+          isOpen={isPreviewOpen}
+          onClose={() => {
+            setIsPreviewOpen(false);
+            setPreviewTemplate(null);
+          }}
+        />
+      )}
+
+      {/* Audit Logs Modal */}
+      {isAuditLogsOpen && (
+        <NotificationTemplateAuditLogs
+          templateId={auditTemplateId}
+          isOpen={isAuditLogsOpen}
+          onClose={() => {
+            setIsAuditLogsOpen(false);
+            setAuditTemplateId(null);
+          }}
+        />
       )}
     </div>
   );
