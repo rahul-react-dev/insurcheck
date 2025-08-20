@@ -219,3 +219,89 @@ export const superAdminAPI = {
     body: JSON.stringify(updates),
   }),
 };
+
+// Payment API (for payment management)
+export const paymentAPI = {
+  getAll: (params) => {
+    const queryString = new URLSearchParams(params || {}).toString();
+    return apiCall(`/api/payments?${queryString}`);
+  },
+  getById: (id) => apiCall(`/api/payments/${id}`),
+  create: (data) => apiCall('/api/payments', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => apiCall(`/api/payments/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => apiCall(`/api/payments/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Invoice API (for invoice management)
+export const invoiceAPI = {
+  getAll: (params) => {
+    const queryString = new URLSearchParams(params || {}).toString();
+    return apiCall(`/api/invoices?${queryString}`);
+  },
+  getById: (id) => apiCall(`/api/invoices/${id}`),
+  create: (data) => apiCall('/api/invoices', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => apiCall(`/api/invoices/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  markPaid: (id) => apiCall(`/api/invoices/${id}/mark-paid`, {
+    method: 'POST',
+  }),
+  delete: (id) => apiCall(`/api/invoices/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Tenant API (for tenant operations)
+export const tenantAPI = {
+  getAll: (params) => {
+    const queryString = new URLSearchParams(params || {}).toString();
+    return apiCall(`/api/tenants?${queryString}`);
+  },
+  getById: (id) => apiCall(`/api/tenants/${id}`),
+  create: (data) => apiCall('/api/tenants', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => apiCall(`/api/tenants/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => apiCall(`/api/tenants/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Subscription API (for subscription management)
+export const subscriptionAPI = {
+  getAll: (params) => {
+    const queryString = new URLSearchParams(params || {}).toString();
+    return apiCall(`/api/subscriptions?${queryString}`);
+  },
+  getById: (id) => apiCall(`/api/subscriptions/${id}`),
+  create: (data) => apiCall('/api/subscriptions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => apiCall(`/api/subscriptions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  cancel: (id) => apiCall(`/api/subscriptions/${id}/cancel`, {
+    method: 'POST',
+  }),
+  delete: (id) => apiCall(`/api/subscriptions/${id}`, {
+    method: 'DELETE',
+  }),
+};
