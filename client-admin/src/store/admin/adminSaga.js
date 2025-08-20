@@ -8,46 +8,12 @@ import {
   forgotPasswordSuccess,
   forgotPasswordFailure,
 } from './adminSlice';
-
-// API Functions
-const adminLoginApi = async (credentials) => {
-  const response = await fetch('/api/auth/admin-login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Login failed');
-  }
-
-  return response.json();
-};
-
-const forgotPasswordApi = async (email) => {
-  const response = await fetch('/api/auth/admin-forgot-password', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to send reset email');
-  }
-
-  return response.json();
-};
+import { adminAuthApi } from '../../utils/api';
 
 // Saga workers
 function* adminLoginSaga(action) {
   try {
-    const response = yield call(adminLoginApi, action.payload);
+    const response = yield call(adminAuthApi.login, action.payload);
 
     if (response?.success && response?.data) {
       yield put(loginSuccess(response.data));
@@ -94,7 +60,7 @@ function* adminLoginSaga(action) {
 
 function* forgotPasswordSaga(action) {
   try {
-    const response = yield call(forgotPasswordApi, action.payload);
+    const response = yield call(adminAuthApi.forgotPassword, action.payload);
     yield put(forgotPasswordSuccess(response.message || 'Password reset email sent successfully'));
   } catch (error) {
     console.error('Forgot password error:', error);

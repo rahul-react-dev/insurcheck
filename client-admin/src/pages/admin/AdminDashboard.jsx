@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import AdminTenantLayout from '../../layouts/AdminTenantLayout';
 import Card from '../../components/ui/Card';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { adminAuthApi } from '../../utils/api';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -27,19 +28,7 @@ const AdminDashboard = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('/api/admin/dashboard-stats', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await adminAuthApi.getDashboardStats();
       setDashboardStats(data);
       console.log('Admin Dashboard loaded for user:', user);
       console.log('Dashboard stats:', data);
