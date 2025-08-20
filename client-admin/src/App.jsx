@@ -29,6 +29,7 @@ import SystemConfiguration from './pages/super-admin/SystemConfiguration';
 import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 // Notification Component
@@ -229,6 +230,14 @@ function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminDashboard />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <AdminProtectedRoute>
+                  <AdminUsers />
                 </AdminProtectedRoute>
               }
             />

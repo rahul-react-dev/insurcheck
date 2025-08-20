@@ -75,6 +75,28 @@ export const adminAuthApi = {
   }),
   
   getDashboardStats: () => apiCall('/api/admin/dashboard-stats'),
+  
+  // Admin Users Management API
+  getUsers: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/users?${queryString}`);
+  },
+  
+  inviteUser: (userData) => apiCall('/api/admin/users/invite', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  }),
+  
+  exportUsers: (format = 'csv', search = '') => {
+    const queryString = new URLSearchParams({ format, search }).toString();
+    return fetch(`${API_BASE_URL}/api/admin/users/export?${queryString}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+  },
+  
+  getUserStats: () => apiCall('/api/admin/users/stats'),
 };
 
 // Super Admin API (comprehensive - all required methods)

@@ -4,6 +4,7 @@ import cors from 'cors';
 import { db } from './db';
 import routes from './routes.js';
 import authRoutes from './src/routes/auth.js';
+import adminUserRoutes from './src/routes/adminUsers.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -92,6 +93,9 @@ app.get('/api/health', (req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Admin routes
+app.use('/api/admin/users', adminUserRoutes);
 
 // API routes
 app.use('/api', routes);
