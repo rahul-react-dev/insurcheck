@@ -45,7 +45,9 @@ const systemConfigSlice = createSlice({
     },
     updateSystemConfigSuccess: (state, action) => {
       state.isUpdating = false;
-      state.configuration = action.payload.configuration;
+      if (action.payload.configuration) {
+        state.configuration = action.payload.configuration;
+      }
       state.updateSuccess = true;
       state.error = null;
 

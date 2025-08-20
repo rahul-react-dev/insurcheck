@@ -35,21 +35,48 @@ function* fetchSystemConfigSaga() {
 
 function* updateSystemConfigSaga(action) {
   try {
-    const { key, value, category } = action.payload;
-    console.log('📡 updateSystemConfigSaga triggered with:', { key, value, category });
+    const { updates } = action.payload;
+    console.log('📡 updateSystemConfigSaga triggered with batch updates:', updates);
 
-    const response = yield call(superAdminAPI.updateSystemConfig, key, { value, category });
-    const updatedConfig = response.data || response;
+    if (updates && Array.isArray(updates)) {
+      // Handle batch updates
+      const updatePromises = updates.map(config => 
+        call(superAdminAPI.updateSystemConfig, config.key, { 
+          value: config.value, 
+          category: config.category 
+        })
+      );
+      
+      const responses = yield all(updatePromises);
+      console.log('✅ Batch update responses:', responses);
+      
+      // Refresh configuration after all updates
+      yield put(fetchSystemConfigRequest());
+      
+      // Mark update as successful
+      yield put(updateSystemConfigSuccess({}));
+      
+      if (window.showNotification) {
+        window.showNotification(`Configuration updated successfully (${updates.length} settings)`, 'success');
+      }
+    } else {
+      // Handle single update (backward compatibility)
+      const { key, value, category } = action.payload;
+      console.log('📡 updateSystemConfigSaga triggered with single update:', { key, value, category });
 
-    yield put(updateSystemConfigSuccess({
-      key,
-      value,
-      category,
-      updatedConfig
-    }));
+      const response = yield call(superAdminAPI.updateSystemConfig, key, { value, category });
+      const updatedConfig = response.configuration || response.data || response;
 
-    if (window.showNotification) {
-      window.showNotification('Configuration updated successfully', 'success');
+      yield put(updateSystemConfigSuccess({
+        key,
+        value,
+        category,
+        updatedConfig
+      }));
+
+      if (window.showNotification) {
+        window.showNotification('Configuration updated successfully', 'success');
+      }
     }
   } catch (error) {
     console.error('❌ Error in updateSystemConfigSaga:', error);

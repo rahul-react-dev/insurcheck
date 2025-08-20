@@ -77,13 +77,42 @@ const SystemConfiguration = () => {
 
   useEffect(() => {
     if (configurationScope === 'system-wide' && configuration) {
-      // Deep copy to avoid mutation issues
-      setFormData(JSON.parse(JSON.stringify(configuration)));
+      // Convert database configuration format to form format
+      const dbConfig = configuration;
+      const formConfig = {
+        // Security Settings
+        twoFactorAuth: {
+          emailEnabled: dbConfig.security?.find(c => c.key === 'email_2fa_enabled')?.value || false,
+          smsEnabled: dbConfig.security?.find(c => c.key === 'sms_2fa_enabled')?.value || false
+        },
+        
+        // File & Storage Settings
+        maxFileSize: dbConfig.storage?.find(c => c.key === 'max_file_size_mb')?.value || 10,
+        maxUsersPerTenant: dbConfig.storage?.find(c => c.key === 'max_users_per_tenant')?.value || 50,
+        maxDocumentsPerTenant: dbConfig.storage?.find(c => c.key === 'max_documents_per_tenant')?.value || 1000,
+        
+        // Email & Communication Settings
+        emailRetryLimits: dbConfig.email?.find(c => c.key === 'email_retry_limits')?.value || 3,
+        
+        // Backup & Maintenance Settings
+        backupFrequency: dbConfig.backup?.find(c => c.key === 'backup_frequency')?.value || 'Daily',
+        autoDeleteInterval: dbConfig.backup?.find(c => c.key === 'auto_delete_interval')?.value || 60,
+        
+        // Feature Toggles
+        featureToggles: {
+          trialExtensions: dbConfig.features?.find(c => c.key === 'feature_trialExtensions')?.value !== false,
+          autoInvoicing: dbConfig.features?.find(c => c.key === 'feature_autoInvoicing')?.value !== false,
+          documentVersioning: dbConfig.features?.find(c => c.key === 'feature_documentVersioning')?.value || false,
+          advancedAnalytics: dbConfig.features?.find(c => c.key === 'feature_advancedAnalytics')?.value || false,
+          apiAccess: dbConfig.features?.find(c => c.key === 'feature_apiAccess')?.value !== false
+        }
+      };
+      
+      setFormData(formConfig);
       setHasUnsavedChanges(false);
     } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
       const tenantConfig = tenantConfigurations?.[selectedTenantId];
       if (tenantConfig) {
-        // Deep copy to avoid mutation issues
         setFormData(JSON.parse(JSON.stringify(tenantConfig)));
       } else {
         // Use system-wide config as default for new tenant configurations
@@ -183,7 +212,75 @@ const SystemConfiguration = () => {
     }
     
     if (configurationScope === 'system-wide') {
-      dispatch(updateSystemConfigRequest(formData));
+      // Convert form data to individual configuration updates
+      const configUpdates = [];
+      
+      // Security Settings
+      if (formData.twoFactorAuth) {
+        configUpdates.push({
+          key: 'email_2fa_enabled',
+          value: formData.twoFactorAuth.emailEnabled,
+          category: 'security'
+        });
+        configUpdates.push({
+          key: 'sms_2fa_enabled', 
+          value: formData.twoFactorAuth.smsEnabled,
+          category: 'security'
+        });
+      }
+      
+      // File & Storage Settings
+      configUpdates.push({
+        key: 'max_file_size_mb',
+        value: formData.maxFileSize,
+        category: 'storage'
+      });
+      configUpdates.push({
+        key: 'max_users_per_tenant',
+        value: formData.maxUsersPerTenant,
+        category: 'storage'
+      });
+      configUpdates.push({
+        key: 'max_documents_per_tenant',
+        value: formData.maxDocumentsPerTenant,
+        category: 'storage'
+      });
+      
+      // Email & Communication Settings
+      configUpdates.push({
+        key: 'email_retry_limits',
+        value: formData.emailRetryLimits,
+        category: 'email'
+      });
+      
+      // Backup & Maintenance Settings
+      configUpdates.push({
+        key: 'backup_frequency',
+        value: formData.backupFrequency,
+        category: 'backup'
+      });
+      configUpdates.push({
+        key: 'auto_delete_interval',
+        value: formData.autoDeleteInterval,
+        category: 'backup'
+      });
+      
+      // Feature Toggles
+      if (formData.featureToggles) {
+        Object.keys(formData.featureToggles).forEach(featureKey => {
+          configUpdates.push({
+            key: `feature_${featureKey}`,
+            value: formData.featureToggles[featureKey],
+            category: 'features'
+          });
+        });
+      }
+      
+      // Dispatch batch update
+      dispatch(updateSystemConfigRequest({
+        updates: configUpdates
+      }));
+      
     } else if (configurationScope === 'tenant-specific' && selectedTenantId) {
       dispatch(updateTenantConfigRequest({ 
         tenantId: selectedTenantId, 
