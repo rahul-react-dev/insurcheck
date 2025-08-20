@@ -1,15 +1,11 @@
 import { call, put, takeEvery } from 'redux-saga/effects';
 import { loginRequest, loginSuccess, loginFailure } from '../authSlice';
-import { authAPI } from '../../utils/api';
+import { adminAuthApi } from '../../utils/api';
 
 function* loginSaga(action) {
   try {
-    // Determine which login API to use based on role or route
-    const loginMethod = action.payload.role === 'admin' || window.location.pathname.includes('/admin/') 
-      ? authAPI.adminLogin 
-      : authAPI.superAdminLogin;
-    
-    const response = yield call(loginMethod, action.payload);
+    // Use admin login API
+    const response = yield call(adminAuthApi.login, action.payload);
     
     // Check if response has data
     if (response?.data) {
@@ -17,7 +13,7 @@ function* loginSaga(action) {
       
       // Store token in localStorage
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('adminToken', response.data.token);
       }
       
       // Redirect based on role (placeholder for now)
