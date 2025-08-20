@@ -9,6 +9,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "./store";
 import { hydrateAuth } from "./store/super-admin/superAdminSlice";
+import { hydrateAdminAuth } from "./store/admin/adminSlice";
 import Login from "./pages/Login";
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
@@ -106,7 +107,8 @@ function App() {
   // Hydrate auth state from localStorage on app startup
   useEffect(() => {
     console.log('🔄 Hydrating authentication state...');
-    dispatch(hydrateAuth());
+    dispatch(hydrateAuth()); // Super admin auth
+    dispatch(hydrateAdminAuth()); // Tenant admin auth
     setIsLoading(false);
   }, [dispatch]);
 

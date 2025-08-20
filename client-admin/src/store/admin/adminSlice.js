@@ -99,6 +99,39 @@ const adminSlice = createSlice({
       state.error = null;
       state.forgotPasswordError = null;
     },
+    
+    // Hydrate authentication state from localStorage
+    hydrateAdminAuth: (state) => {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        try {
+          // Decode JWT token to get user info
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const now = Date.now() / 1000;
+          
+          // Check if token is not expired
+          if (payload.exp > now) {
+            state.token = token;
+            state.isAuthenticated = true;
+            state.user = {
+              id: payload.userId,
+              email: payload.email,
+              role: payload.role,
+              tenantId: payload.tenantId
+            };
+            console.log('✅ Admin auth state hydrated from localStorage');
+          } else {
+            // Token expired, clear it
+            localStorage.removeItem('adminToken');
+            console.log('❌ Admin token expired, cleared from localStorage');
+          }
+        } catch (error) {
+          // Invalid token, clear it
+          localStorage.removeItem('adminToken');
+          console.log('❌ Invalid admin token, cleared from localStorage');
+        }
+      }
+    },
   },
 });
 
@@ -114,6 +147,7 @@ export const {
   forgotPasswordFailure,
   resetForgotPassword,
   clearErrors,
+  hydrateAdminAuth,
 } = adminSlice.actions;
 
 export default adminSlice.reducer;
