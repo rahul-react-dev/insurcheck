@@ -36,4 +36,5 @@ const Switch = ({ checked, onCheckedChange, disabled = false, className = '', ..
   );
 };
 
+export default Switch;
 export { Switch };

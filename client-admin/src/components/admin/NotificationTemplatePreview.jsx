@@ -1,373 +1,291 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { adminAPI } from "../../utils/api";
+import { adminAuthApi } from "../../utils/api";
 import Button from "../ui/Button";
-import Badge from "../ui/badge";
-import { Skeleton } from "../ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/Card";
+import Card from "../ui/Card";
 import { useToast } from "../../hooks/use-toast";
 import {
-  Mail,
+  Eye,
   RefreshCw,
-  Sparkles,
+  Mail,
+  X,
+  Settings,
+  Send,
   Shield,
   Activity,
   Bell,
   AlertTriangle,
-  Clock,
-  User,
-  Building2,
-  FileText,
 } from "lucide-react";
 
-export function NotificationTemplatePreview({ template, onClose }) {
+export default function NotificationTemplatePreview({ template, isOpen, onClose }) {
   const { toast } = useToast();
-  const [preview, setPreview] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
+  const [sampleVariables, setSampleVariables] = useState({
+    organizationName: 'InsurCheck Corporation',
+    userName: 'John Smith',
+    userEmail: 'john.smith@example.com',
+    documentName: 'Insurance Policy Document.pdf',
+    complianceStatus: 'Approved',
+    timestamp: new Date().toLocaleDateString(),
+    actionUrl: 'https://app.insurcheck.com/documents/123',
+  });
 
   // Template type configurations
   const templateTypeConfig = {
     compliance_result: {
       icon: Shield,
-      label: "Compliance Result",
-      color: "bg-blue-100 text-blue-800",
+      label: 'Compliance Result',
+      color: 'bg-blue-100 text-blue-800',
     },
     audit_log: {
       icon: Activity,
-      label: "Audit Log",
-      color: "bg-purple-100 text-purple-800",
+      label: 'Audit Log',
+      color: 'bg-purple-100 text-purple-800',
     },
     user_notification: {
       icon: Bell,
-      label: "User Notification",
-      color: "bg-green-100 text-green-800",
+      label: 'User Notification',
+      color: 'bg-green-100 text-green-800',
     },
     system_alert: {
       icon: AlertTriangle,
-      label: "System Alert",
-      color: "bg-red-100 text-red-800",
-    },
+      label: 'System Alert',
+      color: 'bg-red-100 text-red-800',
+    }
   };
 
   // Preview template mutation
-  const previewMutation = useMutation({
-    mutationFn: (templateData) =>
-      adminAPI.previewNotificationTemplate(templateData),
-    onSuccess: (data) => {
-      setPreview(data.data);
+  const previewTemplateMutation = useMutation({
+    mutationFn: (templateData) => adminAuthApi.previewNotificationTemplate({
+      ...templateData,
+      variables: sampleVariables
+    }),
+    onSuccess: (response) => {
+      setPreviewData(response.data);
     },
     onError: (error) => {
+      const errorData = JSON.parse(error.message || '{}');
       toast({
-        title: "Preview failed",
-        description:
-          error.message || "Failed to generate preview. Please try again.",
-        variant: "destructive",
+        title: 'Preview failed',
+        description: errorData.message || 'Failed to generate preview. Please try again.',
+        variant: 'destructive',
       });
     },
   });
 
-  // Generate preview on mount
+  // Generate preview when template changes
   useEffect(() => {
-    if (template) {
-      const templateData = {
-        templateType: template.templateType,
-        subject: template.subject,
-        header: template.header || "",
-        body: template.body,
-        footer: template.footer || "",
-        variables: template.variables ? JSON.parse(template.variables) : [],
-      };
-      previewMutation.mutate(templateData);
+    if (template && isOpen) {
+      previewTemplateMutation.mutate(template);
     }
-  }, [template]);
+  }, [template, isOpen, sampleVariables]);
 
+  // Handle variable changes
+  const handleVariableChange = (key, value) => {
+    setSampleVariables(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Refresh preview
   const refreshPreview = () => {
     if (template) {
-      const templateData = {
-        templateType: template.templateType,
-        subject: template.subject,
-        header: template.header || "",
-        body: template.body,
-        footer: template.footer || "",
-        variables: template.variables ? JSON.parse(template.variables) : [],
-      };
-      previewMutation.mutate(templateData);
+      previewTemplateMutation.mutate(template);
     }
   };
 
-  if (!template) {
-    return null;
-  }
+  if (!isOpen || !template) return null;
 
-  const typeConfig =
-    templateTypeConfig[template.templateType] ||
-    templateTypeConfig.user_notification;
-  const IconComponent = typeConfig.icon;
+  const currentConfig = templateTypeConfig[template.templateType] || templateTypeConfig.user_notification;
+  const IconComponent = currentConfig.icon;
+  const isLoading = previewTemplateMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            {template.name}
-          </h3>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center gap-3">
+            <IconComponent className="h-6 w-6 text-blue-600" />
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Template Preview</h2>
+              <p className="text-sm text-gray-500">
+                {template.name} • {currentConfig.label}
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className={typeConfig.color}>
-              <IconComponent className="h-3 w-3 mr-1" />
-              {typeConfig.label}
-            </Badge>
-            <Badge variant={template.isActive ? "default" : "secondary"}>
-              {template.isActive ? "Active" : "Inactive"}
-            </Badge>
+            <Button
+              onClick={refreshPreview}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refreshPreview}
-          disabled={previewMutation.isLoading}
-        >
-          {previewMutation.isLoading ? (
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
-          )}
-          Refresh Preview
-        </Button>
-      </div>
-
-      {/* Preview Content */}
-      {previewMutation.isLoading ? (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-20 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      ) : preview ? (
-        <div className="space-y-6">
-          {/* Email Preview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Email Preview
-              </CardTitle>
-              <CardDescription>
-                This is how the email will appear to recipients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg bg-white shadow-sm">
-                {/* Email Header */}
-                <div className="border-b bg-gray-50 px-6 py-4 rounded-t-lg">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="h-4 w-4" />
-                      <span>
-                        From: InsurCheck &lt;noreply@insurcheck.com&gt;
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <User className="h-4 w-4" />
-                      <span>To: recipient@example.com</span>
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900">
-                      {preview.preview.subject}
-                    </div>
-                  </div>
+        {/* Content */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Variables Sidebar */}
+          <div className="w-80 bg-gray-50 border-r p-6 overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Settings className="h-5 w-5 text-blue-600" />
+              Sample Variables
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Modify these sample values to see how they appear in the template.
+            </p>
+            
+            <div className="space-y-4">
+              {Object.entries(sampleVariables).map(([key, value]) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                  </label>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => handleVariableChange(key, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
+              ))}
+            </div>
+          </div>
 
-                {/* Email Body */}
-                <div className="px-6 py-6 space-y-6">
-                  {preview.preview.header && (
-                    <div className="text-gray-900 whitespace-pre-line">
-                      {preview.preview.header}
-                    </div>
-                  )}
-
-                  <div className="text-gray-900 whitespace-pre-line leading-relaxed">
-                    {preview.preview.body}
-                  </div>
-
-                  {preview.preview.footer && (
-                    <div className="border-t pt-4 mt-6 text-gray-600 text-sm whitespace-pre-line">
-                      {preview.preview.footer}
-                    </div>
-                  )}
+          {/* Preview Area */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <RefreshCw className="h-8 w-8 text-blue-600 mx-auto mb-4 animate-spin" />
+                  <p className="text-gray-600">Generating preview...</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            ) : previewData ? (
+              <div className="space-y-6">
+                {/* Email Preview */}
+                <Card>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Mail className="h-5 w-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">Email Preview</h3>
+                  </div>
 
-          {/* Sample Data */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Sample Data Used
-              </CardTitle>
-              <CardDescription>
-                These sample values were used to generate the preview
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {Object.entries(preview.preview.sampleData).map(
-                  ([key, value]) => (
-                    <div key={key} className="flex flex-col space-y-1">
-                      <div className="text-sm font-medium text-gray-600 capitalize">
-                        {key.replace(/([A-Z])/g, " $1").trim()}
-                      </div>
-                      <div className="text-sm bg-gray-50 rounded px-2 py-1 font-mono">
-                        {typeof value === "boolean"
-                          ? value
-                            ? "Yes"
-                            : "No"
-                          : value || "N/A"}
+                  {/* Email Container */}
+                  <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                    {/* Email Header */}
+                    <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600">To:</span>
+                          <span className="text-sm text-gray-900">{sampleVariables.userEmail}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600">Subject:</span>
+                          <span className="text-sm text-gray-900 font-medium">
+                            {previewData.subject}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  ),
-                )}
+
+                    {/* Email Body */}
+                    <div className="px-6 py-6">
+                      <div className="max-w-none prose prose-sm">
+                        {previewData.header && (
+                          <div className="mb-4 text-gray-800">
+                            {previewData.header.split('\n').map((line, index) => (
+                              <p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="mb-4 text-gray-800">
+                          {previewData.body.split('\n').map((line, index) => (
+                            <p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>
+                          ))}
+                        </div>
+
+                        {previewData.footer && (
+                          <div className="mt-6 pt-4 border-t border-gray-200 text-gray-600">
+                            {previewData.footer.split('\n').map((line, index) => (
+                              <p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Template Details */}
+                <Card>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Template Details</h3>
+                  
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Template Name:</span>
+                      <p className="text-sm text-gray-900 mt-1">{template.name}</p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Type:</span>
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${currentConfig.color}`}>
+                          <IconComponent className="h-3 w-3 mr-1" />
+                          {currentConfig.label}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Status:</span>
+                      <p className="text-sm text-gray-900 mt-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          template.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {template.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Created:</span>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'Unknown'}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Template Variables */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Available Variables</CardTitle>
-              <CardDescription>
-                Variables that can be used in this template type
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {preview.preview.availableVariables.map((variable) => (
-                  <Badge
-                    key={variable}
-                    variant="secondary"
-                    className="font-mono text-xs"
-                  >
-                    {variable}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Template Metadata */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Template Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">
-                    Template Type
-                  </div>
-                  <Badge variant="secondary" className={typeConfig.color}>
-                    <IconComponent className="h-3 w-3 mr-1" />
-                    {typeConfig.label}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">
-                    Status
-                  </div>
-                  <Badge variant={template.isActive ? "default" : "secondary"}>
-                    {template.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">
-                    Created
-                  </div>
-                  <div className="text-sm text-gray-900">
-                    {new Date(template.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">
-                    Last Updated
-                  </div>
-                  <div className="text-sm text-gray-900">
-                    {template.updatedAt
-                      ? new Date(template.updatedAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        )
-                      : "Never"}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">
-                    Variables Count
-                  </div>
-                  <div className="text-sm text-gray-900">
-                    {preview.metadata.variablesCount} available
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">
-                    Preview Generated
-                  </div>
-                  <div className="text-sm text-gray-900">
-                    {new Date(
-                      preview.metadata.previewGeneratedAt,
-                    ).toLocaleTimeString()}
-                  </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <Mail className="h-8 w-8 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No preview data available</p>
+                  <Button onClick={refreshPreview} className="mt-4" size="sm">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Generate Preview
+                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>Unable to generate preview. Please try again.</p>
-        </div>
-      )}
 
-      {/* Action Buttons */}
-      <div className="flex justify-end pt-6 border-t">
-        <Button onClick={onClose}>Close Preview</Button>
+        {/* Footer */}
+        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
+          <Button onClick={onClose} variant="outline">
+            Close
+          </Button>
+        </div>
       </div>
     </div>
   );

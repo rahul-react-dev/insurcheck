@@ -1,42 +1,23 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAPI } from "../../utils/api";
+import { adminAuthApi } from "../../utils/api";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
-import Textarea from "../ui/textarea";
-import Badge from "../ui/badge";
-import Switch from "../ui/switch";
-import Label from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/Card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import Card from "../ui/Card";
 import { useToast } from "../../hooks/use-toast";
 import {
   Save,
   Eye,
   RefreshCw,
   Info,
-  Wand2,
   Shield,
   Activity,
   Bell,
   AlertTriangle,
-  Sparkles,
+  X,
 } from "lucide-react";
 
-export function NotificationTemplateEditor({ template, onClose, onSave }) {
+export default function NotificationTemplateEditor({ template, isOpen, onClose, onSave }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -48,658 +29,391 @@ export function NotificationTemplateEditor({ template, onClose, onSave }) {
     header: "",
     body: "",
     footer: "",
-    variables: [],
     isActive: true,
   });
 
-  const [preview, setPreview] = useState(null);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("basic");
 
   // Template type configurations
   const templateTypeConfig = {
     compliance_result: {
       icon: Shield,
-      label: "Compliance Result",
-      color: "bg-blue-100 text-blue-800",
-      description: "Notifications sent when compliance checks are completed",
-      variables: [
-        "{{userName}}",
-        "{{organizationName}}",
-        "{{documentName}}",
-        "{{complianceStatus}}",
-        "{{rulesChecked}}",
-        "{{rulesPassed}}",
-        "{{rulesFailed}}",
-        "{{timestamp}}",
-        "{{detailsUrl}}",
-      ],
+      label: 'Compliance Result',
+      color: 'bg-blue-100 text-blue-800',
+      description: 'Notifications sent when compliance checks are completed'
     },
     audit_log: {
       icon: Activity,
-      label: "Audit Log",
-      color: "bg-purple-100 text-purple-800",
-      description: "Notifications for audit trail events and security logs",
-      variables: [
-        "{{userName}}",
-        "{{organizationName}}",
-        "{{action}}",
-        "{{resource}}",
-        "{{timestamp}}",
-        "{{ipAddress}}",
-        "{{details}}",
-        "{{logUrl}}",
-      ],
+      label: 'Audit Log', 
+      color: 'bg-purple-100 text-purple-800',
+      description: 'Notifications for audit trail events and security logs'
     },
     user_notification: {
       icon: Bell,
-      label: "User Notification",
-      color: "bg-green-100 text-green-800",
-      description: "General user notifications and account updates",
-      variables: [
-        "{{userName}}",
-        "{{organizationName}}",
-        "{{notificationType}}",
-        "{{message}}",
-        "{{timestamp}}",
-        "{{actionRequired}}",
-        "{{actionUrl}}",
-      ],
+      label: 'User Notification',
+      color: 'bg-green-100 text-green-800',
+      description: 'General user notifications and account updates'
     },
     system_alert: {
       icon: AlertTriangle,
-      label: "System Alert",
-      color: "bg-red-100 text-red-800",
-      description: "System maintenance and critical alerts",
-      variables: [
-        "{{organizationName}}",
-        "{{alertType}}",
-        "{{severity}}",
-        "{{message}}",
-        "{{timestamp}}",
-        "{{affectedServices}}",
-        "{{statusUrl}}",
-      ],
-    },
+      label: 'System Alert',
+      color: 'bg-red-100 text-red-800',
+      description: 'System maintenance and critical alerts'
+    }
   };
 
-  // Initialize form with template data
+  // Available variables for templates
+  const availableVariables = [
+    { name: '{{organizationName}}', description: 'Organization name' },
+    { name: '{{userName}}', description: 'User\'s full name' },
+    { name: '{{userEmail}}', description: 'User\'s email address' },
+    { name: '{{documentName}}', description: 'Document name' },
+    { name: '{{complianceStatus}}', description: 'Compliance check result' },
+    { name: '{{timestamp}}', description: 'Current timestamp' },
+    { name: '{{actionUrl}}', description: 'Action button URL' },
+  ];
+
+  // Initialize form data from template prop
   useEffect(() => {
     if (template) {
       setFormData({
-        templateType: template.templateType,
-        name: template.name,
-        subject: template.subject,
+        templateType: template.templateType || "user_notification",
+        name: template.name || "",
+        subject: template.subject || "",
         header: template.header || "",
-        body: template.body,
+        body: template.body || "",
         footer: template.footer || "",
-        variables: template.variables ? JSON.parse(template.variables) : [],
-        isActive: template.isActive,
+        isActive: template.isActive ?? true,
+      });
+    } else {
+      // Reset form for new template
+      setFormData({
+        templateType: "user_notification",
+        name: "",
+        subject: "",
+        header: "",
+        body: "",
+        footer: "",
+        isActive: true,
       });
     }
+    setErrors({});
   }, [template]);
 
-  // Save template mutation
-  const saveTemplateMutation = useMutation({
-    mutationFn: (templateData) => {
-      if (template) {
-        return adminAPI.updateNotificationTemplate(template.id, templateData);
-      } else {
-        return adminAPI.createNotificationTemplate(templateData);
-      }
-    },
+  // Create template mutation
+  const createTemplateMutation = useMutation({
+    mutationFn: (templateData) => adminAuthApi.createNotificationTemplate(templateData),
     onSuccess: () => {
       toast({
-        title: template ? "Template updated" : "Template created",
-        description: `The notification template has been successfully ${template ? "updated" : "created"}.`,
+        title: 'Template created',
+        description: 'The notification template has been successfully created.',
       });
-      onSave();
+      onSave?.();
     },
     onError: (error) => {
+      const errorData = JSON.parse(error.message || '{}');
+      setErrors(errorData.errors || {});
       toast({
-        title: "Save failed",
-        description:
-          error.message || "Failed to save template. Please try again.",
-        variant: "destructive",
+        title: 'Creation failed',
+        description: errorData.message || 'Failed to create template. Please try again.',
+        variant: 'destructive',
       });
     },
   });
 
-  // Preview template mutation
-  const previewTemplateMutation = useMutation({
-    mutationFn: (templateData) =>
-      adminAPI.previewNotificationTemplate(templateData),
-    onSuccess: (data) => {
-      setPreview(data.data.preview);
-      setActiveTab("preview");
+  // Update template mutation  
+  const updateTemplateMutation = useMutation({
+    mutationFn: (templateData) => adminAuthApi.updateNotificationTemplate(template.id, templateData),
+    onSuccess: () => {
+      toast({
+        title: 'Template updated',
+        description: 'The notification template has been successfully updated.',
+      });
+      onSave?.();
     },
     onError: (error) => {
+      const errorData = JSON.parse(error.message || '{}');
+      setErrors(errorData.errors || {});
       toast({
-        title: "Preview failed",
-        description:
-          error.message || "Failed to generate preview. Please try again.",
-        variant: "destructive",
+        title: 'Update failed',
+        description: errorData.message || 'Failed to update template. Please try again.',
+        variant: 'destructive',
       });
     },
   });
 
-  // Handle form field changes
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  // Form validation
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) newErrors.name = 'Template name is required';
+    if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
+    if (!formData.body.trim()) newErrors.body = 'Body content is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Handle save
-  const handleSave = () => {
-    // Validation
-    if (!formData.name.trim()) {
-      toast({
-        title: "Validation error",
-        description: "Template name is required.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.subject.trim()) {
-      toast({
-        title: "Validation error",
-        description: "Subject is required.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.body.trim()) {
-      toast({
-        title: "Validation error",
-        description: "Body is required.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    saveTemplateMutation.mutate(formData);
-  };
-
-  // Handle preview
-  const handlePreview = () => {
-    if (!formData.subject.trim() || !formData.body.trim()) {
-      toast({
-        title: "Validation error",
-        description: "Subject and body are required for preview.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoadingPreview(true);
-    previewTemplateMutation.mutate(formData);
-    setTimeout(() => setIsLoadingPreview(false), 1000); // Visual feedback
-  };
-
-  // Insert variable at cursor
-  const insertVariable = (variable, field) => {
-    const textarea = document.getElementById(field);
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const currentValue = formData[field];
-      const newValue =
-        currentValue.substring(0, start) +
-        variable +
-        currentValue.substring(end);
-
-      handleInputChange(field, newValue);
-
-      // Restore cursor position
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(
-          start + variable.length,
-          start + variable.length,
-        );
-      }, 0);
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    if (template) {
+      updateTemplateMutation.mutate(formData);
     } else {
-      // Fallback - append to end
-      handleInputChange(field, formData[field] + variable);
+      createTemplateMutation.mutate(formData);
     }
   };
 
-  // Apply template suggestions
-  const applyTemplate = (type) => {
-    const templates = {
-      compliance_result: {
-        subject:
-          "[{{organizationName}}] Compliance Check Results for {{documentName}}",
-        header: "Dear {{userName}},",
-        body: `We have completed the compliance check for your document "{{documentName}}".
-
-**Status**: {{complianceStatus}}
-**Rules Checked**: {{rulesChecked}}
-**Rules Passed**: {{rulesPassed}}
-**Rules Failed**: {{rulesFailed}}
-
-The compliance check was completed on {{timestamp}}.
-
-${formData.templateType === "compliance_result" ? "You can view detailed results by clicking the link below." : ""}`,
-        footer: `Best regards,
-The {{organizationName}} Compliance Team
-
-View Details: {{detailsUrl}}`,
-      },
-      audit_log: {
-        subject: "[{{organizationName}}] Security Alert: {{action}}",
-        header: "Security Team Alert",
-        body: `A security-relevant action has occurred in your organization:
-
-**User**: {{userName}}
-**Action**: {{action}}
-**Resource**: {{resource}}
-**Time**: {{timestamp}}
-**IP Address**: {{ipAddress}}
-
-**Details**: {{details}}
-
-This notification was generated automatically as part of our security monitoring.`,
-        footer: `Security Team
-{{organizationName}}
-
-View Audit Log: {{logUrl}}`,
-      },
-      user_notification: {
-        subject: "[{{organizationName}}] {{notificationType}}",
-        header: "Hello {{userName}},",
-        body: `{{message}}
-
-This notification was sent on {{timestamp}}.
-
-{{#if actionRequired}}Please take action by visiting the link below.{{/if}}`,
-        footer: `Thank you,
-{{organizationName}} Team
-
-{{#if actionUrl}}Take Action: {{actionUrl}}{{/if}}`,
-      },
-      system_alert: {
-        subject: "[{{organizationName}}] System Alert: {{alertType}}",
-        header: "System Alert Notification",
-        body: `**Alert Type**: {{alertType}}
-**Severity**: {{severity}}
-
-{{message}}
-
-**Time**: {{timestamp}}
-**Affected Services**: {{affectedServices}}
-
-We are working to resolve this issue as quickly as possible.`,
-        footer: `System Operations Team
-{{organizationName}}
-
-Status Updates: {{statusUrl}}`,
-      },
-    };
-
-    const template = templates[type] || templates.user_notification;
-    setFormData((prev) => ({
-      ...prev,
-      subject: template.subject,
-      header: template.header,
-      body: template.body,
-      footer: template.footer,
-    }));
-
-    toast({
-      title: "Template applied",
-      description:
-        "The template has been applied. You can now customize it further.",
-    });
+  // Handle input changes
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
   };
 
-  const currentTypeConfig =
-    templateTypeConfig[formData.templateType] ||
-    templateTypeConfig.user_notification;
-  const IconComponent = currentTypeConfig.icon;
+  // Insert variable into text field
+  const insertVariable = (variable, field) => {
+    const currentValue = formData[field] || '';
+    setFormData(prev => ({
+      ...prev,
+      [field]: currentValue + variable.name
+    }));
+  };
+
+  const currentConfig = templateTypeConfig[formData.templateType];
+  const IconComponent = currentConfig?.icon || Bell;
+  const isLoading = createTemplateMutation.isPending || updateTemplateMutation.isPending;
+
+  if (!isOpen) return null;
 
   return (
-    <div className="space-y-6">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-6"
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
-
-        {/* Basic Information Tab */}
-        <TabsContent value="basic" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Template Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter template name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="templateType">Template Type</Label>
-                <Select
-                  value={formData.templateType}
-                  onValueChange={(value) =>
-                    handleInputChange("templateType", value)
-                  }
-                >
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select template type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(templateTypeConfig).map(([key, config]) => {
-                      const IconComp = config.icon;
-                      return (
-                        <SelectItem key={key} value={key}>
-                          <div className="flex items-center">
-                            <IconComp className="h-4 w-4 mr-2" />
-                            {config.label}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("isActive", checked)
-                  }
-                />
-                <Label htmlFor="isActive">Active Template</Label>
-              </div>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center gap-3">
+            <IconComponent className="h-6 w-6 text-blue-600" />
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {template ? 'Edit Notification Template' : 'Create Notification Template'}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Design email templates for automated notifications
+              </p>
             </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <IconComponent className="h-5 w-5" />
-                  {currentTypeConfig.label}
-                </CardTitle>
-                <CardDescription>
-                  {currentTypeConfig.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+        {/* Content */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Main Form */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information */}
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <Label className="text-sm font-medium">
-                      Available Variables
-                    </Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {currentTypeConfig.variables.map((variable) => (
-                        <Badge
-                          key={variable}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {variable}
-                        </Badge>
-                      ))}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Template Name *
+                    </label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="Enter template name"
+                      className={errors.name ? 'border-red-300' : ''}
+                    />
+                    {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                   </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyTemplate(formData.templateType)}
-                    className="w-full"
-                  >
-                    <Wand2 className="h-4 w-4 mr-2" />
-                    Apply Template Suggestions
-                  </Button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Template Type *
+                    </label>
+                    <select 
+                      value={formData.templateType}
+                      onChange={(e) => handleInputChange('templateType', e.target.value)}
+                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Object.entries(templateTypeConfig).map(([key, config]) => (
+                        <option key={key} value={key}>
+                          {config.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
-        {/* Content Tab */}
-        <TabsContent value="content" className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-4">
-              <div>
-                <Label htmlFor="subject">Subject Line</Label>
-                <Input
-                  id="subject"
-                  placeholder="Enter email subject"
-                  value={formData.subject}
-                  onChange={(e) => handleInputChange("subject", e.target.value)}
-                  className="mt-2"
-                />
-              </div>
+                <div className="mt-4">
+                  <div className={`p-4 rounded-lg ${currentConfig.color} bg-opacity-20 border border-current border-opacity-20`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconComponent className="h-4 w-4" />
+                      <span className="font-medium">{currentConfig.label}</span>
+                    </div>
+                    <p className="text-sm">{currentConfig.description}</p>
+                  </div>
+                </div>
 
-              <div>
-                <Label htmlFor="header">Header (Optional)</Label>
-                <Textarea
-                  id="header"
-                  placeholder="Enter email header/greeting"
-                  value={formData.header}
-                  onChange={(e) => handleInputChange("header", e.target.value)}
-                  rows={3}
-                  className="mt-2"
-                />
-              </div>
+                <div className="mt-4 flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Template is active</span>
+                  </label>
+                </div>
+              </Card>
 
-              <div>
-                <Label htmlFor="body">Body Content</Label>
-                <Textarea
-                  id="body"
-                  placeholder="Enter email body content"
-                  value={formData.body}
-                  onChange={(e) => handleInputChange("body", e.target.value)}
-                  rows={8}
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="footer">Footer (Optional)</Label>
-                <Textarea
-                  id="footer"
-                  placeholder="Enter email footer/signature"
-                  value={formData.footer}
-                  onChange={(e) => handleInputChange("footer", e.target.value)}
-                  rows={4}
-                  className="mt-2"
-                />
-              </div>
-            </div>
-
-            <Card className="h-fit">
-              <CardHeader>
-                <CardTitle className="text-lg">Variables</CardTitle>
-                <CardDescription>
-                  Click to insert variables into your template
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              {/* Email Content */}
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Content</h3>
+                
                 <div className="space-y-4">
-                  {["subject", "header", "body", "footer"].map((field) => (
-                    <div key={field}>
-                      <Label className="text-sm font-medium capitalize">
-                        {field}
-                      </Label>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {currentTypeConfig.variables.map((variable) => (
-                          <Button
-                            key={`${field}-${variable}`}
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => insertVariable(variable, field)}
-                            className="h-auto p-1 text-xs"
-                          >
-                            {variable}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject Line *
+                    </label>
+                    <Input
+                      value={formData.subject}
+                      onChange={(e) => handleInputChange('subject', e.target.value)}
+                      placeholder="Enter email subject"
+                      className={errors.subject ? 'border-red-300' : ''}
+                    />
+                    {errors.subject && <p className="mt-1 text-sm text-red-600">{errors.subject}</p>}
+                  </div>
 
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                    <div className="text-sm text-blue-800">
-                      <strong>Tip:</strong> Place your cursor in the text area
-                      and click a variable to insert it at that position.
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Header
+                    </label>
+                    <textarea
+                      value={formData.header}
+                      onChange={(e) => handleInputChange('header', e.target.value)}
+                      placeholder="Enter email header (optional greeting)"
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Body Content *
+                    </label>
+                    <textarea
+                      value={formData.body}
+                      onChange={(e) => handleInputChange('body', e.target.value)}
+                      placeholder="Enter main email content"
+                      rows={6}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.body ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.body && <p className="mt-1 text-sm text-red-600">{errors.body}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Footer
+                    </label>
+                    <textarea
+                      value={formData.footer}
+                      onChange={(e) => handleInputChange('footer', e.target.value)}
+                      placeholder="Enter email footer (optional closing)"
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </Card>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      {template ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      {template ? 'Update Template' : 'Create Template'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
-        </TabsContent>
 
-        {/* Preview Tab */}
-        <TabsContent value="preview" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Template Preview</h3>
-            <Button
-              variant="outline"
-              onClick={handlePreview}
-              disabled={previewTemplateMutation.isLoading || isLoadingPreview}
-            >
-              {previewTemplateMutation.isLoading || isLoadingPreview ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Eye className="h-4 w-4 mr-2" />
-              )}
-              Generate Preview
-            </Button>
-          </div>
-
-          {preview ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  Preview with Sample Data
-                </CardTitle>
-                <CardDescription>
-                  This is how your template will look with real data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="border rounded-lg p-4 bg-white">
-                  <div className="space-y-4">
-                    <div className="border-b pb-3">
-                      <h4 className="font-medium text-sm text-gray-600">
-                        Subject
-                      </h4>
-                      <p className="mt-1 font-semibold">{preview.subject}</p>
-                    </div>
-
-                    {preview.header && (
-                      <div className="border-b pb-3">
-                        <h4 className="font-medium text-sm text-gray-600">
-                          Header
-                        </h4>
-                        <div className="mt-1 whitespace-pre-line">
-                          {preview.header}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="border-b pb-3">
-                      <h4 className="font-medium text-sm text-gray-600">
-                        Body
-                      </h4>
-                      <div className="mt-1 whitespace-pre-line">
-                        {preview.body}
+          {/* Variables Sidebar */}
+          <div className="w-80 bg-gray-50 border-l p-6 overflow-y-auto">
+            <div className="sticky top-0">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Info className="h-5 w-5 text-blue-600" />
+                Available Variables
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Click on any variable to insert it into your template content.
+              </p>
+              
+              <div className="space-y-2">
+                {availableVariables.map((variable, index) => (
+                  <div key={index} className="bg-white rounded-lg p-3 border shadow-sm">
+                    <div className="flex items-center justify-between mb-1">
+                      <code className="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {variable.name}
+                      </code>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => insertVariable(variable, 'subject')}
+                          className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        >
+                          Subject
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => insertVariable(variable, 'body')}
+                          className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        >
+                          Body
+                        </button>
                       </div>
                     </div>
-
-                    {preview.footer && (
-                      <div>
-                        <h4 className="font-medium text-sm text-gray-600">
-                          Footer
-                        </h4>
-                        <div className="mt-1 whitespace-pre-line text-gray-600">
-                          {preview.footer}
-                        </div>
-                      </div>
-                    )}
+                    <p className="text-xs text-gray-500">{variable.description}</p>
                   </div>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Sample Data Used</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      {preview.availableVariables.map((variable) => (
-                        <div key={variable} className="flex gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {variable}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Eye className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Click "Generate Preview" to see how your template will look</p>
+                ))}
+              </div>
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-6 border-t">
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handlePreview}
-            disabled={previewTemplateMutation.isLoading || isLoadingPreview}
-          >
-            {previewTemplateMutation.isLoading || isLoadingPreview ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Eye className="h-4 w-4 mr-2" />
-            )}
-            Preview
-          </Button>
-
-          <Button
-            onClick={handleSave}
-            disabled={saveTemplateMutation.isLoading}
-          >
-            {saveTemplateMutation.isLoading ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            {template ? "Update Template" : "Create Template"}
-          </Button>
+          </div>
         </div>
       </div>
     </div>
