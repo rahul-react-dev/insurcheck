@@ -1,5 +1,5 @@
 import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
-import { superAdminAPI } from '../../utils/api';
+import { superAdminAPI, api } from '../../utils/api';
 import {
   fetchAnalyticsRequest,
   fetchAnalyticsSuccess,
@@ -10,6 +10,18 @@ import {
   fetchTenantAnalyticsRequest,
   fetchTenantAnalyticsSuccess,
   fetchTenantAnalyticsFailure,
+  fetchDashboardMetricsRequest,
+  fetchDashboardMetricsSuccess,
+  fetchDashboardMetricsFailure,
+  fetchChartsDataRequest,
+  fetchChartsDataSuccess,
+  fetchChartsDataFailure,
+  fetchTrendDataRequest,
+  fetchTrendDataSuccess,
+  fetchTrendDataFailure,
+  fetchDetailedAnalyticsRequest,
+  fetchDetailedAnalyticsSuccess,
+  fetchDetailedAnalyticsFailure,
   exportAnalyticsRequest,
   exportAnalyticsSuccess,
   exportAnalyticsFailure
@@ -81,6 +93,95 @@ function* fetchTenantAnalyticsSaga(action) {
   }
 }
 
+// Dashboard Metrics Saga
+function* fetchDashboardMetricsSaga(action) {
+  try {
+    const params = action.payload || {};
+    console.log('📡 fetchDashboardMetricsSaga triggered with params:', params);
+
+    const response = yield call(superAdminAPI.getDashboardStats);
+    console.log('✅ Dashboard metrics API response received:', response);
+
+    const metrics = response.data || response;
+    yield put(fetchDashboardMetricsSuccess(metrics));
+  } catch (error) {
+    console.error('❌ Error in fetchDashboardMetricsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch dashboard metrics';
+    yield put(fetchDashboardMetricsFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to load dashboard metrics. Please try again.', 'error');
+    }
+  }
+}
+
+// Charts Data Saga
+function* fetchChartsDataSaga(action) {
+  try {
+    const params = action.payload || {};
+    console.log('📡 fetchChartsDataSaga triggered with params:', params);
+
+    const response = yield call(superAdminAPI.getAnalytics, params);
+    console.log('✅ Charts data API response received:', response);
+
+    const chartsData = response.data || response;
+    yield put(fetchChartsDataSuccess(chartsData));
+  } catch (error) {
+    console.error('❌ Error in fetchChartsDataSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch charts data';
+    yield put(fetchChartsDataFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to load charts data. Please try again.', 'error');
+    }
+  }
+}
+
+// Trend Data Saga
+function* fetchTrendDataSaga(action) {
+  try {
+    const params = action.payload || {};
+    console.log('📡 fetchTrendDataSaga triggered with params:', params);
+
+    const response = yield call(superAdminAPI.getAnalytics, params);
+    console.log('✅ Trend data API response received:', response);
+
+    const trendData = response.data || response;
+    yield put(fetchTrendDataSuccess(trendData));
+  } catch (error) {
+    console.error('❌ Error in fetchTrendDataSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch trend data';
+    yield put(fetchTrendDataFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to load trend data. Please try again.', 'error');
+    }
+  }
+}
+
+// Detailed Analytics Saga
+function* fetchDetailedAnalyticsSaga(action) {
+  try {
+    const params = action.payload || {};
+    console.log('📡 fetchDetailedAnalyticsSaga triggered with params:', params);
+
+    // Use the detailed analytics endpoint
+    const response = yield call(api.get, '/super-admin/analytics/detailed', { params });
+    console.log('✅ Detailed analytics API response received:', response);
+
+    const detailedData = response.data || response;
+    yield put(fetchDetailedAnalyticsSuccess(detailedData));
+  } catch (error) {
+    console.error('❌ Error in fetchDetailedAnalyticsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch detailed analytics';
+    yield put(fetchDetailedAnalyticsFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification('Failed to load detailed analytics. Please try again.', 'error');
+    }
+  }
+}
+
 function* exportAnalyticsSaga(action) {
   try {
     const params = action.payload || {};
@@ -142,12 +243,33 @@ function* watchExportAnalytics() {
   yield takeEvery(exportAnalyticsRequest.type, exportAnalyticsSaga);
 }
 
+// Watcher sagas for new actions
+function* watchFetchDashboardMetrics() {
+  yield takeLatest(fetchDashboardMetricsRequest.type, fetchDashboardMetricsSaga);
+}
+
+function* watchFetchChartsData() {
+  yield takeLatest(fetchChartsDataRequest.type, fetchChartsDataSaga);
+}
+
+function* watchFetchTrendData() {
+  yield takeLatest(fetchTrendDataRequest.type, fetchTrendDataSaga);
+}
+
+function* watchFetchDetailedAnalytics() {
+  yield takeLatest(fetchDetailedAnalyticsRequest.type, fetchDetailedAnalyticsSaga);
+}
+
 // Root saga
 export default function* analyticsSaga() {
   yield all([
     fork(watchFetchAnalytics),
     fork(watchFetchDashboardStats),
     fork(watchFetchTenantAnalytics),
+    fork(watchFetchDashboardMetrics),
+    fork(watchFetchChartsData),
+    fork(watchFetchTrendData),
+    fork(watchFetchDetailedAnalytics),
     fork(watchExportAnalytics)
   ]);
 }
