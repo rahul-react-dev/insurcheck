@@ -13,6 +13,7 @@ import {
   activityLogs,
   invoiceGenerationConfigs,
   invoiceGenerationLogs,
+  systemConfig,
 } from "../shared/schema.js";
 import {
   eq,
@@ -3353,6 +3354,285 @@ router.post('/super-admin/analytics/export', authenticateToken, requireSuperAdmi
     res.status(500).json({
       error: 'Failed to export analytics',
       message: error.message
+    });
+  }
+});
+
+// System Configuration Management API Routes
+// =================================================
+
+// Get all system configuration
+router.get('/super-admin/system-config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📋 Fetching system configuration');
+
+    const configurations = await db.select({
+      id: systemConfig.id,
+      key: systemConfig.key,
+      value: systemConfig.value,
+      description: systemConfig.description,
+      category: systemConfig.category,
+      isActive: systemConfig.isActive,
+      createdAt: systemConfig.createdAt,
+      updatedAt: systemConfig.updatedAt,
+    })
+    .from(systemConfig)
+    .where(eq(systemConfig.isActive, true))
+    .orderBy(systemConfig.category, systemConfig.key);
+
+    // Group configurations by category
+    const configsByCategory = configurations.reduce((acc, config) => {
+      if (!acc[config.category]) {
+        acc[config.category] = [];
+      }
+      acc[config.category].push(config);
+      return acc;
+    }, {});
+
+    // Get audit logs for recent changes
+    const auditLogs = await db.select({
+      id: activityLogs.id,
+      action: activityLogs.action,
+      resource: activityLogs.resource,
+      resourceId: activityLogs.resourceId,
+      details: activityLogs.details,
+      userId: activityLogs.userId,
+      createdAt: activityLogs.createdAt,
+    })
+    .from(activityLogs)
+    .where(eq(activityLogs.resource, 'system-config'))
+    .orderBy(desc(activityLogs.createdAt))
+    .limit(50);
+
+    console.log(`✅ Found ${configurations.length} system configurations in ${Object.keys(configsByCategory).length} categories`);
+    
+    res.json({ 
+      configuration: configsByCategory,
+      auditLogs: auditLogs || [],
+      summary: {
+        totalConfigurations: configurations.length,
+        categories: Object.keys(configsByCategory).length,
+        activeConfigurations: configurations.filter(c => c.isActive).length,
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching system configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch system configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Update system configuration
+router.put('/super-admin/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value, category } = req.body;
+    
+    console.log(`📝 Updating system config: ${key} = ${JSON.stringify(value)}`);
+
+    if (!key || value === undefined) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Key and value are required'
+      });
+    }
+
+    // Get existing configuration
+    const existingConfig = await db.select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key))
+      .limit(1);
+
+    let result;
+    let action = 'UPDATE';
+
+    if (existingConfig.length === 0) {
+      // Create new configuration
+      action = 'CREATE';
+      result = await db.insert(systemConfig)
+        .values({
+          key,
+          value: JSON.stringify(value),
+          category: category || 'general',
+          isActive: true,
+        })
+        .returning();
+    } else {
+      // Update existing configuration
+      result = await db.update(systemConfig)
+        .set({
+          value: JSON.stringify(value),
+          category: category || existingConfig[0].category,
+          updatedAt: new Date(),
+        })
+        .where(eq(systemConfig.key, key))
+        .returning();
+    }
+
+    // Log the activity
+    await db.insert(activityLogs).values({
+      tenantId: null, // System-wide configuration
+      userId: req.user.id,
+      action: `SYSTEM_CONFIG_${action}`,
+      resource: 'system-config',
+      resourceId: key,
+      details: {
+        key,
+        oldValue: existingConfig[0]?.value || null,
+        newValue: value,
+        category: category || 'general'
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      level: 'info',
+    });
+
+    console.log(`✅ System configuration ${action.toLowerCase()}d: ${key}`);
+    
+    res.json({
+      success: true,
+      configuration: result[0],
+      action,
+      message: `Configuration ${action.toLowerCase()}d successfully`
+    });
+  } catch (error) {
+    console.error('❌ Error updating system configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to update system configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Create new system configuration
+router.post('/super-admin/system-config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { key, value, category, description } = req.body;
+    
+    console.log(`📝 Creating system config: ${key}`);
+
+    if (!key || value === undefined || !category) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Key, value, and category are required'
+      });
+    }
+
+    // Check if configuration already exists
+    const existingConfig = await db.select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key))
+      .limit(1);
+
+    if (existingConfig.length > 0) {
+      return res.status(409).json({
+        error: 'Configuration already exists',
+        message: `A configuration with key '${key}' already exists`
+      });
+    }
+
+    // Create new configuration
+    const result = await db.insert(systemConfig)
+      .values({
+        key,
+        value: JSON.stringify(value),
+        category,
+        description,
+        isActive: true,
+      })
+      .returning();
+
+    // Log the activity
+    await db.insert(activityLogs).values({
+      tenantId: null,
+      userId: req.user.id,
+      action: 'SYSTEM_CONFIG_CREATE',
+      resource: 'system-config',
+      resourceId: key,
+      details: {
+        key,
+        value,
+        category,
+        description
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      level: 'info',
+    });
+
+    console.log(`✅ System configuration created: ${key}`);
+    
+    res.status(201).json({
+      success: true,
+      configuration: result[0],
+      message: 'Configuration created successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error creating system configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to create system configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Delete system configuration
+router.delete('/super-admin/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { key } = req.params;
+    
+    console.log(`🗑️ Deleting system config: ${key}`);
+
+    // Get existing configuration
+    const existingConfig = await db.select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key))
+      .limit(1);
+
+    if (existingConfig.length === 0) {
+      return res.status(404).json({
+        error: 'Configuration not found',
+        message: `Configuration with key '${key}' not found`
+      });
+    }
+
+    // Soft delete by setting isActive to false
+    await db.update(systemConfig)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(systemConfig.key, key));
+
+    // Log the activity
+    await db.insert(activityLogs).values({
+      tenantId: null,
+      userId: req.user.id,
+      action: 'SYSTEM_CONFIG_DELETE',
+      resource: 'system-config',
+      resourceId: key,
+      details: {
+        key,
+        deletedValue: existingConfig[0].value
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      level: 'info',
+    });
+
+    console.log(`✅ System configuration deleted: ${key}`);
+    
+    res.json({
+      success: true,
+      message: 'Configuration deleted successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error deleting system configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete system configuration',
+      message: error.message 
     });
   }
 });

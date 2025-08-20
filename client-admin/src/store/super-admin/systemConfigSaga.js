@@ -68,7 +68,7 @@ function* createSystemConfigSaga(action) {
     console.log('📡 createSystemConfigSaga triggered with:', configData);
 
     const response = yield call(superAdminAPI.createSystemConfig, configData);
-    const newConfig = response.data || response;
+    const newConfig = response.configuration || response.data || response;
 
     yield put(createSystemConfigSuccess(newConfig));
 
