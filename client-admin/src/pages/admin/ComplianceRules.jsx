@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import AdminTenantLayout from '../../layouts/AdminTenantLayout';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
-import * as adminAuthApi from '../../utils/api';
+import { adminAuthApi } from '../../utils/api';
 
 const ComplianceRules = () => {
   // State for rules data
