@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminAPI } from '../../utils/api';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
+import  Button  from '../ui/Button';
+import Badge  from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import {
   Card,
@@ -10,7 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card';
+} from '../ui/Card';
 import {
   Table,
   TableBody,

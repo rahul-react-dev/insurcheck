@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { adminAPI } from '../../utils/api';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Skeleton } from '../ui/skeleton';
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { adminAPI } from "../../utils/api";
+import Button from "../ui/Button";
+import Badge from "../ui/badge";
+import { Skeleton } from "../ui/skeleton";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card';
-import { useToast } from '../../hooks/use-toast';
-import { 
-  Mail, 
-  RefreshCw, 
+} from "../ui/Card";
+import { useToast } from "../../hooks/use-toast";
+import {
+  Mail,
+  RefreshCw,
   Sparkles,
   Shield,
   Activity,
@@ -23,8 +23,8 @@ import {
   Clock,
   User,
   Building2,
-  FileText
-} from 'lucide-react';
+  FileText,
+} from "lucide-react";
 
 export function NotificationTemplatePreview({ template, onClose }) {
   const { toast } = useToast();
@@ -34,37 +34,39 @@ export function NotificationTemplatePreview({ template, onClose }) {
   const templateTypeConfig = {
     compliance_result: {
       icon: Shield,
-      label: 'Compliance Result',
-      color: 'bg-blue-100 text-blue-800',
+      label: "Compliance Result",
+      color: "bg-blue-100 text-blue-800",
     },
     audit_log: {
       icon: Activity,
-      label: 'Audit Log',
-      color: 'bg-purple-100 text-purple-800',
+      label: "Audit Log",
+      color: "bg-purple-100 text-purple-800",
     },
     user_notification: {
       icon: Bell,
-      label: 'User Notification',
-      color: 'bg-green-100 text-green-800',
+      label: "User Notification",
+      color: "bg-green-100 text-green-800",
     },
     system_alert: {
       icon: AlertTriangle,
-      label: 'System Alert',
-      color: 'bg-red-100 text-red-800',
-    }
+      label: "System Alert",
+      color: "bg-red-100 text-red-800",
+    },
   };
 
   // Preview template mutation
   const previewMutation = useMutation({
-    mutationFn: (templateData) => adminAPI.previewNotificationTemplate(templateData),
+    mutationFn: (templateData) =>
+      adminAPI.previewNotificationTemplate(templateData),
     onSuccess: (data) => {
       setPreview(data.data);
     },
     onError: (error) => {
       toast({
-        title: 'Preview failed',
-        description: error.message || 'Failed to generate preview. Please try again.',
-        variant: 'destructive',
+        title: "Preview failed",
+        description:
+          error.message || "Failed to generate preview. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -75,10 +77,10 @@ export function NotificationTemplatePreview({ template, onClose }) {
       const templateData = {
         templateType: template.templateType,
         subject: template.subject,
-        header: template.header || '',
+        header: template.header || "",
         body: template.body,
-        footer: template.footer || '',
-        variables: template.variables ? JSON.parse(template.variables) : []
+        footer: template.footer || "",
+        variables: template.variables ? JSON.parse(template.variables) : [],
       };
       previewMutation.mutate(templateData);
     }
@@ -89,10 +91,10 @@ export function NotificationTemplatePreview({ template, onClose }) {
       const templateData = {
         templateType: template.templateType,
         subject: template.subject,
-        header: template.header || '',
+        header: template.header || "",
         body: template.body,
-        footer: template.footer || '',
-        variables: template.variables ? JSON.parse(template.variables) : []
+        footer: template.footer || "",
+        variables: template.variables ? JSON.parse(template.variables) : [],
       };
       previewMutation.mutate(templateData);
     }
@@ -102,7 +104,9 @@ export function NotificationTemplatePreview({ template, onClose }) {
     return null;
   }
 
-  const typeConfig = templateTypeConfig[template.templateType] || templateTypeConfig.user_notification;
+  const typeConfig =
+    templateTypeConfig[template.templateType] ||
+    templateTypeConfig.user_notification;
   const IconComponent = typeConfig.icon;
 
   return (
@@ -119,14 +123,14 @@ export function NotificationTemplatePreview({ template, onClose }) {
               <IconComponent className="h-3 w-3 mr-1" />
               {typeConfig.label}
             </Badge>
-            <Badge variant={template.isActive ? 'default' : 'secondary'}>
-              {template.isActive ? 'Active' : 'Inactive'}
+            <Badge variant={template.isActive ? "default" : "secondary"}>
+              {template.isActive ? "Active" : "Inactive"}
             </Badge>
           </div>
         </div>
-        
-        <Button 
-          variant="outline" 
+
+        <Button
+          variant="outline"
           size="sm"
           onClick={refreshPreview}
           disabled={previewMutation.isLoading}
@@ -175,7 +179,9 @@ export function NotificationTemplatePreview({ template, onClose }) {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Mail className="h-4 w-4" />
-                      <span>From: InsurCheck &lt;noreply@insurcheck.com&gt;</span>
+                      <span>
+                        From: InsurCheck &lt;noreply@insurcheck.com&gt;
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <User className="h-4 w-4" />
@@ -222,16 +228,22 @@ export function NotificationTemplatePreview({ template, onClose }) {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                {Object.entries(preview.preview.sampleData).map(([key, value]) => (
-                  <div key={key} className="flex flex-col space-y-1">
-                    <div className="text-sm font-medium text-gray-600 capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                {Object.entries(preview.preview.sampleData).map(
+                  ([key, value]) => (
+                    <div key={key} className="flex flex-col space-y-1">
+                      <div className="text-sm font-medium text-gray-600 capitalize">
+                        {key.replace(/([A-Z])/g, " $1").trim()}
+                      </div>
+                      <div className="text-sm bg-gray-50 rounded px-2 py-1 font-mono">
+                        {typeof value === "boolean"
+                          ? value
+                            ? "Yes"
+                            : "No"
+                          : value || "N/A"}
+                      </div>
                     </div>
-                    <div className="text-sm bg-gray-50 rounded px-2 py-1 font-mono">
-                      {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value || 'N/A'}
-                    </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </CardContent>
           </Card>
@@ -247,7 +259,11 @@ export function NotificationTemplatePreview({ template, onClose }) {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {preview.preview.availableVariables.map((variable) => (
-                  <Badge key={variable} variant="secondary" className="font-mono text-xs">
+                  <Badge
+                    key={variable}
+                    variant="secondary"
+                    className="font-mono text-xs"
+                  >
                     {variable}
                   </Badge>
                 ))}
@@ -266,59 +282,76 @@ export function NotificationTemplatePreview({ template, onClose }) {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Template Type</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Template Type
+                  </div>
                   <Badge variant="secondary" className={typeConfig.color}>
                     <IconComponent className="h-3 w-3 mr-1" />
                     {typeConfig.label}
                   </Badge>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Status</div>
-                  <Badge variant={template.isActive ? 'default' : 'secondary'}>
-                    {template.isActive ? 'Active' : 'Inactive'}
+                  <div className="text-sm font-medium text-gray-600">
+                    Status
+                  </div>
+                  <Badge variant={template.isActive ? "default" : "secondary"}>
+                    {template.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Created</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Created
+                  </div>
                   <div className="text-sm text-gray-900">
-                    {new Date(template.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                    {new Date(template.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Last Updated</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Last Updated
+                  </div>
                   <div className="text-sm text-gray-900">
-                    {template.updatedAt ? 
-                      new Date(template.updatedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : 'Never'
-                    }
+                    {template.updatedAt
+                      ? new Date(template.updatedAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )
+                      : "Never"}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Variables Count</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Variables Count
+                  </div>
                   <div className="text-sm text-gray-900">
                     {preview.metadata.variablesCount} available
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-600">Preview Generated</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Preview Generated
+                  </div>
                   <div className="text-sm text-gray-900">
-                    {new Date(preview.metadata.previewGeneratedAt).toLocaleTimeString()}
+                    {new Date(
+                      preview.metadata.previewGeneratedAt,
+                    ).toLocaleTimeString()}
                   </div>
                 </div>
               </div>
@@ -334,9 +367,7 @@ export function NotificationTemplatePreview({ template, onClose }) {
 
       {/* Action Buttons */}
       <div className="flex justify-end pt-6 border-t">
-        <Button onClick={onClose}>
-          Close Preview
-        </Button>
+        <Button onClick={onClose}>Close Preview</Button>
       </div>
     </div>
   );
