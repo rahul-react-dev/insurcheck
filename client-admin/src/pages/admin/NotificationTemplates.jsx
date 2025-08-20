@@ -29,7 +29,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-export function NotificationTemplates() {
+const  NotificationTemplates = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -607,3 +607,5 @@ export function NotificationTemplates() {
     </div>
   );
 }
+
+export default NotificationTemplates
