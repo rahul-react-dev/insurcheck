@@ -431,6 +431,7 @@ export const superAdminAPI = {
   // Analytics
   getAnalytics: (params) => api.get('/super-admin/analytics', { params }),
   getDashboardStats: () => api.get('/super-admin/dashboard-stats'),
+  getDetailedAnalytics: (params) => api.get('/super-admin/analytics/detailed', { params }),
   getTenantAnalytics: (tenantId, params) => api.get(`/super-admin/tenants/${tenantId}/analytics`, { params }),
   exportAnalytics: (params) => api.post('/super-admin/analytics/export', params),
 
@@ -455,4 +456,6 @@ export const superAdminAPI = {
   retryInvoiceGeneration: (logId) => api.post(`/super-admin/invoice-logs/${logId}/retry`),
 };
 
+// Also export the api instance for direct usage
+export { api };
 export default api;

@@ -1,5 +1,5 @@
 import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
-import { superAdminAPI, api } from '../../utils/api';
+import { superAdminAPI } from '../../utils/api';
 import {
   fetchAnalyticsRequest,
   fetchAnalyticsSuccess,
@@ -166,7 +166,7 @@ function* fetchDetailedAnalyticsSaga(action) {
     console.log('📡 fetchDetailedAnalyticsSaga triggered with params:', params);
 
     // Use the detailed analytics endpoint
-    const response = yield call(api.get, '/super-admin/analytics/detailed', { params });
+    const response = yield call(superAdminAPI.getDetailedAnalytics, params);
     console.log('✅ Detailed analytics API response received:', response);
 
     const detailedData = response.data || response;
