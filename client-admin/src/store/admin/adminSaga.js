@@ -49,7 +49,7 @@ function* adminLoginSaga(action) {
   try {
     const response = yield call(adminLoginApi, action.payload);
 
-    if (response?.data) {
+    if (response?.success && response?.data) {
       yield put(loginSuccess(response.data));
 
       // Store token in localStorage
@@ -57,19 +57,29 @@ function* adminLoginSaga(action) {
         localStorage.setItem('adminToken', response.data.token);
       }
     } else {
-      yield put(loginFailure('Invalid response from server'));
+      yield put(loginFailure(response?.message || 'Invalid response from server'));
     }
   } catch (error) {
     console.error('Admin login error:', error);
 
     let errorMessage = 'Login failed';
 
-    if (error?.response?.data?.message) {
+    // Handle our custom error responses
+    if (error?.message) {
+      try {
+        const parsedError = JSON.parse(error.message);
+        if (parsedError?.message) {
+          errorMessage = parsedError.message;
+        } else if (parsedError?.error) {
+          errorMessage = parsedError.error;
+        }
+      } catch {
+        errorMessage = error.message;
+      }
+    } else if (error?.response?.data?.message) {
       errorMessage = error.response.data.message;
     } else if (error?.response?.data?.error) {
       errorMessage = error.response.data.error;
-    } else if (error?.message) {
-      errorMessage = error.message;
     } else if (error?.response?.status === 401) {
       errorMessage = 'Invalid credentials or insufficient privileges';
     } else if (error?.response?.status === 423) {

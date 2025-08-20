@@ -26,6 +26,17 @@ router.post('/super-admin/login', [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], authController.superAdminLogin);
+
+// Admin-specific routes (tenant-admin)
+router.post('/admin-login', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], authController.adminLogin);
+
+router.post('/admin-forgot-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
+], authController.adminForgotPassword);
+
 router.post('/register', registerValidation, authController.register);
 router.post('/logout', authController.logout);
 router.get('/me', authMiddleware, authController.getCurrentUser);
