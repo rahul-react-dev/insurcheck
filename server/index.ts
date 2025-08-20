@@ -8,6 +8,7 @@ import adminUserRoutes from './src/routes/adminUsers.js';
 import complianceRuleRoutes from './src/routes/complianceRules.js';
 import notificationTemplatesRoutes from './src/routes/notificationTemplates.js';
 import invoicesRoutes from './src/routes/invoices.js';
+import complianceAnalyticsRoutes from './src/routes/complianceAnalytics.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -102,6 +103,7 @@ app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/compliance-rules', complianceRuleRoutes);
 app.use('/api/admin/notification-templates', notificationTemplatesRoutes);
 app.use('/api/admin/invoices', invoicesRoutes);
+app.use('/api/admin/compliance-analytics', complianceAnalyticsRoutes);
 
 // API routes
 app.use('/api', routes);

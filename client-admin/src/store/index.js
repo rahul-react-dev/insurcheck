@@ -19,6 +19,7 @@ import analyticsReducer from './super-admin/analyticsSlice';
 import adminReducer from './admin/adminSlice'; // Import the new admin reducer
 import notificationTemplatesReducer from './admin/notificationTemplatesSlice';
 import invoicesReducer from './admin/invoicesSlice';
+import complianceAnalyticsReducer from './admin/complianceAnalyticsSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
   admin: adminReducer, // Add the admin reducer to the root reducer
   notificationTemplates: notificationTemplatesReducer,
   invoices: invoicesReducer,
+  complianceAnalytics: complianceAnalyticsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
