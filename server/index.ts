@@ -11,16 +11,23 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 // Middleware - Enhanced CORS configuration
 app.use(cors({
   origin: function (origin: any, callback: any) {
-    // Allow requests with no origin (mobile apps, curl requests, etc.)
-    if (!origin) return callback(null, true);
+    console.log('[CORS] Checking origin:', origin);
     
-    // Allow Replit dev origins
-    if (origin && origin.includes('.replit.dev')) {
+    // Allow requests with no origin (mobile apps, curl requests, etc.)
+    if (!origin) {
+      console.log('[CORS] No origin - allowing');
+      return callback(null, true);
+    }
+    
+    // Allow Replit dev origins (including janeway.replit.dev)
+    if (origin && (origin.includes('.replit.dev') || origin.includes('.repl.co'))) {
+      console.log('[CORS] Replit domain detected - allowing:', origin);
       return callback(null, true);
     }
     
     // Allow localhost origins in development
     if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      console.log('[CORS] Localhost domain detected - allowing:', origin);
       return callback(null, true);
     }
     
@@ -32,14 +39,17 @@ app.use(cors({
     ];
     
     if (allowedOrigins.includes(origin)) {
+      console.log('[CORS] Allowed origin matched - allowing:', origin);
       return callback(null, true);
     }
     
     // For development, be more permissive
     if (process.env.NODE_ENV === 'development') {
+      console.log('[CORS] Development mode - allowing:', origin);
       return callback(null, true);
     }
     
+    console.log('[CORS] Origin not allowed:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -53,7 +63,11 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Handle preflight requests
 app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  const origin = req.headers.origin;
+  console.log('[CORS] Preflight request from origin:', origin);
+  
+  // Set CORS headers for preflight
+  res.header('Access-Control-Allow-Origin', origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
   res.header('Access-Control-Allow-Credentials', 'true');

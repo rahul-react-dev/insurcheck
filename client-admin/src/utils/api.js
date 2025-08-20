@@ -1,24 +1,15 @@
 // API configuration for admin frontend
-// In Replit environment, construct the correct backend URL
+// Use relative URLs since Vite proxy will handle the backend forwarding
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
     
-    // If running in Replit dev environment
-    if (hostname.includes('replit.dev') || hostname.includes('repl.co')) {
-      // Extract the base hostname and construct backend URL
-      // Example: from "4714f73d-c452-465c-a879-41dfeee32c0d-00-3hj62dyd2avxv.janeway.replit.dev:3000"
-      // to "4714f73d-c452-465c-a879-41dfeee32c0d-00-3hj62dyd2avxv.janeway.replit.dev:5000"
-      const baseHostname = hostname.split(':')[0]; // Remove any existing port
-      const backendUrl = `${protocol}//${baseHostname}:5000`;
-      console.log('[API] Replit backend URL:', backendUrl);
-      return backendUrl;
-    }
-    
-    // Local development
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:5000';
+    // If running in development (localhost or Replit), use relative URLs
+    // The Vite proxy will forward /api requests to localhost:5000
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
+        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
+      console.log('[API] Using relative URL with Vite proxy');
+      return ''; // Empty string means relative to current origin
     }
     
     // Production - same origin
@@ -26,7 +17,7 @@ const getApiBaseUrl = () => {
   }
   
   // Fallback for server-side rendering
-  return 'http://localhost:5000';
+  return '';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

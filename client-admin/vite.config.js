@@ -9,6 +9,14 @@ export default defineConfig({
     allowedHosts: [
       "4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev",
     ],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+    },
   },
   build: {
     outDir: "dist",
