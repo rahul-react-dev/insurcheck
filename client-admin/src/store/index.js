@@ -17,6 +17,7 @@ import deletedDocumentsReducer from './super-admin/deletedDocumentsSlice';
 import systemConfigReducer from './super-admin/systemConfigSlice';
 import analyticsReducer from './super-admin/analyticsSlice';
 import adminReducer from './admin/adminSlice'; // Import the new admin reducer
+import notificationTemplatesReducer from './admin/notificationTemplatesSlice';
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -38,6 +39,7 @@ const rootReducer = combineReducers({
   systemConfig: systemConfigReducer,
   analytics: analyticsReducer,
   admin: adminReducer, // Add the admin reducer to the root reducer
+  notificationTemplates: notificationTemplatesReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

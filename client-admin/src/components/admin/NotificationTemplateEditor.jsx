@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAuthApi } from "../../utils/api";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createTemplateRequest,
+  updateTemplateRequest,
+  clearCreateState,
+  clearUpdateState,
+} from "../../store/admin/notificationTemplatesSlice";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Card from "../ui/Card";
@@ -19,7 +24,17 @@ import {
 
 export default function NotificationTemplateEditor({ template, isOpen, onClose, onSave }) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
+  // Redux selectors
+  const {
+    createLoading,
+    createError,
+    createSuccess,
+    updateLoading,
+    updateError,
+    updateSuccess,
+  } = useSelector(state => state.notificationTemplates);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -101,47 +116,50 @@ export default function NotificationTemplateEditor({ template, isOpen, onClose, 
     setErrors({});
   }, [template]);
 
-  // Create template mutation
-  const createTemplateMutation = useMutation({
-    mutationFn: (templateData) => adminAuthApi.createNotificationTemplate(templateData),
-    onSuccess: () => {
+  // Handle Redux success/error states
+  useEffect(() => {
+    if (createSuccess) {
       toast({
         title: 'Template created',
         description: 'The notification template has been successfully created.',
       });
       onSave?.();
-    },
-    onError: (error) => {
-      const errorData = JSON.parse(error.message || '{}');
-      setErrors(errorData.errors || {});
-      toast({
-        title: 'Creation failed',
-        description: errorData.message || 'Failed to create template. Please try again.',
-        variant: 'destructive',
-      });
-    },
-  });
+      dispatch(clearCreateState());
+    }
+  }, [createSuccess, dispatch, onSave]);
 
-  // Update template mutation  
-  const updateTemplateMutation = useMutation({
-    mutationFn: (templateData) => adminAuthApi.updateNotificationTemplate(template.id, templateData),
-    onSuccess: () => {
+  useEffect(() => {
+    if (updateSuccess) {
       toast({
         title: 'Template updated',
         description: 'The notification template has been successfully updated.',
       });
       onSave?.();
-    },
-    onError: (error) => {
-      const errorData = JSON.parse(error.message || '{}');
-      setErrors(errorData.errors || {});
+      dispatch(clearUpdateState());
+    }
+  }, [updateSuccess, dispatch, onSave]);
+
+  useEffect(() => {
+    if (createError) {
+      setErrors(createError.errors || {});
       toast({
-        title: 'Update failed',
-        description: errorData.message || 'Failed to update template. Please try again.',
+        title: 'Creation failed',
+        description: createError.message || 'Failed to create template. Please try again.',
         variant: 'destructive',
       });
-    },
-  });
+    }
+  }, [createError]);
+
+  useEffect(() => {
+    if (updateError) {
+      setErrors(updateError.errors || {});
+      toast({
+        title: 'Update failed',
+        description: updateError.message || 'Failed to update template. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [updateError]);
 
   // Form validation
   const validateForm = () => {
@@ -162,9 +180,9 @@ export default function NotificationTemplateEditor({ template, isOpen, onClose, 
     if (!validateForm()) return;
     
     if (template) {
-      updateTemplateMutation.mutate(formData);
+      dispatch(updateTemplateRequest({ id: template.id, ...formData }));
     } else {
-      createTemplateMutation.mutate(formData);
+      dispatch(createTemplateRequest(formData));
     }
   };
 
@@ -188,7 +206,7 @@ export default function NotificationTemplateEditor({ template, isOpen, onClose, 
 
   const currentConfig = templateTypeConfig[formData.templateType];
   const IconComponent = currentConfig?.icon || Bell;
-  const isLoading = createTemplateMutation.isPending || updateTemplateMutation.isPending;
+  const isLoading = createLoading || updateLoading;
 
   if (!isOpen) return null;
 

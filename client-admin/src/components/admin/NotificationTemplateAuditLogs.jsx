@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { adminAuthApi } from "../../utils/api";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchAuditLogsRequest,
+} from "../../store/admin/notificationTemplatesSlice";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import {
@@ -18,31 +20,45 @@ import {
 } from "lucide-react";
 
 export default function NotificationTemplateAuditLogs({ templateId, isOpen, onClose }) {
+  const dispatch = useDispatch();
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedLog, setSelectedLog] = useState(null);
 
-  // Fetch audit logs
+  // Redux selectors
   const {
-    data: logsResponse,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['notificationTemplateAuditLogs', { templateId, search, page: currentPage, limit: pageSize }],
-    queryFn: () => adminAuthApi.getNotificationTemplateAuditLogs({
+    auditLogs,
+    auditLogsLoading,
+    auditLogsError,
+    auditLogsMeta,
+  } = useSelector(state => state.notificationTemplates);
+
+  const logs = auditLogs;
+  const meta = auditLogsMeta;
+  const isLoading = auditLogsLoading;
+  const error = auditLogsError;
+
+  // Fetch audit logs when component opens or parameters change
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchAuditLogsRequest({
+        templateId,
+        search: search.trim(),
+        page: currentPage,
+        limit: pageSize
+      }));
+    }
+  }, [dispatch, isOpen, templateId, search, currentPage, pageSize]);
+
+  const refetch = () => {
+    dispatch(fetchAuditLogsRequest({
       templateId,
       search: search.trim(),
       page: currentPage,
       limit: pageSize
-    }),
-    enabled: isOpen,
-    keepPreviousData: true,
-  });
-
-  const logs = logsResponse?.data || [];
-  const meta = logsResponse?.meta || {};
+    }));
+  };
 
   // Reset page when search changes
   useEffect(() => {

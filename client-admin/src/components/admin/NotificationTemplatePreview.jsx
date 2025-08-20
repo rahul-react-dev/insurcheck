@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { adminAuthApi } from "../../utils/api";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  previewTemplateRequest,
+  clearPreviewState,
+} from "../../store/admin/notificationTemplatesSlice";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import { useToast } from "../../hooks/use-toast";
@@ -19,7 +22,15 @@ import {
 
 export default function NotificationTemplatePreview({ template, isOpen, onClose }) {
   const { toast } = useToast();
-  const [previewData, setPreviewData] = useState(null);
+  const dispatch = useDispatch();
+  
+  // Redux selectors
+  const {
+    previewData,
+    previewLoading,
+    previewError,
+  } = useSelector(state => state.notificationTemplates);
+  
   const [sampleVariables, setSampleVariables] = useState({
     organizationName: 'InsurCheck Corporation',
     userName: 'John Smith',
@@ -54,31 +65,26 @@ export default function NotificationTemplatePreview({ template, isOpen, onClose 
     }
   };
 
-  // Preview template mutation
-  const previewTemplateMutation = useMutation({
-    mutationFn: (templateData) => adminAuthApi.previewNotificationTemplate({
-      ...templateData,
-      variables: sampleVariables
-    }),
-    onSuccess: (response) => {
-      setPreviewData(response.data);
-    },
-    onError: (error) => {
-      const errorData = JSON.parse(error.message || '{}');
+  // Handle error states
+  useEffect(() => {
+    if (previewError) {
       toast({
         title: 'Preview failed',
-        description: errorData.message || 'Failed to generate preview. Please try again.',
+        description: previewError || 'Failed to generate preview. Please try again.',
         variant: 'destructive',
       });
-    },
-  });
+    }
+  }, [previewError]);
 
   // Generate preview when template changes
   useEffect(() => {
     if (template && isOpen) {
-      previewTemplateMutation.mutate(template);
+      dispatch(previewTemplateRequest({
+        ...template,
+        variables: sampleVariables
+      }));
     }
-  }, [template, isOpen, sampleVariables]);
+  }, [dispatch, template, isOpen, sampleVariables]);
 
   // Handle variable changes
   const handleVariableChange = (key, value) => {
@@ -88,7 +94,10 @@ export default function NotificationTemplatePreview({ template, isOpen, onClose 
   // Refresh preview
   const refreshPreview = () => {
     if (template) {
-      previewTemplateMutation.mutate(template);
+      dispatch(previewTemplateRequest({
+        ...template,
+        variables: sampleVariables
+      }));
     }
   };
 
@@ -96,7 +105,7 @@ export default function NotificationTemplatePreview({ template, isOpen, onClose 
 
   const currentConfig = templateTypeConfig[template.templateType] || templateTypeConfig.user_notification;
   const IconComponent = currentConfig.icon;
-  const isLoading = previewTemplateMutation.isPending;
+  const isLoading = previewLoading;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">

@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminAuthApi } from '../../utils/api';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  fetchTemplatesRequest,
+  fetchStatsRequest,
+  deleteTemplateRequest,
+  updateFilters,
+  clearCreateState,
+  clearUpdateState,
+  clearDeleteState,
+  setSelectedTemplate,
+} from '../../store/admin/notificationTemplatesSlice';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -31,7 +40,23 @@ import {
 
 const  NotificationTemplates = () => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
+  // Redux selectors
+  const {
+    templates,
+    templatesLoading,
+    templatesError,
+    templatesMeta,
+    stats,
+    statsLoading,
+    statsError,
+    deleteLoading,
+    deleteSuccess,
+    createSuccess,
+    updateSuccess,
+    filters
+  } = useSelector(state => state.notificationTemplates);
 
   // State management
   const [search, setSearch] = useState('');
@@ -90,48 +115,59 @@ const  NotificationTemplates = () => {
     isActive,
   }), [currentPage, pageSize, search, sortBy, sortOrder, templateType, isActive]);
 
-  // Fetch templates
-  const {
-    data: templatesResponse,
-    isLoading: isLoadingTemplates,
-    error: templatesError,
-    refetch: refetchTemplates
-  } = useQuery({
-    queryKey: ['notificationTemplates', queryParams],
-    queryFn: () => adminAuthApi.getNotificationTemplates(queryParams),
-    keepPreviousData: true,
-  });
+  // Load data on component mount and when parameters change
+  useEffect(() => {
+    dispatch(fetchTemplatesRequest(queryParams));
+  }, [dispatch, currentPage, pageSize, search, sortBy, sortOrder, templateType, isActive]);
 
-  // Fetch statistics
-  const {
-    data: statsResponse,
-    isLoading: isLoadingStats,
-    refetch: refetchStats
-  } = useQuery({
-    queryKey: ['notificationTemplateStats'],
-    queryFn: () => adminAuthApi.getNotificationTemplateStats(),
-  });
+  useEffect(() => {
+    dispatch(fetchStatsRequest());
+  }, [dispatch]);
 
-  // Delete template mutation
-  const deleteTemplateMutation = useMutation({
-    mutationFn: (templateId) => adminAuthApi.deleteNotificationTemplate(templateId),
-    onSuccess: () => {
+  // Handle success/error states
+  useEffect(() => {
+    if (deleteSuccess) {
       toast({
         title: 'Template deleted',
         description: 'The notification template has been successfully deleted.',
       });
-      queryClient.invalidateQueries(['notificationTemplates']);
-      queryClient.invalidateQueries(['notificationTemplateStats']);
+      dispatch(clearDeleteState());
       setDeleteTemplateId(null);
-    },
-    onError: (error) => {
+      // Refresh data
+      dispatch(fetchTemplatesRequest(queryParams));
+      dispatch(fetchStatsRequest());
+    }
+  }, [deleteSuccess, dispatch, queryParams]);
+
+  useEffect(() => {
+    if (createSuccess) {
       toast({
-        title: 'Delete failed',
-        description: error.message || 'Failed to delete template. Please try again.',
-        variant: 'destructive',
+        title: 'Template created',
+        description: 'The notification template has been successfully created.',
       });
-    },
-  });
+      dispatch(clearCreateState());
+      setIsEditorOpen(false);
+      setEditingTemplate(null);
+      // Refresh data
+      dispatch(fetchTemplatesRequest(queryParams));
+      dispatch(fetchStatsRequest());
+    }
+  }, [createSuccess, dispatch, queryParams]);
+
+  useEffect(() => {
+    if (updateSuccess) {
+      toast({
+        title: 'Template updated',
+        description: 'The notification template has been successfully updated.',
+      });
+      dispatch(clearUpdateState());
+      setIsEditorOpen(false);
+      setEditingTemplate(null);
+      // Refresh data
+      dispatch(fetchTemplatesRequest(queryParams));
+      dispatch(fetchStatsRequest());
+    }
+  }, [updateSuccess, dispatch, queryParams]);
 
   // Handler functions
   const handleCreateTemplate = () => {
@@ -160,7 +196,7 @@ const  NotificationTemplates = () => {
 
   const confirmDelete = () => {
     if (deleteTemplateId) {
-      deleteTemplateMutation.mutate(deleteTemplateId);
+      dispatch(deleteTemplateRequest(deleteTemplateId));
     }
   };
 
@@ -174,8 +210,8 @@ const  NotificationTemplates = () => {
   };
 
   const refreshData = () => {
-    refetchTemplates();
-    refetchStats();
+    dispatch(fetchTemplatesRequest(queryParams));
+    dispatch(fetchStatsRequest());
   };
 
   const handleSort = (field) => {
@@ -193,9 +229,8 @@ const  NotificationTemplates = () => {
     setCurrentPage(1);
   }, [search, templateType, isActive]);
 
-  const templates = templatesResponse?.data || [];
-  const meta = templatesResponse?.meta || {};
-  const stats = statsResponse?.data || {};
+  // Data from Redux store
+  const meta = templatesMeta;
 
   const SortButton = ({ field, children }) => (
     <Button
@@ -243,7 +278,7 @@ const  NotificationTemplates = () => {
             <Mail className="h-4 w-4 text-gray-400" />
           </div>
           <div className="text-2xl font-bold">
-            {isLoadingStats ? (
+            {statsLoading ? (
               <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
             ) : (
               stats.total || 0
@@ -258,7 +293,7 @@ const  NotificationTemplates = () => {
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </div>
           <div className="text-2xl font-bold">
-            {isLoadingStats ? (
+            {statsLoading ? (
               <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
             ) : (
               stats.active || 0
@@ -273,7 +308,7 @@ const  NotificationTemplates = () => {
             <AlertTriangle className="h-4 w-4 text-orange-600" />
           </div>
           <div className="text-2xl font-bold">
-            {isLoadingStats ? (
+            {statsLoading ? (
               <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
             ) : (
               stats.inactive || 0
@@ -288,7 +323,7 @@ const  NotificationTemplates = () => {
             <Shield className="h-4 w-4 text-blue-600" />
           </div>
           <div className="text-2xl font-bold">
-            {isLoadingStats ? (
+            {statsLoading ? (
               <div className="h-7 w-16 bg-gray-200 rounded animate-pulse" />
             ) : (
               (stats.byType?.compliance_result || 0) + (stats.byType?.audit_log || 0)
@@ -398,7 +433,7 @@ const  NotificationTemplates = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoadingTemplates ? (
+              {templatesLoading ? (
                 Array.from({ length: pageSize }).map((_, index) => (
                   <tr key={index} className="border-b border-gray-100">
                     <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></td>
@@ -539,16 +574,16 @@ const  NotificationTemplates = () => {
               <Button
                 onClick={() => setDeleteTemplateId(null)}
                 variant="outline"
-                disabled={deleteTemplateMutation.isLoading}
+                disabled={deleteLoading}
               >
                 Cancel
               </Button>
               <Button
                 onClick={confirmDelete}
-                disabled={deleteTemplateMutation.isLoading}
+                disabled={deleteLoading}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {deleteTemplateMutation.isLoading ? (
+                {deleteLoading ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                     Deleting...
@@ -572,9 +607,6 @@ const  NotificationTemplates = () => {
             setEditingTemplate(null);
           }}
           onSave={() => {
-            // Refetch templates and stats after saving
-            refetchTemplates();
-            refetchStats();
             setIsEditorOpen(false);
             setEditingTemplate(null);
           }}
