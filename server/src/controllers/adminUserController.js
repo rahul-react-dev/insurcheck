@@ -20,20 +20,22 @@ export const getAdminUsers = async (req, res) => {
     console.log(`📋 Admin Users: Fetching users for tenant ${tenantId}`);
 
     const offset = (page - 1) * limit;
-    const validSortFields = ['firstName', 'lastName', 'email', 'createdAt'];
+    const validSortFields = ['firstName', 'lastName', 'email', 'phoneNumber', 'companyName', 'createdAt'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
     const orderFn = sortOrder === 'asc' ? asc : desc;
 
-    // Build base query with tenant filter - using only existing fields
+    // Build base query with tenant filter - using fields for User ID, Full Name, Email, Phone, Company, Registration Date, Status
     let selectQuery = db
       .select({
         id: users.id,
-        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
         email: users.email,
+        phoneNumber: users.phoneNumber,
+        companyName: users.companyName,
         role: users.role,
         isActive: users.isActive,
-        createdAt: users.createdAt,
-        lastLoginAt: users.lastLoginAt
+        createdAt: users.createdAt
       })
       .from(users);
 
@@ -41,20 +43,26 @@ export const getAdminUsers = async (req, res) => {
       .select({ count: count() })
       .from(users);
 
-    // Apply tenant filter and search
+    // Apply tenant filter and search (search in Full Name, Email, Phone, Company)
     if (search) {
       selectQuery = selectQuery.where(
         eq(users.tenantId, tenantId),
         or(
-          like(users.username, `%${search}%`),
-          like(users.email, `%${search}%`)
+          like(users.firstName, `%${search}%`),
+          like(users.lastName, `%${search}%`),
+          like(users.email, `%${search}%`),
+          like(users.phoneNumber, `%${search}%`),
+          like(users.companyName, `%${search}%`)
         )
       );
       countQuery = countQuery.where(
         eq(users.tenantId, tenantId),
         or(
-          like(users.username, `%${search}%`),
-          like(users.email, `%${search}%`)
+          like(users.firstName, `%${search}%`),
+          like(users.lastName, `%${search}%`),
+          like(users.email, `%${search}%`),
+          like(users.phoneNumber, `%${search}%`),
+          like(users.companyName, `%${search}%`)
         )
       );
     } else {
@@ -66,7 +74,7 @@ export const getAdminUsers = async (req, res) => {
     const userList = await selectQuery
       .limit(parseInt(limit))
       .offset(offset)
-      .orderBy(orderFn(users.createdAt)); // Use a safe default sort
+      .orderBy(orderFn(users[sortField]));
 
     const totalResult = await countQuery;
     const total = totalResult[0].count;
@@ -108,9 +116,9 @@ export const inviteUser = async (req, res) => {
     }
 
     const { tenantId } = req.user; // Admin's tenant
-    const { username, email, role = 'user' } = req.body;
+    const { firstName, lastName, email, phoneNumber, companyName, role = 'user' } = req.body;
 
-    console.log(`👤 Admin Invite: Creating user ${username} (${email}) for tenant ${tenantId}`);
+    console.log(`👤 Admin Invite: Creating user ${firstName} ${lastName} (${email}) for tenant ${tenantId}`);
 
     // Check if user already exists
     const existingUser = await db.select()
@@ -131,8 +139,12 @@ export const inviteUser = async (req, res) => {
 
     // Create user
     const newUser = await db.insert(users).values({
-      username,
+      firstName,
+      lastName,
       email,
+      phoneNumber,
+      companyName,
+      username: email.split('@')[0], // Generate username from email
       password: hashedPassword,
       role,
       tenantId,
@@ -146,11 +158,10 @@ export const inviteUser = async (req, res) => {
         subject: 'Welcome to InsurCheck - Account Created',
         html: `
           <h2>Welcome to InsurCheck!</h2>
-          <p>Hello ${username},</p>
+          <p>Hello ${firstName} ${lastName},</p>
           <p>Your account has been created. Here are your login credentials:</p>
           <ul>
             <li><strong>Email:</strong> ${email}</li>
-            <li><strong>Username:</strong> ${username}</li>
             <li><strong>Temporary Password:</strong> ${tempPassword}</li>
           </ul>
           <p>Please log in and change your password immediately.</p>
@@ -170,8 +181,11 @@ export const inviteUser = async (req, res) => {
       message: 'User invited successfully',
       data: {
         id: newUser[0].id,
-        username: newUser[0].username,
+        firstName: newUser[0].firstName,
+        lastName: newUser[0].lastName,
         email: newUser[0].email,
+        phoneNumber: newUser[0].phoneNumber,
+        companyName: newUser[0].companyName,
         role: newUser[0].role,
         tempPassword // Include in response for admin to share manually if email fails
       }
@@ -194,16 +208,17 @@ export const exportUsers = async (req, res) => {
 
     console.log(`📤 Admin Export: Exporting users in ${format} format for tenant ${tenantId}`);
 
-    // Get all users for export (no pagination)
+    // Get all users for export (no pagination) - matching required columns
     let exportQuery = db
       .select({
         userId: users.id,
-        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
         email: users.email,
-        role: users.role,
+        phoneNumber: users.phoneNumber,
+        companyName: users.companyName,
         registrationDate: users.createdAt,
-        accountStatus: users.isActive,
-        lastLogin: users.lastLoginAt
+        accountStatus: users.isActive
       })
       .from(users);
 
@@ -212,8 +227,11 @@ export const exportUsers = async (req, res) => {
       exportQuery = exportQuery.where(
         eq(users.tenantId, tenantId),
         or(
-          like(users.username, `%${search}%`),
-          like(users.email, `%${search}%`)
+          like(users.firstName, `%${search}%`),
+          like(users.lastName, `%${search}%`),
+          like(users.email, `%${search}%`),
+          like(users.phoneNumber, `%${search}%`),
+          like(users.companyName, `%${search}%`)
         )
       );
     } else {
@@ -225,7 +243,7 @@ export const exportUsers = async (req, res) => {
     // Format data for export
     const exportData = userData.map(user => ({
       'User ID': user.userId,
-      'Full Name': `${user.fullName} ${user.lastName}`,
+      'Full Name': `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A',
       'Email Address': user.email,
       'Phone Number': user.phoneNumber || 'Not provided',
       'Company Name': user.companyName || 'Not provided',

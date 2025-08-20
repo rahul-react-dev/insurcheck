@@ -68,9 +68,13 @@ export const subscriptions = pgTable("subscriptions", {
 
 // Enhanced users table with multi-tenant support
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`), // Keep existing UUID format
   username: varchar('username', { length: 255 }),
+  firstName: varchar('first_name', { length: 255 }),
+  lastName: varchar('last_name', { length: 255 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
+  phoneNumber: varchar('phone_number', { length: 20 }),
+  companyName: varchar('company_name', { length: 255 }),
   password: varchar('password', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('user'),
   tenantId: integer('tenant_id').references(() => tenants.id),

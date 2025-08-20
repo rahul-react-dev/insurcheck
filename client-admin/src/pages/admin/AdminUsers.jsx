@@ -44,8 +44,11 @@ const AdminUsers = () => {
   // Modal states
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteForm, setInviteForm] = useState({
-    username: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    phoneNumber: '',
+    companyName: '',
     role: 'user'
   });
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -143,13 +146,13 @@ const AdminUsers = () => {
         // Show success message
         if (window.showNotification) {
           window.showNotification(
-            `User ${inviteForm.username} invited successfully!`,
+            `User ${inviteForm.firstName} ${inviteForm.lastName} invited successfully!`,
             'success'
           );
         }
         
         // Reset form and close modal
-        setInviteForm({ username: '', email: '', role: 'user' });
+        setInviteForm({ firstName: '', lastName: '', email: '', phoneNumber: '', companyName: '', role: 'user' });
         setShowInviteModal(false);
         
         // Refresh users list
@@ -415,13 +418,16 @@ const AdminUsers = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User ID
+                    </th>
                     <th
-                      onClick={() => handleSort('username')}
+                      onClick={() => handleSort('firstName')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     >
                       <div className="flex items-center space-x-1">
-                        <span>Username</span>
-                        {getSortIcon('username')}
+                        <span>Full Name</span>
+                        {getSortIcon('firstName')}
                       </div>
                     </th>
                     <th
@@ -433,11 +439,23 @@ const AdminUsers = () => {
                         {getSortIcon('email')}
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
+                    <th
+                      onClick={() => handleSort('phoneNumber')}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Phone Number</span>
+                        {getSortIcon('phoneNumber')}
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Login
+                    <th
+                      onClick={() => handleSort('companyName')}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Company Name</span>
+                        {getSortIcon('companyName')}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort('createdAt')}
@@ -456,18 +474,20 @@ const AdminUsers = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        {user.id.slice(0, 8)}...
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center">
                             <span className="text-sm font-medium text-white">
-                              {(user.username?.[0] || 'U').toUpperCase()}{(user.username?.[1] || '').toUpperCase()}
+                              {(user.firstName?.[0] || '').toUpperCase()}{(user.lastName?.[0] || '').toUpperCase()}
                             </span>
                           </div>
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
-                              {user.username || 'N/A'}
+                              {formatFullName(user.firstName, user.lastName)}
                             </div>
-                            <div className="text-sm text-gray-500">ID: {user.id.slice(0, 8)}...</div>
                           </div>
                         </div>
                       </td>
@@ -475,16 +495,10 @@ const AdminUsers = () => {
                         {user.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.role === 'tenant-admin' ? 'bg-blue-100 text-blue-800' :
-                          user.role === 'super-admin' ? 'bg-purple-100 text-purple-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.role}
-                        </span>
+                        {user.phoneNumber || 'Not provided'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never'}
+                        {user.companyName || 'Not provided'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(user.createdAt)}
@@ -511,13 +525,13 @@ const AdminUsers = () => {
                   <div className="flex items-center space-x-3">
                     <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center">
                       <span className="text-sm font-medium text-white">
-                        {(user.username?.[0] || 'U').toUpperCase()}{(user.username?.[1] || '').toUpperCase()}
+                        {(user.firstName?.[0] || '').toUpperCase()}{(user.lastName?.[0] || '').toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-gray-900">
-                          {user.username || 'N/A'}
+                          {formatFullName(user.firstName, user.lastName)}
                         </h4>
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           user.isActive
@@ -532,18 +546,16 @@ const AdminUsers = () => {
                   </div>
                   <div className="mt-3 space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Role:</span>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.role === 'tenant-admin' ? 'bg-blue-100 text-blue-800' :
-                        user.role === 'super-admin' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {user.role}
-                      </span>
+                      <span className="text-gray-500">ID:</span>
+                      <span className="text-gray-900 font-mono">{user.id.slice(0, 8)}...</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Last Login:</span>
-                      <span className="text-gray-900">{user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never'}</span>
+                      <span className="text-gray-500">Phone:</span>
+                      <span className="text-gray-900">{user.phoneNumber || 'Not provided'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Company:</span>
+                      <span className="text-gray-900">{user.companyName || 'Not provided'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Registered:</span>
@@ -616,18 +628,33 @@ const AdminUsers = () => {
           maxWidth="md"
         >
           <form onSubmit={handleInviteUser} className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username *
-              </label>
-              <Input
-                id="username"
-                type="text"
-                required
-                value={inviteForm.username}
-                onChange={(e) => setInviteForm({ ...inviteForm, username: e.target.value })}
-                placeholder="Enter username"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  required
+                  value={inviteForm.firstName}
+                  onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })}
+                  placeholder="Enter first name"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  required
+                  value={inviteForm.lastName}
+                  onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })}
+                  placeholder="Enter last name"
+                />
+              </div>
             </div>
 
             <div>
@@ -642,6 +669,33 @@ const AdminUsers = () => {
                 onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                 placeholder="Enter email address"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  value={inviteForm.phoneNumber}
+                  onChange={(e) => setInviteForm({ ...inviteForm, phoneNumber: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Company Name
+                </label>
+                <Input
+                  id="companyName"
+                  type="text"
+                  value={inviteForm.companyName}
+                  onChange={(e) => setInviteForm({ ...inviteForm, companyName: e.target.value })}
+                  placeholder="Enter company name"
+                />
+              </div>
             </div>
 
             <div>
