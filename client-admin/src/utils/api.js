@@ -129,6 +129,38 @@ export const adminAuthApi = {
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/api/admin/compliance-rules/audit-logs?${queryString}`);
   },
+
+  // Notification Templates Management API
+  getNotificationTemplates: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/notification-templates?${queryString}`);
+  },
+
+  getNotificationTemplateStats: () => apiCall('/api/admin/notification-templates/stats'),
+
+  createNotificationTemplate: (templateData) => apiCall('/api/admin/notification-templates', {
+    method: 'POST',
+    body: JSON.stringify(templateData),
+  }),
+
+  updateNotificationTemplate: (id, templateData) => apiCall(`/api/admin/notification-templates/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(templateData),
+  }),
+
+  deleteNotificationTemplate: (id) => apiCall(`/api/admin/notification-templates/${id}`, {
+    method: 'DELETE',
+  }),
+
+  previewNotificationTemplate: (templateData) => apiCall('/api/admin/notification-templates/preview', {
+    method: 'POST',
+    body: JSON.stringify(templateData),
+  }),
+
+  getNotificationTemplateAuditLogs: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/notification-templates/audit-logs?${queryString}`);
+  },
 };
 
 // Super Admin API (comprehensive - all required methods)

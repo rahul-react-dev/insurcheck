@@ -48,6 +48,12 @@ const AdminTenantLayout = ({ children }) => {
       roles: ["tenant-admin", "admin"],
     },
     {
+      name: "Notification Templates",
+      path: "/admin/notification-templates",
+      icon: "fas fa-envelope",
+      roles: ["tenant-admin", "admin"],
+    },
+    {
       name: "Settings",
       path: "/admin/settings",
       icon: "fas fa-cogs",

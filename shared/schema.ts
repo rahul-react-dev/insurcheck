@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, pgEnum, boolean, decimal, jsonb, uuid, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, pgEnum, boolean, decimal, jsonb, uuid, serial, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -190,6 +190,43 @@ export const systemMetrics = pgTable("system_metrics", {
   metricType: text("metric_type").notNull(), // counter, gauge, histogram
   tags: jsonb("tags"),
   timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// Notification Templates table
+export const notificationTemplates = pgTable("notification_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  templateType: text("template_type").notNull(), // 'compliance_result', 'audit_log', 'user_notification', 'system_alert'
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  header: text("header"),
+  body: text("body").notNull(),
+  footer: text("footer"),
+  variables: jsonb("variables").default('[]'),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    uniqueTemplatePerTenant: unique().on(table.tenantId, table.templateType, table.name)
+  }
+});
+
+// Notification Template Audit Logs table
+export const notificationTemplateAuditLogs = pgTable("notification_template_audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  templateId: varchar("template_id").notNull().references(() => notificationTemplates.id),
+  action: text("action").notNull(),
+  oldValues: jsonb("old_values"),
+  newValues: jsonb("new_values"),
+  changedBy: varchar("changed_by").notNull().references(() => users.id),
+  changeReason: text("change_reason"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Define relations

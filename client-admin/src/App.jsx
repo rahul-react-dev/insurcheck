@@ -31,6 +31,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import ComplianceRules from './pages/admin/ComplianceRules';
+import NotificationTemplates from './pages/admin/NotificationTemplates';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 // Notification Component
@@ -247,6 +248,14 @@ function App() {
               element={
                 <AdminProtectedRoute>
                   <ComplianceRules />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/notification-templates"
+              element={
+                <AdminProtectedRoute>
+                  <NotificationTemplates />
                 </AdminProtectedRoute>
               }
             />
