@@ -276,7 +276,7 @@ const SystemConfiguration = () => {
         });
       }
       
-      // Dispatch batch update
+      // Dispatch single batch update
       dispatch(updateSystemConfigRequest({
         updates: configUpdates
       }));

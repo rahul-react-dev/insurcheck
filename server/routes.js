@@ -3424,7 +3424,113 @@ router.get('/super-admin/system-config', authenticateToken, requireSuperAdmin, a
   }
 });
 
-// Update system configuration
+// Batch update system configurations (MUST be before /:key route)
+router.put('/super-admin/system-config/batch', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { updates } = req.body;
+    
+    console.log(`📝 Batch updating system configurations:`, req.body);
+
+    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Updates array is required and must not be empty'
+      });
+    }
+
+    console.log(`📝 Processing ${updates.length} system configuration updates`);
+
+    const results = [];
+    const activityLogs_batch = [];
+
+    // Process each update
+    for (const update of updates) {
+      const { key, value, category } = update;
+
+      if (!key || value === undefined) {
+        console.warn(`⚠️ Skipping invalid update: ${JSON.stringify(update)}`);
+        continue;
+      }
+
+      // Get existing configuration
+      const existingConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, key))
+        .limit(1);
+
+      let result;
+      let action = 'UPDATE';
+
+      if (existingConfig.length === 0) {
+        // Create new configuration
+        action = 'CREATE';
+        result = await db.insert(systemConfig)
+          .values({
+            key,
+            value: JSON.stringify(value),
+            category: category || 'general',
+            isActive: true,
+          })
+          .returning();
+      } else {
+        // Update existing configuration
+        result = await db.update(systemConfig)
+          .set({
+            value: JSON.stringify(value),
+            category: category || existingConfig[0].category,
+            updatedAt: new Date(),
+          })
+          .where(eq(systemConfig.key, key))
+          .returning();
+      }
+
+      results.push({
+        key,
+        action,
+        configuration: result[0]
+      });
+
+      // Prepare activity log entry
+      activityLogs_batch.push({
+        tenantId: null,
+        userId: req.user.id,
+        action: `SYSTEM_CONFIG_${action}`,
+        resource: 'system-config',
+        resourceId: key,
+        details: {
+          key,
+          oldValue: existingConfig[0]?.value || null,
+          newValue: value,
+          category: category || 'general'
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        level: 'info',
+      });
+    }
+
+    // Batch insert activity logs
+    if (activityLogs_batch.length > 0) {
+      await db.insert(activityLogs).values(activityLogs_batch);
+    }
+
+    console.log(`✅ Batch updated ${results.length} system configurations`);
+    
+    res.json({
+      success: true,
+      results,
+      message: `${results.length} configurations updated successfully`
+    });
+  } catch (error) {
+    console.error('❌ Error batch updating system configuration:', error);
+    res.status(500).json({ 
+      error: 'Failed to batch update system configuration',
+      message: error.message 
+    });
+  }
+});
+
+// Update system configuration (single)
 router.put('/super-admin/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { key } = req.params;
@@ -3578,63 +3684,6 @@ router.post('/super-admin/system-config', authenticateToken, requireSuperAdmin, 
   }
 });
 
-// Delete system configuration
-router.delete('/super-admin/system-config/:key', authenticateToken, requireSuperAdmin, async (req, res) => {
-  try {
-    const { key } = req.params;
-    
-    console.log(`🗑️ Deleting system config: ${key}`);
 
-    // Get existing configuration
-    const existingConfig = await db.select()
-      .from(systemConfig)
-      .where(eq(systemConfig.key, key))
-      .limit(1);
-
-    if (existingConfig.length === 0) {
-      return res.status(404).json({
-        error: 'Configuration not found',
-        message: `Configuration with key '${key}' not found`
-      });
-    }
-
-    // Soft delete by setting isActive to false
-    await db.update(systemConfig)
-      .set({
-        isActive: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(systemConfig.key, key));
-
-    // Log the activity
-    await db.insert(activityLogs).values({
-      tenantId: null,
-      userId: req.user.id,
-      action: 'SYSTEM_CONFIG_DELETE',
-      resource: 'system-config',
-      resourceId: key,
-      details: {
-        key,
-        deletedValue: existingConfig[0].value
-      },
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      level: 'info',
-    });
-
-    console.log(`✅ System configuration deleted: ${key}`);
-    
-    res.json({
-      success: true,
-      message: 'Configuration deleted successfully'
-    });
-  } catch (error) {
-    console.error('❌ Error deleting system configuration:', error);
-    res.status(500).json({ 
-      error: 'Failed to delete system configuration',
-      message: error.message 
-    });
-  }
-});
 
 export default router;

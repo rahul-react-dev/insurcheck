@@ -427,6 +427,7 @@ export const superAdminAPI = {
   // System Configuration
   getSystemConfig: () => api.get('/super-admin/system-config'),
   updateSystemConfig: (key, data) => api.put(`/super-admin/system-config/${key}`, data),
+  batchUpdateSystemConfig: (updates) => api.put('/super-admin/system-config/batch', { updates }),
   createSystemConfig: (data) => api.post('/super-admin/system-config', data),
   deleteSystemConfig: (key) => api.delete(`/super-admin/system-config/${key}`),
 

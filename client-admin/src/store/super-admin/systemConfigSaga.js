@@ -39,18 +39,11 @@ function* updateSystemConfigSaga(action) {
     console.log('📡 updateSystemConfigSaga triggered with batch updates:', updates);
 
     if (updates && Array.isArray(updates)) {
-      // Handle batch updates
-      const updatePromises = updates.map(config => 
-        call(superAdminAPI.updateSystemConfig, config.key, { 
-          value: config.value, 
-          category: config.category 
-        })
-      );
+      // Handle batch updates with single API call
+      const response = yield call(superAdminAPI.batchUpdateSystemConfig, updates);
+      console.log('✅ Batch update response:', response);
       
-      const responses = yield all(updatePromises);
-      console.log('✅ Batch update responses:', responses);
-      
-      // Refresh configuration after all updates
+      // Refresh configuration after batch update
       yield put(fetchSystemConfigRequest());
       
       // Mark update as successful
