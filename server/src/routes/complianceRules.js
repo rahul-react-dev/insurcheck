@@ -37,8 +37,8 @@ router.get(
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
     query('sortBy').optional().isIn(['ruleId', 'fieldName', 'ruleType', 'createdAt', 'updatedAt']).withMessage('Invalid sort field'),
     query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
-    query('ruleType').optional().isIn(['required', 'format', 'range', 'length', 'custom']).withMessage('Invalid rule type'),
-    query('isActive').optional().isBoolean().withMessage('isActive must be boolean')
+    query('ruleType').optional().isIn(['required', 'format', 'range', 'length', 'custom', '']).withMessage('Invalid rule type'),
+    query('isActive').optional().isIn(['true', 'false', '', 'True', 'False']).withMessage('isActive must be boolean')
   ],
   handleValidationErrors,
   getComplianceRules

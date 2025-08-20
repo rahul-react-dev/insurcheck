@@ -53,6 +53,14 @@ export const getComplianceRules = async (req, res) => {
       isActive = ''
     } = req.query;
 
+    // Convert string boolean values to actual boolean
+    let isActiveBool = null;
+    if (isActive === 'true' || isActive === 'True') {
+      isActiveBool = true;
+    } else if (isActive === 'false' || isActive === 'False') {
+      isActiveBool = false;
+    }
+
     const skip = (page - 1) * limit;
 
     console.log(`📋 Compliance Rules: Fetching rules for tenant ${tenantId}`);
@@ -93,8 +101,8 @@ export const getComplianceRules = async (req, res) => {
       whereConditions.push(eq(complianceRules.ruleType, ruleType));
     }
 
-    if (isActive !== '') {
-      whereConditions.push(eq(complianceRules.isActive, isActive === 'true'));
+    if (isActiveBool !== null) {
+      whereConditions.push(eq(complianceRules.isActive, isActiveBool));
     }
 
     query = query.where(and(...whereConditions));
