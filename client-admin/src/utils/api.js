@@ -34,12 +34,12 @@ export const apiCall = async (endpoint, options = {}) => {
 
 // Admin authentication API
 export const adminAuthApi = {
-  login: (credentials) => apiCall('/api/auth/admin-login', {
+  login: (credentials) => apiCall('/api/auth/admin/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   }),
   
-  forgotPassword: (email) => apiCall('/api/auth/admin-forgot-password', {
+  forgotPassword: (email) => apiCall('/api/auth/admin/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email }),
   }),
