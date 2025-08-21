@@ -1,0 +1,43 @@
+ Manage Invoices and Payments
+Title: View, Pay Invoices, and Download Receipts
+Story Description: As an admin user, I want to view and pay my invoices and download receipts in the Admin Panel so that I can manage my billing and maintain records of payments.
+Acceptance Criteria:
+Given I am logged into the Admin Panel, I can access an "Invoices" section displaying a table with columns: Invoice ID, Invoice Date, Due Date, Amount, Status (Paid, Unpaid, Overdue), Action (View, Pay, Download Receipt).
+I can sort the table by Invoice ID, Invoice Date, Due Date, or Amount.
+I can paginate the table with options for 10, 25, or 50 entries per page.
+I can search by Invoice ID or Status.
+I can export the table data in PDF, CSV, or Excel formats via an "Export" dropdown or buttons, with files named appropriately (e.g., "Invoices_{Timestamp}.pdf/csv/xlsx").
+Clicking "View" in the Action column opens a detailed invoice page showing: Invoice ID, Invoice Date, Due Date, Amount, Status, Billing Details (e.g., Admin Name, Company Name, Billing Address), and Itemized Charges.
+Clicking "Pay" for an Unpaid or Overdue invoice redirects to a payment interface supporting a default payment method (e.g., credit card or bank transfer).
+Clicking "Download Receipt" for a Paid invoice downloads a PDF receipt named "Receipt_{Invoice_ID}.pdf" with Invoice ID, Payment Date, Amount, Payment Method, and Billing Details.
+Payment actions (successful payments) are logged in the audit logs with Invoice ID, Timestamp, Action Type, and Status.
+Validations with Success/Error Messages:
+Table Data:
+Success: Table loads with correct invoice data.
+Error: If no data, display: "No invoices available."
+Search:
+Success: Results filter based on Invoice ID or Status input.
+Error: If no results, display: "No results found."
+Export:
+Success: File downloads in selected format (PDF, CSV, Excel).
+Error: "Failed to export [format]. Please try again."
+Payment Process:
+Success: "Payment successful. Receipt available for download."
+Error: "Payment failed. Please try again."
+Download Receipt:
+Success: PDF receipt downloads with correct details.
+Error: "Failed to download receipt. Please try again."
+Expected Outcome:
+The admin views and searches invoices, exports the invoice table in PDF, CSV, or Excel, pays unpaid/overdue invoices using a default payment method, and downloads receipts for paid invoices.
+All actions are logged, and errors are communicated clearly.
+Definition of Done:
+Invoices table with specified columns is implemented in the Admin Panel.
+Sorting, pagination (10, 25, 50 entries), search by Invoice ID/Status, and export (PDF, CSV, Excel) functionalities are implemented.
+Detailed invoice view page with specified fields is functional.
+Payment interface supporting a default payment method (e.g., credit card, bank transfer) is implemented.
+Receipt download for paid invoices in PDF format is implemented with correct naming.
+Audit log entries for payments (Invoice ID, Timestamp, Action Type, Status) are created.
+Error handling for invalid inputs, failed payments, and failed downloads/exports is implemented.
+Unit tests cover table rendering, sorting, pagination, search, export, payment processing, and receipt generation.
+UI/UX is tested for responsiveness, accessibility, and clarity of error messages.
+Feature is deployed and verified in production.

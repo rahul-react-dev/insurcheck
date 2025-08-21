@@ -52,8 +52,18 @@ export const getAdminInvoices = async (req, res) => {
 
     query = query.where(and(...whereConditions));
 
-    // Apply sorting
-    const sortColumn = invoices[sortBy] || invoices.issueDate;
+    // Apply sorting with valid field mapping
+    const validSortFields = {
+      'invoiceNumber': invoices.invoiceNumber,
+      'issueDate': invoices.issueDate,
+      'dueDate': invoices.dueDate,
+      'totalAmount': invoices.totalAmount,
+      'amount': invoices.amount,
+      'status': invoices.status,
+      'createdAt': invoices.createdAt
+    };
+    
+    const sortColumn = validSortFields[sortBy] || invoices.issueDate;
     query = sortOrder === 'asc' 
       ? query.orderBy(asc(sortColumn))
       : query.orderBy(desc(sortColumn));
