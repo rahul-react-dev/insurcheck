@@ -47,12 +47,12 @@ const superAdminSlice = createSlice({
       state.error = null;
       state.loginAttempts = 0; // Reset login attempts on successful login
 
-      // Store in localStorage for persistence
+      // Store in localStorage for persistence - use 'adminToken' key for API compatibility
       try {
-        localStorage.setItem('token', action.payload.token);
+        localStorage.setItem('adminToken', action.payload.token);
         localStorage.setItem('user', JSON.stringify(action.payload.user));
         localStorage.setItem('isAuthenticated', 'true');
-        console.log('💾 Auth data saved to localStorage');
+        console.log('💾 Super Admin auth data saved to localStorage');
       } catch (error) {
         console.error('❌ Error saving auth data to localStorage:', error);
       }
@@ -101,15 +101,15 @@ const superAdminSlice = createSlice({
       state.error = null;
       state.isLoading = false;
 
-      // Clear localStorage
-      localStorage.removeItem('token');
+      // Clear localStorage - use 'adminToken' key for API compatibility
+      localStorage.removeItem('adminToken');
       localStorage.removeItem('user');
       localStorage.removeItem('isAuthenticated');
     },
 
     // Hydrate authentication state from localStorage
     hydrateAuth: (state) => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       const user = localStorage.getItem('user');
       const isAuthenticated = localStorage.getItem('isAuthenticated');
 
@@ -124,7 +124,7 @@ const superAdminSlice = createSlice({
             // Check if token is expired
             if (payload.exp && payload.exp < currentTime) {
               console.log('🔐 Token expired during hydration, clearing auth data');
-              localStorage.removeItem('token');
+              localStorage.removeItem('adminToken');
               localStorage.removeItem('user');
               localStorage.removeItem('isAuthenticated');
               state.user = null;
@@ -142,7 +142,7 @@ const superAdminSlice = createSlice({
         } catch (error) {
           console.error('❌ Error validating token or parsing user data:', error);
           // Clear invalid data
-          localStorage.removeItem('token');
+          localStorage.removeItem('adminToken');
           localStorage.removeItem('user');
           localStorage.removeItem('isAuthenticated');
           state.user = null;
