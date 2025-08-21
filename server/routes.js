@@ -34,59 +34,23 @@ import {
 
 const router = express.Router();
 
-// Middleware to authenticate token
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+// Import the standardized auth middleware
+import { authMiddleware } from './src/middleware/auth.js';
 
-  if (!token) {
-    return res.status(401).json({
-      error: "Access token required",
-      message: "Authentication token is missing",
-    });
-  }
+// Use the standardized auth middleware for consistency
+const authenticateToken = authMiddleware;
 
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET ||
-        "your-super-secret-jwt-key-change-this-in-production",
-    );
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.log("Token verification error:", error);
+// Import the standardized super admin middleware
+import { superAdminRoleMiddleware } from './src/middleware/roles.js';
 
-    let errorMessage = "Invalid or expired token";
-    if (error.name === "TokenExpiredError") {
-      errorMessage = "Token has expired";
-    } else if (error.name === "JsonWebTokenError") {
-      errorMessage = "Invalid token";
-    }
+// Use the standardized super admin middleware for consistency
+const requireSuperAdmin = superAdminRoleMiddleware;
 
-    return res.status(401).json({
-      error: errorMessage,
-      message: errorMessage,
-      tokenExpired: error.name === "TokenExpiredError",
-    });
-  }
-};
+// Import the standardized admin middleware
+import { adminRoleMiddleware } from './src/middleware/roles.js';
 
-// Middleware to check super admin role
-const requireSuperAdmin = (req, res, next) => {
-  if (req.user?.role !== "super-admin") {
-    return res.status(403).json({ error: "Super admin access required" });
-  }
-  next();
-};
-
-// Middleware to check admin role (tenant-admin)
-const requireAdmin = (req, res, next) => {
-  if (req.user?.role !== "tenant-admin" && req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  next();
-};
+// Use the standardized admin middleware for consistency
+const requireAdmin = adminRoleMiddleware;
 
 // ===================== SYSTEM HEALTH & METRICS ROUTES =====================
 
