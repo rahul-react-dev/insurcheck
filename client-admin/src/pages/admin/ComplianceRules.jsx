@@ -275,6 +275,42 @@ const ComplianceRules = () => {
     });
   };
 
+  // Safe JSON parse helper for audit log values
+  const safeParseJSON = (value) => {
+    if (!value) return null;
+    
+    // If it's already an object, return it
+    if (typeof value === 'object') {
+      return value;
+    }
+    
+    // If it's a string, try to parse it
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        console.warn('Failed to parse JSON:', error, 'Raw value:', value);
+        return value; // Return the original string if parsing fails
+      }
+    }
+    
+    return value;
+  };
+
+  // Format audit log values for display
+  const formatAuditLogValue = (value) => {
+    const parsed = safeParseJSON(value);
+    if (parsed === null || parsed === undefined) {
+      return 'N/A';
+    }
+    
+    if (typeof parsed === 'object') {
+      return JSON.stringify(parsed, null, 2);
+    }
+    
+    return String(parsed);
+  };
+
   // Get rule type details
   const getRuleTypeDetails = (ruleType) => {
     return ruleTypeOptions.find(option => option.value === ruleType) || ruleTypeOptions[0];
@@ -1244,13 +1280,13 @@ const ComplianceRules = () => {
                     
                     {log.oldValues && (
                       <div className="text-xs text-gray-500 mb-1">
-                        <strong>Before:</strong> {JSON.stringify(JSON.parse(log.oldValues), null, 2)}
+                        <strong>Before:</strong> <pre className="mt-1 whitespace-pre-wrap">{formatAuditLogValue(log.oldValues)}</pre>
                       </div>
                     )}
                     
                     {log.newValues && (
                       <div className="text-xs text-gray-500">
-                        <strong>After:</strong> {JSON.stringify(JSON.parse(log.newValues), null, 2)}
+                        <strong>After:</strong> <pre className="mt-1 whitespace-pre-wrap">{formatAuditLogValue(log.newValues)}</pre>
                       </div>
                     )}
                     
