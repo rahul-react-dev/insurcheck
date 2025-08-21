@@ -39,7 +39,11 @@ function* fetchInvoicesSaga(action) {
       adminAuthApi.getInvoices,
       action.payload
     );
-    yield put(fetchInvoicesSuccess(response.data));
+    // Backend returns { success: true, invoices: [...], meta: {...} }
+    yield put(fetchInvoicesSuccess({
+      invoices: response.invoices || [],
+      meta: response.meta || {}
+    }));
   } catch (error) {
     const errorData = JSON.parse(error.message || '{}');
     yield put(fetchInvoicesFailure(errorData.message || 'Failed to fetch invoices'));
@@ -139,6 +143,7 @@ function* exportInvoicesSaga(action) {
 function* fetchInvoiceStatsSaga(action) {
   try {
     const response = yield call(adminAuthApi.getInvoiceStats);
+    // Backend returns { success: true, data: {...} }
     yield put(fetchInvoiceStatsSuccess(response.data));
   } catch (error) {
     const errorData = JSON.parse(error.message || '{}');
