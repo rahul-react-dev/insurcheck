@@ -10,62 +10,12 @@ import {
   clearSelectedInvoice,
   updateFilters
 } from '../../store/admin/invoicesSlice';
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../../components/ui/dialog';
-import { Badge } from '../../components/ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { useToast } from '../../hooks/use-toast';
-import { 
-  Search,
-  Download,
-  Filter,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  CreditCard,
-  Receipt,
-  FileText,
-  DollarSign,
-  Calendar,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  Loader2,
-  MoreHorizontal,
-  RefreshCw,
-  Plus,
-  Settings
-} from 'lucide-react';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { useToast } from '../../hooks/use-toast.js';
 
 const Invoices = () => {
   const { toast } = useToast();
@@ -73,18 +23,20 @@ const Invoices = () => {
   
   // Redux selectors
   const {
-    invoices,
-    invoicesLoading,
-    invoicesError,
-    invoicesMeta,
-    selectedInvoice,
-    invoiceDetailsLoading,
-    paymentLoading,
-    receiptDownloading,
-    exportLoading,
-    filters,
-    invoiceStats
-  } = useSelector(state => state.invoices);
+    invoices = [],
+    invoicesLoading = false,
+    invoicesError = null,
+    invoiceStats = {
+      total: 0,
+      totalAmount: 0,
+      paid: 0,
+      paidAmount: 0,
+      unpaid: 0,
+      unpaidAmount: 0,
+      overdue: 0,
+      overdueAmount: 0
+    }
+  } = useSelector(state => state.invoices || {});
 
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
