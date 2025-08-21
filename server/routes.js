@@ -3950,6 +3950,18 @@ router.get('/invoices', authenticateToken, requireSuperAdmin, async (req, res) =
   return router.handle(req, res);
 });
 
+// Add missing /api/invoices/config route (alias for super-admin/invoice-config)
+router.get('/invoices/config', authenticateToken, requireSuperAdmin, async (req, res) => {
+  req.url = '/super-admin/invoice-config';
+  return router.handle(req, res);
+});
+
+// Add missing /api/invoices/logs route (alias for super-admin/invoice-logs)  
+router.get('/invoices/logs', authenticateToken, requireSuperAdmin, async (req, res) => {
+  req.url = '/super-admin/invoice-logs';
+  return router.handle(req, res);
+});
+
 // Add missing /api/logs route (alias for activity-logs)
 router.get('/logs', authenticateToken, requireSuperAdmin, async (req, res) => {
   req.url = '/activity-logs';
@@ -4037,41 +4049,10 @@ router.get('/system-config', authenticateToken, requireSuperAdmin, async (req, r
   }
 });
 
-// Add missing /api/documents/deleted route
+// Add missing /api/documents/deleted route (alias for existing deleted-documents)
 router.get('/documents/deleted', authenticateToken, requireSuperAdmin, async (req, res) => {
-  try {
-    console.log('📋 Fetching deleted documents');
-    
-    const deletedDocs = await db.select({
-      id: documents.id,
-      filename: documents.filename,
-      originalName: documents.originalName,
-      tenantId: documents.tenantId,
-      tenantName: tenants.name,
-      uploadedBy: users.email,
-      deletedAt: documents.deletedAt,
-      fileSize: documents.fileSize,
-      fileType: documents.fileType
-    })
-    .from(documents)
-    .leftJoin(tenants, eq(documents.tenantId, tenants.id))
-    .leftJoin(users, eq(documents.uploadedBy, users.id))
-    .where(isNotNull(documents.deletedAt))
-    .orderBy(desc(documents.deletedAt));
-
-    console.log(`✅ Retrieved ${deletedDocs.length} deleted documents`);
-    res.json({
-      success: true,
-      data: deletedDocs,
-      total: deletedDocs.length
-    });
-  } catch (error) {
-    console.error('❌ Error fetching deleted documents:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch deleted documents',
-      message: error.message 
-    });
-  }
+  req.url = '/deleted-documents';
+  return router.handle(req, res);
 });
 
 // Add missing /api/analytics route
