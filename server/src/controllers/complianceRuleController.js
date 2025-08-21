@@ -385,12 +385,7 @@ export const deleteComplianceRule = async (req, res) => {
 
     const ruleToDelete = existingRule[0];
 
-    // Delete the rule
-    await db
-      .delete(complianceRules)
-      .where(and(eq(complianceRules.id, id), eq(complianceRules.tenantId, tenantId)));
-
-    // Log the deletion
+    // Log the deletion first
     await logRuleChange(
       id,
       'deleted',
@@ -408,6 +403,16 @@ export const deleteComplianceRule = async (req, res) => {
       req.get('User-Agent'),
       'Rule deleted via admin interface'
     );
+
+    // Delete audit logs first to avoid foreign key constraint
+    await db
+      .delete(complianceRuleAuditLogs)
+      .where(eq(complianceRuleAuditLogs.ruleId, id));
+
+    // Delete the rule
+    await db
+      .delete(complianceRules)
+      .where(and(eq(complianceRules.id, id), eq(complianceRules.tenantId, tenantId)));
 
     console.log(`✅ Compliance rule deleted: ${ruleToDelete.ruleId}`);
 
@@ -593,8 +598,14 @@ export const getRuleAuditLogs = async (req, res) => {
       changedByName: log.changedByName && log.changedByLastName
         ? `${log.changedByName} ${log.changedByLastName}`
         : log.changedByEmail || 'Unknown User',
-      oldValues: log.oldValues ? JSON.parse(log.oldValues) : null,
-      newValues: log.newValues ? JSON.parse(log.newValues) : null
+      oldValues: log.oldValues && typeof log.oldValues === 'string' ? 
+        (() => {
+          try { return JSON.parse(log.oldValues); } catch { return null; }
+        })() : log.oldValues,
+      newValues: log.newValues && typeof log.newValues === 'string' ? 
+        (() => {
+          try { return JSON.parse(log.newValues); } catch { return null; }
+        })() : log.newValues
     }));
 
     res.json({

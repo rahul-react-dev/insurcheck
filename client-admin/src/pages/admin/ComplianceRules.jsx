@@ -1,356 +1,282 @@
-import React, { useState, useEffect } from "react";
-import Button from "../../components/ui/Button";
-import Input from "../../components/ui/Input";
-import Modal from "../../components/ui/Modal";
-import { adminAuthApi } from "../../utils/api";
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { 
+  fetchRulesRequest,
+  fetchStatsRequest,
+  createRuleRequest,
+  editRuleRequest,
+  deleteRuleRequest,
+  previewRuleRequest,
+  fetchAuditLogsRequest,
+  updateFilters,
+  updatePagination,
+  setShowCreateModal,
+  setShowEditModal,
+  setShowPreviewModal,
+  setShowAuditModal,
+  setSelectedRule,
+  clearErrors
+} from '../../store/admin/complianceRulesSlice';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Modal from '../../components/ui/Modal';
+import { 
+  Search,
+  Plus,
+  Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
+  Tags,
+  Edit,
+  Trash2,
+  Eye,
+  History,
+  CheckCircle,
+  XCircle,
+  AlertCircle
+} from 'lucide-react';
 
 const ComplianceRules = () => {
-  // State for rules data
-  const [rules, setRules] = useState([]);
-  const [stats, setStats] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // Pagination and filtering states
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  });
-
-  const [filters, setFilters] = useState({
-    search: "",
-    ruleType: "",
-    isActive: "",
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
-
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [showAuditModal, setShowAuditModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState(null);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [editLoading, setEditLoading] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
-  const [auditLogs, setAuditLogs] = useState([]);
+  const dispatch = useDispatch();
+  
+  // Redux state
+  const {
+    rules,
+    loading,
+    error,
+    stats,
+    statsLoading,
+    pagination,
+    filters,
+    showCreateModal,
+    showEditModal,
+    showPreviewModal,
+    showAuditModal,
+    selectedRule,
+    createLoading,
+    createError,
+    editLoading,
+    editError,
+    deleteLoading,
+    previewLoading,
+    previewData,
+    auditLogs,
+    auditLoading
+  } = useSelector(state => state.complianceRules);
 
   // Form states
   const [createForm, setCreateForm] = useState({
-    fieldName: "",
-    ruleType: "required",
-    value: "",
-    description: "",
+    fieldName: '',
+    ruleType: 'required',
+    value: '',
+    description: ''
   });
 
   const [editForm, setEditForm] = useState({
-    fieldName: "",
-    ruleType: "required",
-    value: "",
-    description: "",
-    isActive: true,
+    fieldName: '',
+    ruleType: 'required',
+    value: '',
+    description: '',
+    isActive: true
   });
 
-  // Rule type options
+  // Rule type options with descriptions
   const ruleTypeOptions = [
     {
-      value: "required",
-      label: "Required Field",
-      description: "Field must have a value",
+      value: 'required',
+      label: 'Required Field',
+      description: 'Field must have a value',
+      icon: 'fas fa-asterisk',
+      color: 'red'
     },
     {
-      value: "format",
-      label: "Format Validation",
-      description: "Field must match regex pattern",
+      value: 'format',
+      label: 'Format Validation',
+      description: 'Field must match regex pattern',
+      icon: 'fas fa-code',
+      color: 'blue'
     },
     {
-      value: "range",
-      label: "Range Validation",
+      value: 'range',
+      label: 'Range Validation',
       description: 'Numeric field must be within range (e.g., "1-100")',
+      icon: 'fas fa-arrows-alt-h',
+      color: 'green'
     },
     {
-      value: "length",
-      label: "Length Validation",
-      description: "Text field maximum length",
+      value: 'length',
+      label: 'Length Validation',
+      description: 'Text field maximum length',
+      icon: 'fas fa-ruler',
+      color: 'yellow'
     },
     {
-      value: "custom",
-      label: "Custom Rule",
-      description: "Custom validation logic",
-    },
+      value: 'custom',
+      label: 'Custom Rule',
+      description: 'Custom validation logic',
+      icon: 'fas fa-cogs',
+      color: 'purple'
+    }
   ];
 
-  // Common field names for suggestions
+  // Common field suggestions
   const fieldNameSuggestions = [
-    "filename",
-    "originalName",
-    "fileSize",
-    "documentType",
-    "policyNumber",
-    "clientName",
-    "effectiveDate",
-    "expirationDate",
-    "coverageAmount",
-    "premium",
+    'filename', 'originalName', 'fileSize', 'documentType',
+    'policyNumber', 'clientName', 'effectiveDate', 'expirationDate',
+    'coverageAmount', 'premium', 'deductible', 'agentName',
+    'claimNumber', 'incidentDate', 'reportDate', 'status'
   ];
 
-  // Fetch rules data
-  const fetchRules = async () => {
-    try {
-      setLoading(true);
-      const response = await adminAuthApi.getComplianceRules({
-        page: pagination.page,
-        limit: pagination.limit,
-        ...filters,
-      });
-
-      if (response?.success) {
-        setRules(response.data);
-        setPagination((prev) => ({ ...prev, ...response.meta }));
-      }
-    } catch (error) {
-      console.error("Failed to fetch rules:", error);
-      setError("Failed to load compliance rules. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch stats
-  const fetchStats = async () => {
-    try {
-      const response = await adminAuthApi.getComplianceRuleStats();
-      if (response?.success) {
-        setStats(response.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-    }
-  };
-
-  // Initial data load
+  // Load data on component mount
   useEffect(() => {
-    fetchRules();
-    fetchStats();
-  }, [pagination.page, pagination.limit, filters]);
+    dispatch(fetchRulesRequest());
+    dispatch(fetchStatsRequest());
+    dispatch(clearErrors());
+  }, [dispatch]);
 
-  // Handle pagination
-  const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
+  // Refetch data when filters/pagination change
+  useEffect(() => {
+    dispatch(fetchRulesRequest());
+  }, [dispatch, pagination.page, pagination.limit, filters]);
 
-  const handleLimitChange = (newLimit) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+  // Handle search
+  const handleSearch = (e) => {
+    dispatch(updateFilters({ search: e.target.value }));
   };
 
   // Handle sorting
-  const handleSort = (column) => {
-    const newSortOrder =
-      filters.sortBy === column && filters.sortOrder === "asc" ? "desc" : "asc";
-    setFilters((prev) => ({
-      ...prev,
-      sortBy: column,
-      sortOrder: newSortOrder,
-    }));
+  const handleSort = (field) => {
+    const newSortOrder = filters.sortBy === field && filters.sortOrder === 'asc' ? 'desc' : 'asc';
+    dispatch(updateFilters({ sortBy: field, sortOrder: newSortOrder }));
   };
 
-  // Handle search
-  const handleSearch = (searchTerm) => {
-    setFilters((prev) => ({ ...prev, search: searchTerm }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
+  // Handle filter changes
+  const handleFilterChange = (filterName, value) => {
+    dispatch(updateFilters({ [filterName]: value }));
+  };
+
+  // Handle pagination
+  const handlePageChange = (newPage) => {
+    dispatch(updatePagination({ page: newPage }));
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    dispatch(updatePagination({ page: 1, limit: newSize }));
   };
 
   // Handle create rule
-  const handleCreateRule = async (e) => {
+  const handleCreateRule = (e) => {
     e.preventDefault();
-    setCreateLoading(true);
-
-    try {
-      const response = await adminAuthApi.createComplianceRule(createForm);
-
-      if (response?.success) {
-        if (window.showNotification) {
-          window.showNotification("Rule created successfully!", "success");
-        }
-
-        setCreateForm({
-          fieldName: "",
-          ruleType: "required",
-          value: "",
-          description: "",
-        });
-        setShowCreateModal(false);
-        await fetchRules();
-        await fetchStats();
-      }
-    } catch (error) {
-      console.error("Create rule error:", error);
-      if (window.showNotification) {
-        window.showNotification(
-          error.response?.data?.message ||
-            "Failed to create rule. Please try again.",
-          "error",
-        );
-      }
-    } finally {
-      setCreateLoading(false);
-    }
+    dispatch(createRuleRequest(createForm));
   };
 
   // Handle edit rule
-  const handleEditRule = async (e) => {
+  const handleEditRule = (e) => {
     e.preventDefault();
     if (!selectedRule) return;
-
-    setEditLoading(true);
-
-    try {
-      const response = await adminAuthApi.updateComplianceRule(
-        selectedRule.id,
-        editForm,
-      );
-
-      if (response?.success) {
-        if (window.showNotification) {
-          window.showNotification("Rule updated successfully!", "success");
-        }
-
-        setShowEditModal(false);
-        setSelectedRule(null);
-        await fetchRules();
-        await fetchStats();
-      }
-    } catch (error) {
-      console.error("Update rule error:", error);
-      if (window.showNotification) {
-        window.showNotification(
-          error.response?.data?.message ||
-            "Failed to update rule. Please try again.",
-          "error",
-        );
-      }
-    } finally {
-      setEditLoading(false);
-    }
+    
+    dispatch(editRuleRequest({
+      ruleId: selectedRule.id,
+      ruleData: editForm
+    }));
   };
 
   // Handle delete rule
-  const handleDeleteRule = async (rule) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete rule "${rule.ruleId}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await adminAuthApi.deleteComplianceRule(rule.id);
-
-      if (response?.success) {
-        if (window.showNotification) {
-          window.showNotification("Rule deleted successfully!", "success");
-        }
-
-        await fetchRules();
-        await fetchStats();
-      }
-    } catch (error) {
-      console.error("Delete rule error:", error);
-      if (window.showNotification) {
-        window.showNotification(
-          error.response?.data?.message ||
-            "Failed to delete rule. Please try again.",
-          "error",
-        );
-      }
+  const handleDeleteRule = (rule) => {
+    if (window.confirm(`Are you sure you want to delete rule "${rule.ruleId}"? This action cannot be undone.`)) {
+      dispatch(deleteRuleRequest(rule.id));
     }
   };
 
-  // Handle preview rule impact
-  const handlePreviewImpact = async (ruleData) => {
-    setPreviewLoading(true);
-
-    try {
-      const response = await adminAuthApi.previewComplianceRule({
-        fieldName: ruleData.fieldName,
-        ruleType: ruleData.ruleType,
-        value: ruleData.value,
-      });
-
-      if (response?.success) {
-        setPreviewData(response.data);
-        setShowPreviewModal(true);
-      }
-    } catch (error) {
-      console.error("Preview rule error:", error);
-      if (window.showNotification) {
-        window.showNotification(
-          error.response?.data?.message ||
-            "Failed to preview rules. Please try again.",
-          "error",
-        );
-      }
-    } finally {
-      setPreviewLoading(false);
-    }
+  // Handle preview rule
+  const handlePreviewRule = (ruleData) => {
+    dispatch(previewRuleRequest({
+      fieldName: ruleData.fieldName,
+      ruleType: ruleData.ruleType,
+      value: ruleData.value
+    }));
   };
 
-  // Handle view audit logs
-  const handleViewAuditLogs = async (rule) => {
-    try {
-      const response = await adminAuthApi.getComplianceRuleAuditLogs({
-        ruleId: rule.id,
-      });
-
-      if (response?.success) {
-        setAuditLogs(response.data);
-        setSelectedRule(rule);
-        setShowAuditModal(true);
-      }
-    } catch (error) {
-      console.error("Fetch audit logs error:", error);
-      if (window.showNotification) {
-        window.showNotification(
-          "Failed to load audit logs. Please try again.",
-          "error",
-        );
-      }
-    }
+  // Handle audit logs
+  const handleViewAuditLogs = (rule) => {
+    dispatch(setSelectedRule(rule));
+    dispatch(fetchAuditLogsRequest({ ruleId: rule.id }));
   };
 
   // Open edit modal
   const openEditModal = (rule) => {
-    setSelectedRule(rule);
+    dispatch(setSelectedRule(rule));
     setEditForm({
       fieldName: rule.fieldName,
       ruleType: rule.ruleType,
       value: rule.value,
       description: rule.description,
-      isActive: rule.isActive,
+      isActive: rule.isActive
     });
-    setShowEditModal(true);
+    dispatch(setShowEditModal(true));
+  };
+
+  // Reset forms when modals close
+  const handleCloseCreateModal = () => {
+    setCreateForm({
+      fieldName: '',
+      ruleType: 'required',
+      value: '',
+      description: ''
+    });
+    dispatch(setShowCreateModal(false));
+  };
+
+  const handleCloseEditModal = () => {
+    setEditForm({
+      fieldName: '',
+      ruleType: 'required',
+      value: '',
+      description: '',
+      isActive: true
+    });
+    dispatch(setShowEditModal(false));
   };
 
   // Format date
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  // Get rule type label
-  const getRuleTypeLabel = (ruleType) => {
-    const option = ruleTypeOptions.find((opt) => opt.value === ruleType);
-    return option ? option.label : ruleType;
+  // Get rule type details
+  const getRuleTypeDetails = (ruleType) => {
+    return ruleTypeOptions.find(option => option.value === ruleType) || ruleTypeOptions[0];
+  };
+
+  // Get status icon
+  const getStatusIcon = (isActive) => {
+    return isActive ? (
+      <CheckCircle className="h-4 w-4 text-green-600" />
+    ) : (
+      <XCircle className="h-4 w-4 text-red-600" />
+    );
+  };
+
+  // Get sort icon
+  const getSortIcon = (field) => {
+    if (filters.sortBy !== field) {
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    return filters.sortOrder === 'asc' ? 
+      <ArrowUp className="h-4 w-4 text-blue-600" /> : 
+      <ArrowDown className="h-4 w-4 text-blue-600" />;
   };
 
   return (
@@ -359,18 +285,24 @@ const ComplianceRules = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <ShieldCheck className="h-8 w-8 text-blue-600" />
               Compliance Rules
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 mt-2">
               Define and manage document validation rules for your organization
             </p>
           </div>
           <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            onClick={() => dispatch(setShowCreateModal(true))}
+            disabled={createLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
-            <i className="fas fa-plus"></i>
+            {createLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
             <span>Create Rule</span>
           </Button>
         </div>
@@ -383,102 +315,132 @@ const ComplianceRules = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Rules</p>
               <p className="text-2xl font-bold text-gray-900">
-                {stats.total || 0}
+                {statsLoading ? (
+                  <div className="animate-pulse h-8 w-12 bg-gray-200 rounded"></div>
+                ) : (
+                  stats.total || 0
+                )}
               </p>
             </div>
             <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-shield-check text-blue-600 text-xl"></i>
+              <ShieldCheck className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
+        
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Rules</p>
               <p className="text-2xl font-bold text-green-600">
-                {stats.active || 0}
+                {statsLoading ? (
+                  <div className="animate-pulse h-8 w-12 bg-gray-200 rounded"></div>
+                ) : (
+                  stats.active || 0
+                )}
               </p>
             </div>
             <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-check-circle text-green-600 text-xl"></i>
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
+        
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">
-                Inactive Rules
-              </p>
+              <p className="text-sm font-medium text-gray-600">Inactive Rules</p>
               <p className="text-2xl font-bold text-red-600">
-                {stats.inactive || 0}
+                {statsLoading ? (
+                  <div className="animate-pulse h-8 w-12 bg-gray-200 rounded"></div>
+                ) : (
+                  stats.inactive || 0
+                )}
               </p>
             </div>
             <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-times-circle text-red-600 text-xl"></i>
+              <XCircle className="h-6 w-6 text-red-600" />
             </div>
           </div>
         </div>
+        
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Rule Types</p>
               <p className="text-2xl font-bold text-purple-600">
-                {Object.keys(stats.byType || {}).length}
+                {statsLoading ? (
+                  <div className="animate-pulse h-8 w-12 bg-gray-200 rounded"></div>
+                ) : (
+                  Object.keys(stats.byType || {}).length
+                )}
               </p>
             </div>
             <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-tags text-purple-600 text-xl"></i>
+              <Tags className="h-6 w-6 text-purple-600" />
             </div>
           </div>
         </div>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search rules..."
               value={filters.search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full"
+              onChange={handleSearch}
+              className="pl-10"
             />
           </div>
+          
           <div>
             <select
               value={filters.ruleType}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, ruleType: e.target.value }))
-              }
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              onChange={(e) => handleFilterChange('ruleType', e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Rule Types</option>
-              {ruleTypeOptions.map((option) => (
+              {ruleTypeOptions.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
           </div>
+          
           <div>
             <select
               value={filters.isActive}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, isActive: e.target.value }))
-              }
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              onChange={(e) => handleFilterChange('isActive', e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Status</option>
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
           </div>
+          
           <div>
             <select
               value={pagination.limit}
-              onChange={(e) => handleLimitChange(parseInt(e.target.value))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value={10}>10 per page</option>
               <option value={25}>25 per page</option>
@@ -492,23 +454,26 @@ const ComplianceRules = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <i className="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
-              <p className="text-gray-600">{error}</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading compliance rules...</p>
             </div>
           </div>
         ) : rules.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <i className="fas fa-shield-check text-gray-400 text-3xl mb-4"></i>
-              <p className="text-gray-600">No compliance rules found</p>
+              <ShieldAlert className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 text-lg">No compliance rules found</p>
               <p className="text-sm text-gray-500 mt-2">
-                Create your first rule to get started
+                Create your first rule to get started with document validation
               </p>
+              <Button
+                onClick={() => dispatch(setShowCreateModal(true))}
+                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 mx-auto"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create Rule</span>
+              </Button>
             </div>
           </div>
         ) : (
@@ -519,226 +484,256 @@ const ComplianceRules = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("ruleId")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('ruleId')}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Rule ID</span>
-                        {filters.sortBy === "ruleId" && (
-                          <i
-                            className={`fas fa-sort-${filters.sortOrder === "asc" ? "up" : "down"} text-green-600`}
-                          ></i>
-                        )}
+                        {getSortIcon('ruleId')}
                       </div>
                     </th>
+                    
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("fieldName")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('fieldName')}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Field Name</span>
-                        {filters.sortBy === "fieldName" && (
-                          <i
-                            className={`fas fa-sort-${filters.sortOrder === "asc" ? "up" : "down"} text-green-600`}
-                          ></i>
-                        )}
+                        {getSortIcon('fieldName')}
                       </div>
                     </th>
+                    
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("ruleType")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('ruleType')}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Rule Type</span>
-                        {filters.sortBy === "ruleType" && (
-                          <i
-                            className={`fas fa-sort-${filters.sortOrder === "asc" ? "up" : "down"} text-green-600`}
-                          ></i>
-                        )}
+                        {getSortIcon('ruleType')}
                       </div>
                     </th>
+                    
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Value
                     </th>
+                    
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Description
                     </th>
+                    
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
+                    
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("createdAt")}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('createdAt')}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Created</span>
-                        {filters.sortBy === "createdAt" && (
-                          <i
-                            className={`fas fa-sort-${filters.sortOrder === "asc" ? "up" : "down"} text-green-600`}
-                          ></i>
-                        )}
+                        {getSortIcon('createdAt')}
                       </div>
                     </th>
+                    
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
+                
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {rules.map((rule) => (
-                    <tr key={rule.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {rule.ruleId}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {rule.fieldName}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {getRuleTypeLabel(rule.ruleType)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div
-                          className="text-sm text-gray-900 truncate max-w-xs"
-                          title={rule.value}
-                        >
-                          {rule.value}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div
-                          className="text-sm text-gray-900 truncate max-w-xs"
-                          title={rule.description}
-                        >
-                          {rule.description}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            rule.isActive
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {rule.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(rule.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handlePreviewImpact(rule)}
-                            className="text-blue-600 hover:text-blue-900 p-1 rounded"
-                            title="Preview Impact"
+                  {rules.map((rule) => {
+                    const ruleTypeDetails = getRuleTypeDetails(rule.ruleType);
+                    
+                    return (
+                      <tr key={rule.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {rule.ruleId}
+                          </div>
+                        </td>
+                        
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {rule.fieldName}
+                          </div>
+                        </td>
+                        
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-${ruleTypeDetails.color}-100 text-${ruleTypeDetails.color}-800`}>
+                            <i className={`${ruleTypeDetails.icon} mr-1`}></i>
+                            {ruleTypeDetails.label}
+                          </span>
+                        </td>
+                        
+                        <td className="px-6 py-4">
+                          <div
+                            className="text-sm text-gray-900 truncate max-w-xs"
+                            title={rule.value}
                           >
-                            <i className="fas fa-eye"></i>
-                          </button>
-                          <button
-                            onClick={() => openEditModal(rule)}
-                            className="text-green-600 hover:text-green-900 p-1 rounded"
-                            title="Edit Rule"
+                            {rule.value}
+                          </div>
+                        </td>
+                        
+                        <td className="px-6 py-4">
+                          <div
+                            className="text-sm text-gray-900 truncate max-w-xs"
+                            title={rule.description}
                           >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button
-                            onClick={() => handleViewAuditLogs(rule)}
-                            className="text-purple-600 hover:text-purple-900 p-1 rounded"
-                            title="View Audit Logs"
-                          >
-                            <i className="fas fa-history"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRule(rule)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded"
-                            title="Delete Rule"
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            {rule.description}
+                          </div>
+                        </td>
+                        
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {getStatusIcon(rule.isActive)}
+                            <span
+                              className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                rule.isActive
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {rule.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </td>
+                        
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(rule.createdAt)}
+                        </td>
+                        
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handlePreviewRule(rule)}
+                              className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                              title="Preview Impact"
+                              disabled={previewLoading}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            
+                            <button
+                              onClick={() => openEditModal(rule)}
+                              className="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-colors"
+                              title="Edit Rule"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            
+                            <button
+                              onClick={() => handleViewAuditLogs(rule)}
+                              className="text-purple-600 hover:text-purple-900 p-2 rounded-lg hover:bg-purple-50 transition-colors"
+                              title="View Audit Logs"
+                            >
+                              <History className="h-4 w-4" />
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDeleteRule(rule)}
+                              className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                              title="Delete Rule"
+                              disabled={deleteLoading}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Cards */}
             <div className="lg:hidden divide-y divide-gray-200">
-              {rules.map((rule) => (
-                <div key={rule.id} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="font-medium text-gray-900">
-                          {rule.ruleId}
-                        </span>
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            rule.isActive
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {rule.isActive ? "Active" : "Inactive"}
-                        </span>
+              {rules.map((rule) => {
+                const ruleTypeDetails = getRuleTypeDetails(rule.ruleType);
+                
+                return (
+                  <div key={rule.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <span className="font-medium text-gray-900 text-lg">
+                            {rule.ruleId}
+                          </span>
+                          <div className="flex items-center">
+                            {getStatusIcon(rule.isActive)}
+                            <span
+                              className={`ml-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                rule.isActive
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {rule.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">
+                            <strong className="text-gray-900">Field:</strong> {rule.fieldName}
+                          </p>
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <strong className="text-gray-900 mr-2">Type:</strong>
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-${ruleTypeDetails.color}-100 text-${ruleTypeDetails.color}-800`}>
+                              <i className={`${ruleTypeDetails.icon} mr-1`}></i>
+                              {ruleTypeDetails.label}
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <strong className="text-gray-900">Value:</strong> {rule.value}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <strong className="text-gray-900">Description:</strong> {rule.description}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Created: {formatDate(rule.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <strong>Field:</strong> {rule.fieldName}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <strong>Type:</strong> {getRuleTypeLabel(rule.ruleType)}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <strong>Value:</strong> {rule.value}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-2">
-                        <strong>Description:</strong> {rule.description}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Created: {formatDate(rule.createdAt)}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <button
-                        onClick={() => handlePreviewImpact(rule)}
-                        className="text-blue-600 hover:text-blue-900 p-2 rounded"
-                        title="Preview Impact"
-                      >
-                        <i className="fas fa-eye"></i>
-                      </button>
-                      <button
-                        onClick={() => openEditModal(rule)}
-                        className="text-green-600 hover:text-green-900 p-2 rounded"
-                        title="Edit Rule"
-                      >
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button
-                        onClick={() => handleViewAuditLogs(rule)}
-                        className="text-purple-600 hover:text-purple-900 p-2 rounded"
-                        title="View Audit Logs"
-                      >
-                        <i className="fas fa-history"></i>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRule(rule)}
-                        className="text-red-600 hover:text-red-900 p-2 rounded"
-                        title="Delete Rule"
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
+                      
+                      <div className="flex flex-col space-y-2 ml-4">
+                        <button
+                          onClick={() => handlePreviewRule(rule)}
+                          className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                          title="Preview Impact"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => openEditModal(rule)}
+                          className="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-colors"
+                          title="Edit Rule"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => handleViewAuditLogs(rule)}
+                          className="text-purple-600 hover:text-purple-900 p-2 rounded-lg hover:bg-purple-50 transition-colors"
+                          title="View Audit Logs"
+                        >
+                          <History className="h-4 w-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteRule(rule)}
+                          className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                          title="Delete Rule"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pagination */}
@@ -746,19 +741,18 @@ const ComplianceRules = () => {
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-700">
-                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                    {Math.min(
-                      pagination.page * pagination.limit,
-                      pagination.total,
-                    )}{" "}
-                    of {pagination.total} results
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                    {pagination.total} results
                   </div>
+                  
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={pagination.page === 1}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
                       Previous
                     </button>
 
@@ -770,10 +764,10 @@ const ComplianceRules = () => {
                         <button
                           key={pageNumber}
                           onClick={() => handlePageChange(pageNumber)}
-                          className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                          className={`px-3 py-2 border rounded-md text-sm font-medium transition-colors ${
                             isCurrentPage
-                              ? "border-green-500 bg-green-50 text-green-600"
-                              : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                              ? 'border-blue-500 bg-blue-50 text-blue-600'
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                           }`}
                         >
                           {pageNumber}
@@ -784,9 +778,10 @@ const ComplianceRules = () => {
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page === pagination.totalPages}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
                     </button>
                   </div>
                 </div>
@@ -800,17 +795,28 @@ const ComplianceRules = () => {
       {showCreateModal && (
         <Modal
           isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+          onClose={handleCloseCreateModal}
           title="Create New Compliance Rule"
           maxWidth="lg"
         >
-          <form onSubmit={handleCreateRule} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="fieldName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+          <form onSubmit={handleCreateRule} className="space-y-6">
+            {/* Error display */}
+            {createError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-600 mr-3" />
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800">Error</h3>
+                    <p className="text-sm text-red-700 mt-1">{createError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Field Name */}
+              <div className="sm:col-span-2">
+                <label htmlFor="fieldName" className="block text-sm font-medium text-gray-700 mb-2">
                   Field Name *
                 </label>
                 <input
@@ -818,87 +824,77 @@ const ComplianceRules = () => {
                   type="text"
                   required
                   value={createForm.fieldName}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, fieldName: e.target.value })
-                  }
-                  placeholder="Enter field name"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  list="fieldNameSuggestions"
+                  onChange={(e) => setCreateForm({ ...createForm, fieldName: e.target.value })}
+                  placeholder="Enter field name (e.g., filename, documentType)"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  list="fieldSuggestions"
                 />
-                <datalist id="fieldNameSuggestions">
-                  {fieldNameSuggestions.map((suggestion) => (
-                    <option key={suggestion} value={suggestion} />
+                <datalist id="fieldSuggestions">
+                  {fieldNameSuggestions.map(field => (
+                    <option key={field} value={field} />
                   ))}
                 </datalist>
+                <p className="text-xs text-gray-500 mt-1">
+                  The document field this rule will validate
+                </p>
               </div>
 
+              {/* Rule Type */}
               <div>
-                <label
-                  htmlFor="ruleType"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="ruleType" className="block text-sm font-medium text-gray-700 mb-2">
                   Rule Type *
                 </label>
                 <select
                   id="ruleType"
                   required
                   value={createForm.ruleType}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, ruleType: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  onChange={(e) => setCreateForm({ ...createForm, ruleType: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {ruleTypeOptions.map((option) => (
+                  {ruleTypeOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {getRuleTypeDetails(createForm.ruleType).description}
+                </p>
+              </div>
+
+              {/* Value */}
+              <div>
+                <label htmlFor="value" className="block text-sm font-medium text-gray-700 mb-2">
+                  Value *
+                </label>
+                <input
+                  id="value"
+                  type="text"
+                  required
+                  value={createForm.value}
+                  onChange={(e) => setCreateForm({ ...createForm, value: e.target.value })}
+                  placeholder={
+                    createForm.ruleType === 'required' ? 'true' :
+                    createForm.ruleType === 'format' ? '^[A-Za-z0-9]+$' :
+                    createForm.ruleType === 'range' ? '1-100' :
+                    createForm.ruleType === 'length' ? '255' :
+                    'Custom validation value'
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {createForm.ruleType === 'required' && 'Use "true" to make field mandatory'}
+                  {createForm.ruleType === 'format' && 'Enter regex pattern to match'}
+                  {createForm.ruleType === 'range' && 'Enter range like "1-100" for numeric values'}
+                  {createForm.ruleType === 'length' && 'Enter maximum character length'}
+                  {createForm.ruleType === 'custom' && 'Enter custom validation expression'}
+                </p>
               </div>
             </div>
 
+            {/* Description */}
             <div>
-              <label
-                htmlFor="value"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Rule Value *
-              </label>
-              <input
-                id="value"
-                type="text"
-                required
-                value={createForm.value}
-                onChange={(e) =>
-                  setCreateForm({ ...createForm, value: e.target.value })
-                }
-                placeholder={
-                  createForm.ruleType === "format"
-                    ? "Enter regex pattern (e.g., ^[A-Z]{3}-\\d{4}$)"
-                    : createForm.ruleType === "range"
-                      ? "Enter range (e.g., 1-100)"
-                      : createForm.ruleType === "length"
-                        ? "Enter maximum length (e.g., 255)"
-                        : "Enter rule value"
-                }
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              {createForm.ruleType && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {
-                    ruleTypeOptions.find(
-                      (opt) => opt.value === createForm.ruleType,
-                    )?.description
-                  }
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                 Description *
               </label>
               <textarea
@@ -906,65 +902,69 @@ const ComplianceRules = () => {
                 required
                 rows={3}
                 value={createForm.description}
-                onChange={(e) =>
-                  setCreateForm({ ...createForm, description: e.target.value })
-                }
+                onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                 placeholder="Describe what this rule validates and why it's important"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               />
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <p className="text-sm text-blue-700">
-                <i className="fas fa-info-circle mr-2"></i>
-                Rules will be applied to future document validations. Use the
-                preview feature to test rule impact.
+              <p className="text-xs text-gray-500 mt-1">
+                Clear description helps team members understand the rule purpose
               </p>
             </div>
 
-            <div className="flex justify-between pt-4">
+            {/* Preview Section */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center">
+                <Eye className="h-4 w-4 mr-2" />
+                Rule Preview
+              </h4>
+              <div className="text-sm text-blue-800">
+                <p><strong>Field:</strong> {createForm.fieldName || 'Not specified'}</p>
+                <p><strong>Type:</strong> {getRuleTypeDetails(createForm.ruleType).label}</p>
+                <p><strong>Value:</strong> {createForm.value || 'Not specified'}</p>
+                <p><strong>Description:</strong> {createForm.description || 'Not specified'}</p>
+              </div>
+              
+              {createForm.fieldName && createForm.value && (
+                <button
+                  type="button"
+                  onClick={() => handlePreviewRule(createForm)}
+                  className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                  disabled={previewLoading}
+                >
+                  {previewLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  ) : (
+                    <Eye className="h-4 w-4 mr-2" />
+                  )}
+                  Preview Impact on Documents
+                </button>
+              )}
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
               <Button
                 type="button"
+                onClick={handleCloseCreateModal}
                 variant="outline"
-                onClick={() => handlePreviewImpact(createForm)}
-                disabled={
-                  !createForm.fieldName ||
-                  !createForm.ruleType ||
-                  !createForm.value ||
-                  previewLoading
-                }
-                className="flex items-center space-x-2"
+                disabled={createLoading}
               >
-                {previewLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span>Previewing...</span>
-                  </>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createLoading || !createForm.fieldName || !createForm.value || !createForm.description}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+              >
+                {createLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </div>
                 ) : (
-                  <>
-                    <i className="fas fa-eye"></i>
-                    <span>Preview Impact</span>
-                  </>
+                  'Create Rule'
                 )}
               </Button>
-
-              <div className="flex space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={createLoading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  loading={createLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Create Rule
-                </Button>
-              </div>
             </div>
           </form>
         </Modal>
@@ -974,17 +974,28 @@ const ComplianceRules = () => {
       {showEditModal && selectedRule && (
         <Modal
           isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          title={`Edit Rule ${selectedRule.ruleId}`}
+          onClose={handleCloseEditModal}
+          title={`Edit Rule: ${selectedRule.ruleId}`}
           maxWidth="lg"
         >
-          <form onSubmit={handleEditRule} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="editFieldName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+          <form onSubmit={handleEditRule} className="space-y-6">
+            {/* Error display */}
+            {editError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-600 mr-3" />
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800">Error</h3>
+                    <p className="text-sm text-red-700 mt-1">{editError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Field Name */}
+              <div className="sm:col-span-2">
+                <label htmlFor="editFieldName" className="block text-sm font-medium text-gray-700 mb-2">
                   Field Name *
                 </label>
                 <input
@@ -992,73 +1003,54 @@ const ComplianceRules = () => {
                   type="text"
                   required
                   value={editForm.fieldName}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, fieldName: e.target.value })
-                  }
-                  placeholder="Enter field name"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  list="fieldNameSuggestions"
+                  onChange={(e) => setEditForm({ ...editForm, fieldName: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  list="fieldSuggestions"
                 />
               </div>
 
+              {/* Rule Type */}
               <div>
-                <label
-                  htmlFor="editRuleType"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="editRuleType" className="block text-sm font-medium text-gray-700 mb-2">
                   Rule Type *
                 </label>
                 <select
                   id="editRuleType"
                   required
                   value={editForm.ruleType}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, ruleType: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  onChange={(e) => setEditForm({ ...editForm, ruleType: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {ruleTypeOptions.map((option) => (
+                  {ruleTypeOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {getRuleTypeDetails(editForm.ruleType).description}
+                </p>
+              </div>
+
+              {/* Value */}
+              <div>
+                <label htmlFor="editValue" className="block text-sm font-medium text-gray-700 mb-2">
+                  Value *
+                </label>
+                <input
+                  id="editValue"
+                  type="text"
+                  required
+                  value={editForm.value}
+                  onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
 
+            {/* Description */}
             <div>
-              <label
-                htmlFor="editValue"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Rule Value *
-              </label>
-              <input
-                id="editValue"
-                type="text"
-                required
-                value={editForm.value}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, value: e.target.value })
-                }
-                placeholder={
-                  editForm.ruleType === "format"
-                    ? "Enter regex pattern (e.g., ^[A-Z]{3}-\\d{4}$)"
-                    : editForm.ruleType === "range"
-                      ? "Enter range (e.g., 1-100)"
-                      : editForm.ruleType === "length"
-                        ? "Enter maximum length (e.g., 255)"
-                        : "Enter rule value"
-                }
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="editDescription"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="editDescription" className="block text-sm font-medium text-gray-700 mb-2">
                 Description *
               </label>
               <textarea
@@ -1066,174 +1058,121 @@ const ComplianceRules = () => {
                 required
                 rows={3}
                 value={editForm.description}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, description: e.target.value })
-                }
-                placeholder="Describe what this rule validates and why it's important"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               />
             </div>
 
+            {/* Status */}
             <div>
-              <label className="flex items-center space-x-3">
+              <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={editForm.isActive}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, isActive: e.target.checked })
-                  }
-                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  Rule is active
-                </span>
+                <span className="ml-2 text-sm font-medium text-gray-700">Active Rule</span>
               </label>
               <p className="text-xs text-gray-500 mt-1">
-                Inactive rules are not applied during document validation
+                Inactive rules will not be applied to document validation
               </p>
             </div>
 
-            <div className="flex justify-between pt-4">
+            {/* Form Actions */}
+            <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
               <Button
                 type="button"
+                onClick={handleCloseEditModal}
                 variant="outline"
-                onClick={() => handlePreviewImpact(editForm)}
-                disabled={
-                  !editForm.fieldName ||
-                  !editForm.ruleType ||
-                  !editForm.value ||
-                  previewLoading
-                }
-                className="flex items-center space-x-2"
+                disabled={editLoading}
               >
-                {previewLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span>Previewing...</span>
-                  </>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={editLoading || !editForm.fieldName || !editForm.value || !editForm.description}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+              >
+                {editLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Updating...
+                  </div>
                 ) : (
-                  <>
-                    <i className="fas fa-eye"></i>
-                    <span>Preview Impact</span>
-                  </>
+                  'Update Rule'
                 )}
               </Button>
-
-              <div className="flex space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowEditModal(false)}
-                  disabled={editLoading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  loading={editLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Update Rule
-                </Button>
-              </div>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Preview Impact Modal */}
+      {/* Preview Modal */}
       {showPreviewModal && previewData && (
         <Modal
           isOpen={showPreviewModal}
-          onClose={() => setShowPreviewModal(false)}
+          onClose={() => dispatch(setShowPreviewModal(false))}
           title="Rule Impact Preview"
           maxWidth="lg"
         >
-          <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">Rule Details</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Field:</span>
-                  <span className="ml-2 font-medium">
-                    {previewData.ruleDetails.fieldName}
-                  </span>
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium text-blue-900 mb-4 flex items-center">
+                <Eye className="h-5 w-5 mr-2" />
+                Preview Results
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="text-2xl font-bold text-green-600">
+                    {previewData.compliantDocuments || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Compliant Documents</div>
                 </div>
-                <div>
-                  <span className="text-gray-600">Type:</span>
-                  <span className="ml-2 font-medium">
-                    {getRuleTypeLabel(previewData.ruleDetails.ruleType)}
-                  </span>
+                
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="text-2xl font-bold text-red-600">
+                    {previewData.nonCompliantDocuments || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Non-Compliant Documents</div>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-gray-600">Value:</span>
-                  <span className="ml-2 font-medium">
-                    {previewData.ruleDetails.value}
-                  </span>
+                
+                <div className="bg-white rounded-lg p-4 border">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {previewData.complianceRate || '0'}%
+                  </div>
+                  <div className="text-sm text-gray-600">Compliance Rate</div>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {previewData.preview.totalDocuments}
-                </div>
-                <div className="text-sm text-blue-700">Total Documents</div>
-              </div>
-              <div className="bg-green-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {previewData.preview.compliant}
-                </div>
-                <div className="text-sm text-green-700">Compliant</div>
-              </div>
-              <div className="bg-red-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {previewData.preview.nonCompliant}
-                </div>
-                <div className="text-sm text-red-700">Non-Compliant</div>
-              </div>
-            </div>
-
-            {previewData.preview.examples &&
-              previewData.preview.examples.length > 0 && (
+              {previewData.sampleMatches && previewData.sampleMatches.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Non-Compliant Examples
-                  </h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Sample Affected Documents:</h4>
                   <div className="space-y-2">
-                    {previewData.preview.examples.map((example, index) => (
-                      <div
-                        key={index}
-                        className="bg-red-50 border border-red-200 rounded-md p-3"
-                      >
-                        <div className="text-sm">
-                          <div className="font-medium text-gray-900">
-                            {example.filename}
-                          </div>
-                          <div className="text-red-600 mt-1">
-                            {example.reason}
-                          </div>
-                        </div>
+                    {previewData.sampleMatches.slice(0, 5).map((doc, index) => (
+                      <div key={index} className="bg-white rounded border p-3 text-sm">
+                        <div className="font-medium text-gray-900">{doc.filename}</div>
+                        <div className="text-gray-600">Status: {doc.wouldPass ? 'Pass' : 'Fail'}</div>
+                        {doc.reason && (
+                          <div className="text-gray-500 text-xs mt-1">Reason: {doc.reason}</div>
+                        )}
                       </div>
                     ))}
+                    {previewData.sampleMatches.length > 5 && (
+                      <div className="text-sm text-gray-500 text-center">
+                        ... and {previewData.sampleMatches.length - 5} more documents
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <p className="text-sm text-blue-700">
-                <i className="fas fa-info-circle mr-2"></i>
-                This preview is based on existing document metadata. Actual rule
-                application may vary depending on document content.
-              </p>
             </div>
 
             <div className="flex justify-end">
               <Button
-                type="button"
-                onClick={() => setShowPreviewModal(false)}
-                className="bg-gray-600 hover:bg-gray-700 text-white"
+                onClick={() => dispatch(setShowPreviewModal(false))}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
               >
                 Close
               </Button>
@@ -1246,75 +1185,58 @@ const ComplianceRules = () => {
       {showAuditModal && selectedRule && (
         <Modal
           isOpen={showAuditModal}
-          onClose={() => setShowAuditModal(false)}
-          title={`Audit Logs - ${selectedRule.ruleId}`}
-          maxWidth="xl"
+          onClose={() => dispatch(setShowAuditModal(false))}
+          title={`Audit Logs: ${selectedRule.ruleId}`}
+          maxWidth="lg"
         >
-          <div className="space-y-4">
-            {auditLogs.length === 0 ? (
+          <div className="space-y-6">
+            {auditLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Loading audit logs...</span>
+              </div>
+            ) : auditLogs.length === 0 ? (
               <div className="text-center py-8">
-                <i className="fas fa-history text-gray-400 text-3xl mb-4"></i>
-                <p className="text-gray-600">
-                  No audit logs found for this rule
-                </p>
+                <History className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600">No audit logs found for this rule</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {auditLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="border border-gray-200 rounded-lg p-4"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            log.action === "created"
-                              ? "bg-green-100 text-green-800"
-                              : log.action === "updated"
-                                ? "bg-blue-100 text-blue-800"
-                                : log.action === "deleted"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {log.action.charAt(0).toUpperCase() +
-                            log.action.slice(1)}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          by {log.changedByName}
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {auditLogs.map((log, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-4 border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        log.action === 'create' ? 'bg-green-100 text-green-800' :
+                        log.action === 'update' ? 'bg-blue-100 text-blue-800' :
+                        log.action === 'delete' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {log.action.toUpperCase()}
+                      </span>
+                      <span className="text-sm text-gray-500">
                         {formatDate(log.createdAt)}
                       </span>
                     </div>
-
-                    {log.changeReason && (
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Reason:</strong> {log.changeReason}
-                      </p>
-                    )}
-
+                    
+                    <div className="text-sm text-gray-600 mb-2">
+                      Changed by: {log.changedByName || 'System'}
+                    </div>
+                    
                     {log.oldValues && (
-                      <div className="mb-2">
-                        <p className="text-xs font-medium text-gray-600 mb-1">
-                          Previous Values:
-                        </p>
-                        <pre className="text-xs bg-gray-100 p-2 rounded">
-                          {JSON.stringify(log.oldValues, null, 2)}
-                        </pre>
+                      <div className="text-xs text-gray-500 mb-1">
+                        <strong>Before:</strong> {JSON.stringify(JSON.parse(log.oldValues), null, 2)}
                       </div>
                     )}
-
+                    
                     {log.newValues && (
-                      <div>
-                        <p className="text-xs font-medium text-gray-600 mb-1">
-                          New Values:
-                        </p>
-                        <pre className="text-xs bg-gray-100 p-2 rounded">
-                          {JSON.stringify(log.newValues, null, 2)}
-                        </pre>
+                      <div className="text-xs text-gray-500">
+                        <strong>After:</strong> {JSON.stringify(JSON.parse(log.newValues), null, 2)}
+                      </div>
+                    )}
+                    
+                    {log.changeReason && (
+                      <div className="text-xs text-gray-600 mt-2">
+                        <strong>Reason:</strong> {log.changeReason}
                       </div>
                     )}
                   </div>
@@ -1322,11 +1244,10 @@ const ComplianceRules = () => {
               </div>
             )}
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end">
               <Button
-                type="button"
-                onClick={() => setShowAuditModal(false)}
-                className="bg-gray-600 hover:bg-gray-700 text-white"
+                onClick={() => dispatch(setShowAuditModal(false))}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
               >
                 Close
               </Button>
