@@ -72,42 +72,80 @@ export const getNotificationTemplates = async (req, res) => {
     // Apply filters
     let whereConditions = [eq(notificationTemplates.tenantId, tenantId)];
 
-    if (search) {
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      console.log(`🔍 Applying search filter: "${searchTerm}"`);
       whereConditions.push(
         or(
-          like(notificationTemplates.name, `%${search}%`),
-          like(notificationTemplates.subject, `%${search}%`),
-          like(notificationTemplates.templateType, `%${search}%`)
+          like(notificationTemplates.name, `%${searchTerm}%`),
+          like(notificationTemplates.subject, `%${searchTerm}%`),
+          like(notificationTemplates.templateType, `%${searchTerm}%`)
         )
       );
     }
 
-    if (templateType) {
+    if (templateType && templateType.trim()) {
+      console.log(`🏷️ Applying template type filter: "${templateType}"`);
       whereConditions.push(eq(notificationTemplates.templateType, templateType));
     }
 
     if (isActiveBool !== null) {
+      console.log(`✅ Applying active status filter: ${isActiveBool}`);
       whereConditions.push(eq(notificationTemplates.isActive, isActiveBool));
     }
 
-    query = query.where(and(...whereConditions));
+    console.log(`📋 Total where conditions: ${whereConditions.length}`);
+    
+    try {
+      query = query.where(and(...whereConditions));
+    } catch (whereError) {
+      console.error('Error building where clause:', whereError);
+      throw new Error('Invalid filter parameters');
+    }
 
     // Apply sorting
-    const sortColumn = notificationTemplates[sortBy] || notificationTemplates.createdAt;
-    query = sortOrder === 'asc' 
-      ? query.orderBy(sortColumn)
-      : query.orderBy(desc(sortColumn));
+    let sortColumn;
+    try {
+      // Validate sortBy parameter
+      const validSortColumns = ['name', 'templateType', 'subject', 'createdAt', 'updatedAt'];
+      const sortField = validSortColumns.includes(sortBy) ? sortBy : 'createdAt';
+      sortColumn = notificationTemplates[sortField];
+      
+      console.log(`📊 Sorting by: ${sortField} (${sortOrder})`);
+      
+      query = sortOrder === 'asc' 
+        ? query.orderBy(sortColumn)
+        : query.orderBy(desc(sortColumn));
+    } catch (sortError) {
+      console.error('Error applying sort:', sortError);
+      // Fallback to default sorting
+      query = query.orderBy(desc(notificationTemplates.createdAt));
+    }
 
     // Get total count
-    const totalCountQuery = db
-      .select({ count: count() })
-      .from(notificationTemplates)
-      .where(and(...whereConditions));
+    let totalCountQuery;
+    try {
+      totalCountQuery = db
+        .select({ count: count() })
+        .from(notificationTemplates)
+        .where(and(...whereConditions));
+    } catch (countError) {
+      console.error('Error building count query:', countError);
+      throw new Error('Failed to build count query');
+    }
     
-    const [templatesData, totalCount] = await Promise.all([
-      query.limit(limit).offset(skip),
-      totalCountQuery
-    ]);
+    console.log(`🔍 Executing queries with pagination: limit=${limit}, offset=${skip}`);
+    
+    let templatesData, totalCount;
+    try {
+      [templatesData, totalCount] = await Promise.all([
+        query.limit(limit).offset(skip),
+        totalCountQuery
+      ]);
+    } catch (queryError) {
+      console.error('Database query execution error:', queryError);
+      throw new Error('Database query failed');
+    }
 
     const formattedTemplates = templatesData.map(template => ({
       ...template,

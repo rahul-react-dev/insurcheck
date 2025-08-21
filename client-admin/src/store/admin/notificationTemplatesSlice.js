@@ -159,7 +159,8 @@ const notificationTemplatesSlice = createSlice({
     },
     previewTemplateSuccess: (state, action) => {
       state.previewLoading = false;
-      state.previewData = action.payload.data;
+      // Extract preview data from nested structure
+      state.previewData = action.payload.data?.preview || action.payload.data;
       state.previewError = null;
     },
     previewTemplateFailure: (state, action) => {
