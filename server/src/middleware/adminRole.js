@@ -3,7 +3,7 @@ export const adminRoleMiddleware = (req, res, next) => {
   try {
     const { role } = req.user;
 
-    if (!role || (role !== 'tenant-admin' && role !== 'admin')) {
+    if (!role || (role !== 'tenant-admin' && role !== 'admin' && role !== 'super-admin')) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.'

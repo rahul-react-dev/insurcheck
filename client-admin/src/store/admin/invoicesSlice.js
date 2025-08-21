@@ -36,7 +36,21 @@ const initialState = {
     status: '',
     sortBy: 'invoiceDate',
     sortOrder: 'desc'
-  }
+  },
+  
+  // Add statistics state
+  invoiceStats: {
+    total: 0,
+    totalAmount: 0,
+    paid: 0,
+    paidAmount: 0,
+    unpaid: 0,
+    unpaidAmount: 0,
+    overdue: 0,
+    overdueAmount: 0
+  },
+  statsLoading: false,
+  statsError: null
 };
 
 const invoicesSlice = createSlice({
@@ -147,6 +161,21 @@ const invoicesSlice = createSlice({
       state.selectedInvoice = null;
       state.invoiceDetailsError = null;
     },
+
+    // Fetch invoice statistics
+    fetchInvoiceStatsRequest: (state) => {
+      state.statsLoading = true;
+      state.statsError = null;
+    },
+    fetchInvoiceStatsSuccess: (state, action) => {
+      state.statsLoading = false;
+      state.invoiceStats = action.payload.data || state.invoiceStats;
+      state.statsError = null;
+    },
+    fetchInvoiceStatsFailure: (state, action) => {
+      state.statsLoading = false;
+      state.statsError = action.payload;
+    },
   },
 });
 
@@ -175,6 +204,11 @@ export const {
   exportInvoicesRequest,
   exportInvoicesSuccess,
   exportInvoicesFailure,
+  
+  // Invoice statistics
+  fetchInvoiceStatsRequest,
+  fetchInvoiceStatsSuccess,
+  fetchInvoiceStatsFailure,
   
   // Filters and utility
   updateFilters,

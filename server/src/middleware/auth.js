@@ -1,109 +1,67 @@
-
 import jwt from 'jsonwebtoken';
+import { db } from '../../db.js';
+import { users } from '../../../shared/schema.js';
+import { eq } from 'drizzle-orm';
 import { config } from '../config/env.js';
-import { AuthService } from '../services/authService.js';
 
-const authService = new AuthService();
+const JWT_SECRET = config.jwtSecret;
+console.log('🔑 JWT_SECRET loaded:', JWT_SECRET ? 'Present' : 'Missing');
 
 export const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
-
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const authHeader = req.headers.authorization;
     
-    // Fetch fresh user data
-    const user = await authService.findUserById(decoded.userId);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
+      });
+    }
+
+    const token = authHeader.substring(7);
     
-    if (!user) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      console.log('🔍 Token decoded successfully:', { userId: decoded.userId, email: decoded.email, role: decoded.role });
+      
+      // Fetch user details
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, decoded.userId))
+        .limit(1);
+
+      console.log('👤 User lookup result:', user ? { id: user.id, email: user.email, active: user.isActive } : 'No user found');
+
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token or user inactive'
+        });
+      }
+
+      // Add user info to request
+      req.user = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+        name: user.name
+      };
+
+      next();
+    } catch (tokenError) {
+      console.error('❌ Token verification failed:', tokenError.message);
       return res.status(401).json({
         success: false,
-        message: 'Invalid token. User not found.'
+        message: 'Invalid token'
       });
     }
-
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is disabled.'
-      });
-    }
-
-    req.user = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenantId
-    };
-
-    next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token.'
-      });
-    }
-    
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token expired.'
-      });
-    }
-
     console.error('Auth middleware error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: 'Server error during authentication.'
+      message: 'Authentication error'
     });
   }
 };
-
-export const requireRole = (roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required.'
-      });
-    }
-
-    const userRole = req.user.role;
-    const allowedRoles = Array.isArray(roles) ? roles : [roles];
-
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions.'
-      });
-    }
-
-    next();
-  };
-};
-
-export const requireSameTenant = (req, res, next) => {
-  const { tenantId } = req.params;
-  
-  if (req.user.role === 'super-admin') {
-    return next(); // Super admin can access any tenant
-  }
-  
-  if (!req.user.tenantId || req.user.tenantId.toString() !== tenantId) {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. Invalid tenant.'
-    });
-  }
-  
-  next();
-};
-
-export const superAdminOnly = requireRole('super-admin');

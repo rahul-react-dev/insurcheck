@@ -168,6 +168,8 @@ export const adminAuthApi = {
     return apiCall(`/api/admin/invoices?${queryString}`);
   },
 
+  getInvoiceStats: () => apiCall('/api/admin/invoices/stats'),
+
   getInvoiceDetails: (invoiceId) => apiCall(`/api/admin/invoices/${invoiceId}`),
 
   processPayment: (paymentData) => apiCall('/api/admin/invoices/pay', {

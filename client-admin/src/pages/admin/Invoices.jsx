@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   fetchInvoicesRequest,
+  fetchInvoiceStatsRequest,
   fetchInvoiceDetailsRequest,
   processPaymentRequest,
   downloadReceiptRequest,
@@ -9,11 +10,35 @@ import {
   clearSelectedInvoice,
   updateFilters
 } from '../../store/admin/invoicesSlice';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import Modal from '../../components/ui/Modal';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { Card } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../../components/ui/dialog';
+import { Badge } from '../../components/ui/badge';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
 import { useToast } from '../../hooks/use-toast';
 import { 
   Search,
@@ -32,7 +57,14 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle2,
-  Clock
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  Loader2,
+  MoreHorizontal,
+  RefreshCw,
+  Plus,
+  Settings
 } from 'lucide-react';
 
 const Invoices = () => {
@@ -50,7 +82,8 @@ const Invoices = () => {
     paymentLoading,
     receiptDownloading,
     exportLoading,
-    filters
+    filters,
+    invoiceStats
   } = useSelector(state => state.invoices);
 
   // Local state
@@ -65,6 +98,7 @@ const Invoices = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   
   // Payment form state
   const [paymentForm, setPaymentForm] = useState({
@@ -78,15 +112,19 @@ const Invoices = () => {
     routingNumber: ''
   });
 
-  // Invoice statistics (computed from invoices data)
-  const invoiceStats = {
-    total: invoices?.length || 0,
-    paid: invoices?.filter(inv => inv.status === 'paid')?.length || 0,
-    unpaid: invoices?.filter(inv => inv.status === 'unpaid')?.length || 0,
-    overdue: invoices?.filter(inv => inv.status === 'overdue')?.length || 0
+  // Initialize invoice statistics with default values
+  const stats = invoiceStats || {
+    total: 0,
+    totalAmount: 0,
+    paid: 0,
+    paidAmount: 0,
+    unpaid: 0,
+    unpaidAmount: 0,
+    overdue: 0,
+    overdueAmount: 0
   };
 
-  // Fetch invoices on component mount and when dependencies change
+  // Fetch invoices and statistics on component mount and when dependencies change
   useEffect(() => {
     const params = {
       page: currentPage,
@@ -97,6 +135,7 @@ const Invoices = () => {
       sortOrder
     };
     dispatch(fetchInvoicesRequest(params));
+    dispatch(fetchInvoiceStatsRequest());
   }, [dispatch, currentPage, pageSize, searchTerm, statusFilter, sortBy, sortOrder]);
 
   // Handle search
@@ -182,6 +221,11 @@ const Invoices = () => {
       sortOrder
     };
     dispatch(exportInvoicesRequest(params));
+    setShowExportDialog(false);
+    toast({
+      title: "Export Started",
+      description: `${format.toUpperCase()} export is being generated...`,
+    });
   };
 
   // Format currency

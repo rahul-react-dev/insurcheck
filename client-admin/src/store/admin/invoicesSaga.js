@@ -25,6 +25,11 @@ import {
   exportInvoicesRequest,
   exportInvoicesSuccess,
   exportInvoicesFailure,
+  
+  // Invoice statistics
+  fetchInvoiceStatsRequest,
+  fetchInvoiceStatsSuccess,
+  fetchInvoiceStatsFailure,
 } from './invoicesSlice';
 
 // Fetch invoices saga
@@ -130,6 +135,17 @@ function* exportInvoicesSaga(action) {
   }
 }
 
+// Fetch invoice statistics saga
+function* fetchInvoiceStatsSaga(action) {
+  try {
+    const response = yield call(adminAuthApi.getInvoiceStats);
+    yield put(fetchInvoiceStatsSuccess(response.data));
+  } catch (error) {
+    const errorData = JSON.parse(error.message || '{}');
+    yield put(fetchInvoiceStatsFailure(errorData.message || 'Failed to fetch invoice statistics'));
+  }
+}
+
 // Watcher saga
 function* invoicesSaga() {
   yield takeEvery(fetchInvoicesRequest.type, fetchInvoicesSaga);
@@ -137,6 +153,7 @@ function* invoicesSaga() {
   yield takeEvery(processPaymentRequest.type, processPaymentSaga);
   yield takeEvery(downloadReceiptRequest.type, downloadReceiptSaga);
   yield takeEvery(exportInvoicesRequest.type, exportInvoicesSaga);
+  yield takeEvery(fetchInvoiceStatsRequest.type, fetchInvoiceStatsSaga);
 }
 
 export default invoicesSaga;
