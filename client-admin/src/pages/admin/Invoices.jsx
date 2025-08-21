@@ -10,12 +10,15 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 const Invoices = () => {
   const dispatch = useDispatch();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
   
   // Redux selectors with safe defaults
   const {
     invoices = [],
     invoicesLoading = false,
     invoicesError = null,
+    invoicesMeta = { total: 0, totalPages: 1, page: 1, limit: 10 },
     invoiceStats = {
       total: 0,
       totalAmount: 0,
@@ -28,11 +31,14 @@ const Invoices = () => {
     }
   } = useSelector(state => state.invoices || {});
 
-  // Fetch data on component mount
+  // Fetch data on component mount and when page changes
   useEffect(() => {
-    dispatch(fetchInvoicesRequest({}));
+    dispatch(fetchInvoicesRequest({ 
+      page: currentPage, 
+      limit: pageSize 
+    }));
     dispatch(fetchInvoiceStatsRequest());
-  }, [dispatch]);
+  }, [dispatch, currentPage, pageSize]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -146,11 +152,16 @@ const Invoices = () => {
         {/* Invoices List */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Invoices</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Recent Invoices</h2>
+              <p className="text-sm text-gray-500">
+                Showing {invoices.length} of {invoicesMeta.total} invoices
+              </p>
+            </div>
             <Button 
               variant="primary"
               onClick={() => {
-                dispatch(fetchInvoicesRequest({}));
+                dispatch(fetchInvoicesRequest({ page: currentPage, limit: pageSize }));
                 dispatch(fetchInvoiceStatsRequest());
               }}
             >
@@ -224,6 +235,36 @@ const Invoices = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {invoicesMeta.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Page {invoicesMeta.page} of {invoicesMeta.totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="small"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  {currentPage} / {invoicesMeta.totalPages}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="small"
+                  disabled={currentPage >= invoicesMeta.totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </Card>

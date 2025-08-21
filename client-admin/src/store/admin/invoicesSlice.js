@@ -64,7 +64,7 @@ const invoicesSlice = createSlice({
     },
     fetchInvoicesSuccess: (state, action) => {
       state.invoicesLoading = false;
-      state.invoices = action.payload.data || [];
+      state.invoices = action.payload.invoices || [];
       state.invoicesMeta = action.payload.meta || state.invoicesMeta;
       state.invoicesError = null;
     },
