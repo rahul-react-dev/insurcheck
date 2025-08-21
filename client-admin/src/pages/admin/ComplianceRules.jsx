@@ -20,6 +20,7 @@ import {
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import { 
   Search,
   Plus,
@@ -85,6 +86,10 @@ const ComplianceRules = () => {
     description: '',
     isActive: true
   });
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [ruleToDelete, setRuleToDelete] = useState(null);
 
   // Rule type options with descriptions
   const ruleTypeOptions = [
@@ -189,9 +194,23 @@ const ComplianceRules = () => {
 
   // Handle delete rule
   const handleDeleteRule = (rule) => {
-    if (window.confirm(`Are you sure you want to delete rule "${rule.ruleId}"? This action cannot be undone.`)) {
-      dispatch(deleteRuleRequest(rule.id));
+    setRuleToDelete(rule);
+    setShowDeleteConfirm(true);
+  };
+
+  // Confirm delete rule
+  const confirmDeleteRule = () => {
+    if (ruleToDelete) {
+      dispatch(deleteRuleRequest(ruleToDelete.id));
+      setShowDeleteConfirm(false);
+      setRuleToDelete(null);
     }
+  };
+
+  // Cancel delete rule
+  const cancelDeleteRule = () => {
+    setShowDeleteConfirm(false);
+    setRuleToDelete(null);
   };
 
   // Handle preview rule
@@ -206,6 +225,7 @@ const ComplianceRules = () => {
   // Handle audit logs
   const handleViewAuditLogs = (rule) => {
     dispatch(setSelectedRule(rule));
+    dispatch(setShowAuditModal(true));
     dispatch(fetchAuditLogsRequest({ ruleId: rule.id }));
   };
 
@@ -1255,6 +1275,39 @@ const ComplianceRules = () => {
           </div>
         </Modal>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={cancelDeleteRule}
+        onConfirm={confirmDeleteRule}
+        title="Delete Compliance Rule"
+        message={
+          ruleToDelete ? (
+            <div>
+              <p className="mb-3">
+                Are you sure you want to delete rule <strong>"{ruleToDelete.ruleId}"</strong>?
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-yellow-800">
+                    <p className="font-medium mb-1">This action cannot be undone.</p>
+                    <p>All audit logs for this rule will also be permanently deleted.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : 'Are you sure?'
+        }
+        confirmText="Delete Rule"
+        cancelText="Cancel"
+        confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+        cancelButtonClass="bg-gray-500 hover:bg-gray-600 text-white"
+        isLoading={deleteLoading}
+        icon="fas fa-exclamation-triangle"
+        iconClass="text-red-500"
+      />
     </div>
   );
 };
