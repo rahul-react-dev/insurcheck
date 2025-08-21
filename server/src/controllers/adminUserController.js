@@ -1,9 +1,12 @@
 import { db } from '../../db.ts';
 import { users, tenants } from '@shared/schema';
-import { eq, like, or, desc, asc, count, gte } from 'drizzle-orm';
+import { eq, like, or, and, desc, asc, count, gte } from 'drizzle-orm';
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../services/emailService.js';
+import XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // Get all users for the admin's tenant with search, sorting, and pagination
 export const getAdminUsers = async (req, res) => {
@@ -46,23 +49,27 @@ export const getAdminUsers = async (req, res) => {
     // Apply tenant filter and search (search in Full Name, Email, Phone, Company)
     if (search) {
       selectQuery = selectQuery.where(
-        eq(users.tenantId, tenantId),
-        or(
-          like(users.firstName, `%${search}%`),
-          like(users.lastName, `%${search}%`),
-          like(users.email, `%${search}%`),
-          like(users.phoneNumber, `%${search}%`),
-          like(users.companyName, `%${search}%`)
+        and(
+          eq(users.tenantId, tenantId),
+          or(
+            like(users.firstName, `%${search}%`),
+            like(users.lastName, `%${search}%`),
+            like(users.email, `%${search}%`),
+            like(users.phoneNumber, `%${search}%`),
+            like(users.companyName, `%${search}%`)
+          )
         )
       );
       countQuery = countQuery.where(
-        eq(users.tenantId, tenantId),
-        or(
-          like(users.firstName, `%${search}%`),
-          like(users.lastName, `%${search}%`),
-          like(users.email, `%${search}%`),
-          like(users.phoneNumber, `%${search}%`),
-          like(users.companyName, `%${search}%`)
+        and(
+          eq(users.tenantId, tenantId),
+          or(
+            like(users.firstName, `%${search}%`),
+            like(users.lastName, `%${search}%`),
+            like(users.email, `%${search}%`),
+            like(users.phoneNumber, `%${search}%`),
+            like(users.companyName, `%${search}%`)
+          )
         )
       );
     } else {
@@ -225,13 +232,15 @@ export const exportUsers = async (req, res) => {
     // Apply filters
     if (search) {
       exportQuery = exportQuery.where(
-        eq(users.tenantId, tenantId),
-        or(
-          like(users.firstName, `%${search}%`),
-          like(users.lastName, `%${search}%`),
-          like(users.email, `%${search}%`),
-          like(users.phoneNumber, `%${search}%`),
-          like(users.companyName, `%${search}%`)
+        and(
+          eq(users.tenantId, tenantId),
+          or(
+            like(users.firstName, `%${search}%`),
+            like(users.lastName, `%${search}%`),
+            like(users.email, `%${search}%`),
+            like(users.phoneNumber, `%${search}%`),
+            like(users.companyName, `%${search}%`)
+          )
         )
       );
     } else {
@@ -266,23 +275,62 @@ export const exportUsers = async (req, res) => {
       return res.send(csv);
     }
 
+    if (format === 'excel') {
+      // Generate Excel file
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Users');
+      
+      // Generate buffer
+      const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+      return res.send(excelBuffer);
+    }
+
+    if (format === 'pdf') {
+      // Generate PDF
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(16);
+      doc.text('Users Export Report', 20, 20);
+      
+      // Add timestamp
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+      doc.text(`Total Users: ${exportData.length}`, 20, 37);
+      
+      // Create table headers and data
+      const tableHeaders = Object.keys(exportData[0] || {});
+      const tableData = exportData.map(row => Object.values(row));
+      
+      // Add table
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 45,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] }, // Blue header
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+      });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
+      return res.send(doc.output());
+    }
+
     if (format === 'json') {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
       return res.json(exportData);
     }
 
-    // For now, return JSON format as fallback
-    // TODO: Implement PDF and Excel formats with proper libraries
-    res.json({
-      success: true,
-      message: `Export in ${format} format coming soon. Here's the data:`,
-      data: exportData,
-      meta: {
-        format,
-        filename,
-        count: exportData.length
-      }
+    // Fallback for unsupported formats
+    res.status(400).json({
+      success: false,
+      message: `Unsupported export format: ${format}. Supported formats: csv, excel, pdf, json`
     });
 
   } catch (error) {
