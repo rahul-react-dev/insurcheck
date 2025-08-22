@@ -18,8 +18,6 @@ import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import Card from '../../components/ui/Card';
 import { useToast } from '../../hooks/use-toast';
-import { Skeleton } from '../../components/ui/skeleton';
-import { TableSkeleton, CardSkeleton } from '../../components/ui/SkeletonLoader';
 import { 
   Search,
   Plus,
@@ -395,69 +393,10 @@ const NotificationTemplates = () => {
 
   if (templatesLoading && templates.length === 0) {
     return (
-      <div className="p-4 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Configure Notification Templates
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Customize email notifications for compliance results and audit logs to align with organizational branding.
-          </p>
-        </div>
-
-        {/* Statistics Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-16" />
-                </div>
-                <Skeleton className="h-8 w-8" />
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Filters Skeleton */}
-        <Card className="p-3 mb-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Skeleton className="h-10 w-64" />
-              <Skeleton className="h-10 w-32" />
-              <Skeleton className="h-10 w-32" />
-            </div>
-            <Skeleton className="h-10 w-40" />
-          </div>
-        </Card>
-
-        {/* Templates Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Card key={index} className="p-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <div className="flex gap-1">
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-28" />
-                  <Skeleton className="h-3 w-36" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </div>
-            </Card>
-          ))}
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <RefreshCw className="h-5 w-5 animate-spin" />
+          <span>Loading notification templates...</span>
         </div>
       </div>
     );
