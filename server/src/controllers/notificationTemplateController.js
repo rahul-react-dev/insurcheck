@@ -36,6 +36,8 @@ export const getNotificationTemplates = async (req, res) => {
       isActive = ''
     } = req.query;
 
+    console.log(`📧 Request params:`, { page, limit, search, sortBy, sortOrder, templateType, isActive, tenantId });
+
     // Convert string boolean values to actual boolean
     let isActiveBool = null;
     if (isActive === 'true' || isActive === 'True') {
@@ -97,7 +99,11 @@ export const getNotificationTemplates = async (req, res) => {
     console.log(`📋 Total where conditions: ${whereConditions.length}`);
     
     try {
-      query = query.where(and(...whereConditions));
+      if (whereConditions.length === 1) {
+        query = query.where(whereConditions[0]);
+      } else {
+        query = query.where(and(...whereConditions));
+      }
     } catch (whereError) {
       console.error('Error building where clause:', whereError);
       throw new Error('Invalid filter parameters');
@@ -127,8 +133,13 @@ export const getNotificationTemplates = async (req, res) => {
     try {
       totalCountQuery = db
         .select({ count: count() })
-        .from(notificationTemplates)
-        .where(and(...whereConditions));
+        .from(notificationTemplates);
+      
+      if (whereConditions.length === 1) {
+        totalCountQuery = totalCountQuery.where(whereConditions[0]);
+      } else {
+        totalCountQuery = totalCountQuery.where(and(...whereConditions));
+      }
     } catch (countError) {
       console.error('Error building count query:', countError);
       throw new Error('Failed to build count query');

@@ -403,9 +403,9 @@ const NotificationTemplates = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Configure Notification Templates
         </h1>
@@ -415,7 +415,7 @@ const NotificationTemplates = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -466,7 +466,7 @@ const NotificationTemplates = () => {
       </div>
 
       {/* Filters and Controls */}
-      <Card className="p-4 mb-6">
+      <Card className="p-3 mb-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative">
