@@ -12,7 +12,13 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import { useToast } from '../../hooks/use-toast';
+import Pagination from '../../components/ui/Pagination';
+import { useToast, ToastContainer } from '../../components/ui/Toast';
+import {
+  CompliancePassFailChart,
+  CommonIssuesChart,
+  ComplianceTrendsChart
+} from '../../components/admin/ComplianceCharts';
 import { 
   TrendingUp,
   TrendingDown,
@@ -33,8 +39,31 @@ import {
 } from 'lucide-react';
 
 const ComplianceAnalytics = () => {
-  const { toast } = useToast();
+  const { toasts, removeToast, showSuccess, showError, showInfo } = useToast();
   const dispatch = useDispatch();
+
+  // Set up global toast function for saga
+  useEffect(() => {
+    window.showToast = (type, title, message) => {
+      switch (type) {
+        case 'success':
+          showSuccess(title, message);
+          break;
+        case 'error':
+          showError(title, message);
+          break;
+        case 'info':
+          showInfo(title, message);
+          break;
+        default:
+          showInfo(title, message);
+      }
+    };
+
+    return () => {
+      delete window.showToast;
+    };
+  }, [showSuccess, showError, showInfo]);
   
   // Redux selectors
   const {
@@ -58,6 +87,10 @@ const ComplianceAnalytics = () => {
     end: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // Fetch data on component mount and filter changes
   useEffect(() => {
@@ -65,13 +98,15 @@ const ComplianceAnalytics = () => {
       timeRange,
       documentType: documentTypeFilter,
       user: userFilter,
-      dateRange: dateRange.start && dateRange.end ? dateRange : null
+      dateRange: dateRange.start && dateRange.end ? dateRange : null,
+      page: currentPage,
+      limit: itemsPerPage
     };
     
     dispatch(fetchComplianceAnalyticsRequest(filterParams));
     dispatch(fetchComplianceTrendsRequest(filterParams));
     dispatch(fetchComplianceChartsRequest(filterParams));
-  }, [dispatch, timeRange, documentTypeFilter, userFilter, dateRange]);
+  }, [dispatch, timeRange, documentTypeFilter, userFilter, dateRange, currentPage, itemsPerPage]);
 
   // Handle filter changes
   const handleTimeRangeChange = (range) => {
@@ -106,12 +141,24 @@ const ComplianceAnalytics = () => {
       timeRange,
       documentType: documentTypeFilter,
       user: userFilter,
-      dateRange: dateRange.start && dateRange.end ? dateRange : null
+      dateRange: dateRange.start && dateRange.end ? dateRange : null,
+      page: currentPage,
+      limit: itemsPerPage
     };
     
     dispatch(fetchComplianceAnalyticsRequest(filterParams));
     dispatch(fetchComplianceTrendsRequest(filterParams));
     dispatch(fetchComplianceChartsRequest(filterParams));
+  };
+
+  // Handle pagination changes
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   // Handle export
@@ -150,132 +197,30 @@ const ComplianceAnalytics = () => {
     };
   };
 
-  // Render pass/fail pie chart
-  const renderPassFailChart = () => {
-    if (!charts?.passFailData) return null;
-    
-    const { passed, failed } = charts.passFailData;
-    const total = passed + failed;
-    const passPercentage = total > 0 ? (passed / total) * 100 : 0;
-    const failPercentage = total > 0 ? (failed / total) * 100 : 0;
-    
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center">
-          <div className="relative w-48 h-48">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              {/* Background circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#f3f4f6"
-                strokeWidth="8"
-              />
-              {/* Pass segment */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="8"
-                strokeDasharray={`${passPercentage * 2.51} ${(100 - passPercentage) * 2.51}`}
-                strokeLinecap="round"
-              />
-              {/* Fail segment */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="8"
-                strokeDasharray={`${failPercentage * 2.51} ${(100 - failPercentage) * 2.51}`}
-                strokeDashoffset={`-${passPercentage * 2.51}`}
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{formatPercentage(passPercentage)}</div>
-                <div className="text-sm text-gray-600">Pass Rate</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-700">Passed</span>
-            </div>
-            <div className="text-xl font-bold text-green-600">{formatNumber(passed)}</div>
-            <div className="text-sm text-gray-500">{formatPercentage(passPercentage)}</div>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-700">Failed</span>
-            </div>
-            <div className="text-xl font-bold text-red-600">{formatNumber(failed)}</div>
-            <div className="text-sm text-gray-500">{formatPercentage(failPercentage)}</div>
-          </div>
-        </div>
-      </div>
-    );
+  // Get pass/fail chart data for Chart.js component
+  const getPassFailChartData = () => {
+    return charts?.passFailData || null;
   };
 
-  // Render common issues bar chart
-  const renderCommonIssuesChart = () => {
-    if (!charts?.commonIssues || charts.commonIssues.length === 0) return null;
-    
-    const maxCount = Math.max(...charts.commonIssues.map(issue => issue.count));
-    
-    return (
-      <div className="space-y-3">
-        {charts.commonIssues.map((issue, index) => {
-          const percentage = (issue.count / maxCount) * 100;
-          
-          return (
-            <div key={index} className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-medium text-gray-700 truncate flex-1 mr-2">
-                  {issue.type}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-900 font-semibold">
-                    {formatNumber(issue.count)}
-                  </span>
-                  <span className="text-gray-500 text-xs">
-                    ({formatPercentage(issue.percentage)})
-                  </span>
-                </div>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${percentage}%` }}
-                ></div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+  // Get common issues chart data for Chart.js component
+  const getCommonIssuesChartData = () => {
+    return charts?.commonIssues || [];
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Compliance Analytics</h1>
-            <p className="text-gray-600 mt-1">Monitor compliance performance and identify trends</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="page-title">
+              Compliance Analytics
+            </h1>
+            <p className="text-gray-600 mt-1" data-testid="page-description">
+              Monitor compliance performance and identify trends
+            </p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -284,6 +229,8 @@ const ComplianceAnalytics = () => {
               onClick={handleRefresh}
               disabled={analyticsLoading}
               className="flex items-center gap-2"
+              aria-label="Refresh compliance analytics data"
+              data-testid="button-refresh"
             >
               <RefreshCw className={`h-4 w-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
               Refresh
@@ -293,6 +240,9 @@ const ComplianceAnalytics = () => {
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2"
+              aria-label={showFilters ? "Hide filters" : "Show filters"}
+              aria-expanded={showFilters}
+              data-testid="button-filters"
             >
               <Filter className="h-4 w-4" />
               Filters
@@ -304,6 +254,8 @@ const ComplianceAnalytics = () => {
                 value=""
                 className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={exportLoading}
+                aria-label="Export compliance analytics data"
+                data-testid="select-export"
               >
                 <option value="">Export</option>
                 <option value="png">Export PNG</option>
@@ -547,7 +499,10 @@ const ComplianceAnalytics = () => {
                 </div>
               </div>
             ) : (
-              renderPassFailChart()
+              <CompliancePassFailChart 
+                data={getPassFailChartData()} 
+                loading={chartsLoading}
+              />
             )}
           </Card>
 
@@ -580,7 +535,10 @@ const ComplianceAnalytics = () => {
                 </div>
               </div>
             ) : (
-              renderCommonIssuesChart()
+              <CommonIssuesChart 
+                data={getCommonIssuesChartData()} 
+                loading={chartsLoading}
+              />
             )}
           </Card>
         </div>
@@ -630,25 +588,46 @@ const ComplianceAnalytics = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {trends.timeSeriesData.map((point, index) => (
-                  <div key={index} className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-500 mb-1">
-                      {point.period}
-                    </div>
-                    <div className="text-lg font-bold text-gray-900">
-                      {formatPercentage(point.passRate)}
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {formatNumber(point.total)} docs
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ComplianceTrendsChart 
+              data={trends} 
+              loading={trendsLoading}
+            />
           )}
         </Card>
+
+        {/* Pagination */}
+        {analytics && (
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
+                  Items per page:
+                </label>
+                <select
+                  id="itemsPerPage"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  data-testid="select-items-per-page"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+              
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil((analytics?.totalDocuments || 0) / itemsPerPage)}
+                totalItems={analytics?.totalDocuments || 0}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                disabled={analyticsLoading}
+                className="flex-1 justify-end"
+              />
+            </div>
+          </Card>
+        )}
 
       </div>
     </div>

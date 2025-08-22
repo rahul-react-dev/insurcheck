@@ -14,6 +14,14 @@ import {
   exportComplianceAnalyticsFailure
 } from './complianceAnalyticsSlice';
 
+// Toast notification helper
+function* showToastNotification(type, title, message) {
+  // We'll dispatch this to a global toast state or use window notification function
+  if (window.showToast) {
+    window.showToast(type, title, message);
+  }
+}
+
 // API calls
 const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('adminToken');
@@ -57,11 +65,16 @@ function* fetchComplianceAnalyticsSaga(action) {
     
     if (response.success) {
       yield put(fetchComplianceAnalyticsSuccess(response.data));
+      yield call(showToastNotification, 'success', 'Success', 'Analytics data loaded successfully');
     } else {
-      yield put(fetchComplianceAnalyticsFailure(response.message || 'Failed to fetch analytics'));
+      const errorMessage = response.message || 'Failed to fetch analytics';
+      yield put(fetchComplianceAnalyticsFailure(errorMessage));
+      yield call(showToastNotification, 'error', 'Error', errorMessage);
     }
   } catch (error) {
-    yield put(fetchComplianceAnalyticsFailure(error.message || 'Failed to fetch analytics'));
+    const errorMessage = error.message || 'Failed to fetch analytics';
+    yield put(fetchComplianceAnalyticsFailure(errorMessage));
+    yield call(showToastNotification, 'error', 'Error', errorMessage);
   }
 }
 
@@ -87,11 +100,16 @@ function* fetchComplianceTrendsSaga(action) {
     
     if (response.success) {
       yield put(fetchComplianceTrendsSuccess(response.data));
+      yield call(showToastNotification, 'success', 'Success', 'Trends data loaded successfully');
     } else {
-      yield put(fetchComplianceTrendsFailure(response.message || 'Failed to fetch trends'));
+      const errorMessage = response.message || 'Failed to fetch trends';
+      yield put(fetchComplianceTrendsFailure(errorMessage));
+      yield call(showToastNotification, 'error', 'Error', errorMessage);
     }
   } catch (error) {
-    yield put(fetchComplianceTrendsFailure(error.message || 'Failed to fetch trends'));
+    const errorMessage = error.message || 'Failed to fetch trends';
+    yield put(fetchComplianceTrendsFailure(errorMessage));
+    yield call(showToastNotification, 'error', 'Error', errorMessage);
   }
 }
 
@@ -117,11 +135,16 @@ function* fetchComplianceChartsSaga(action) {
     
     if (response.success) {
       yield put(fetchComplianceChartsSuccess(response.data));
+      yield call(showToastNotification, 'success', 'Success', 'Chart data loaded successfully');
     } else {
-      yield put(fetchComplianceChartsFailure(response.message || 'Failed to fetch charts'));
+      const errorMessage = response.message || 'Failed to fetch charts';
+      yield put(fetchComplianceChartsFailure(errorMessage));
+      yield call(showToastNotification, 'error', 'Error', errorMessage);
     }
   } catch (error) {
-    yield put(fetchComplianceChartsFailure(error.message || 'Failed to fetch charts'));
+    const errorMessage = error.message || 'Failed to fetch charts';
+    yield put(fetchComplianceChartsFailure(errorMessage));
+    yield call(showToastNotification, 'error', 'Error', errorMessage);
   }
 }
 
@@ -173,8 +196,11 @@ function* exportComplianceAnalyticsSaga(action) {
     window.URL.revokeObjectURL(url);
 
     yield put(exportComplianceAnalyticsSuccess());
+    yield call(showToastNotification, 'success', 'Export Complete', `Analytics exported as ${format.toUpperCase()} successfully`);
   } catch (error) {
-    yield put(exportComplianceAnalyticsFailure(error.message || 'Failed to export analytics'));
+    const errorMessage = error.message || 'Failed to export analytics';
+    yield put(exportComplianceAnalyticsFailure(errorMessage));
+    yield call(showToastNotification, 'error', 'Export Failed', errorMessage);
   }
 }
 

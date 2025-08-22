@@ -136,27 +136,52 @@ router.get('/', authMiddleware, adminRoleMiddleware, async (req, res) => {
   try {
     console.log('📊 Admin fetching compliance analytics');
     
+    // Extract pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    
     const filters = {
       timeRange: req.query.timeRange,
       documentType: req.query.documentType,
       user: req.query.user,
       startDate: req.query.startDate,
-      endDate: req.query.endDate
+      endDate: req.query.endDate,
+      page,
+      limit,
+      skip
     };
 
-    // In production, this would query the database
+    // In production, this would query the database with pagination
     const analytics = generateMockComplianceData(filters);
+    
+    // Add pagination metadata
+    const totalRecords = 1247; // Mock total count
+    const totalPages = Math.ceil(totalRecords / limit);
+    
+    const response = {
+      success: true,
+      data: analytics,
+      pagination: {
+        page,
+        limit,
+        skip,
+        total: totalRecords,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    };
 
     console.log('✅ Generated compliance analytics:', {
       passRate: analytics.overallPassRate,
       totalDocs: analytics.totalDocuments,
+      page,
+      limit,
       filters
     });
 
-    res.json({
-      success: true,
-      data: analytics
-    });
+    res.json(response);
   } catch (error) {
     console.error('❌ Error fetching compliance analytics:', error);
     res.status(500).json({
@@ -171,26 +196,51 @@ router.get('/trends', authMiddleware, adminRoleMiddleware, async (req, res) => {
   try {
     console.log('📈 Admin fetching compliance trends');
     
+    // Extract pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const skip = (page - 1) * limit;
+    
     const filters = {
       timeRange: req.query.timeRange,
       documentType: req.query.documentType,
       user: req.query.user,
       startDate: req.query.startDate,
-      endDate: req.query.endDate
+      endDate: req.query.endDate,
+      page,
+      limit,
+      skip
     };
 
-    // In production, this would query historical data
+    // In production, this would query historical data with pagination
     const trends = generateMockTrendsData(filters);
+    
+    // Add pagination for time series data
+    const totalDataPoints = trends.timeSeriesData?.length || 0;
+    const totalPages = Math.ceil(totalDataPoints / limit);
+    
+    const response = {
+      success: true,
+      data: trends,
+      pagination: {
+        page,
+        limit,
+        skip,
+        total: totalDataPoints,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    };
 
     console.log('✅ Generated compliance trends:', {
       timeRange: filters.timeRange,
-      dataPoints: trends.timeSeriesData?.length
+      dataPoints: trends.timeSeriesData?.length,
+      page,
+      limit
     });
 
-    res.json({
-      success: true,
-      data: trends
-    });
+    res.json(response);
   } catch (error) {
     console.error('❌ Error fetching compliance trends:', error);
     res.status(500).json({
@@ -205,26 +255,51 @@ router.get('/charts', authMiddleware, adminRoleMiddleware, async (req, res) => {
   try {
     console.log('📊 Admin fetching compliance charts data');
     
+    // Extract pagination parameters for issues list
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
     const filters = {
       timeRange: req.query.timeRange,
       documentType: req.query.documentType,
       user: req.query.user,
       startDate: req.query.startDate,
-      endDate: req.query.endDate
+      endDate: req.query.endDate,
+      page,
+      limit,
+      skip
     };
 
-    // In production, this would aggregate data for charts
+    // In production, this would aggregate data for charts with pagination
     const charts = generateMockChartsData(filters);
+    
+    // Add pagination for common issues
+    const totalIssues = charts.commonIssues?.length || 0;
+    const totalPages = Math.ceil(totalIssues / limit);
+    
+    const response = {
+      success: true,
+      data: charts,
+      pagination: {
+        page,
+        limit,
+        skip,
+        total: totalIssues,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    };
 
     console.log('✅ Generated compliance charts:', {
       passFailData: charts.passFailData,
-      issuesCount: charts.commonIssues?.length
+      issuesCount: charts.commonIssues?.length,
+      page,
+      limit
     });
 
-    res.json({
-      success: true,
-      data: charts
-    });
+    res.json(response);
   } catch (error) {
     console.error('❌ Error fetching compliance charts:', error);
     res.status(500).json({
