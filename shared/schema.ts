@@ -135,9 +135,12 @@ export const invoices = pgTable("invoices", {
   issueDate: timestamp("issue_date").notNull(),
   dueDate: timestamp("due_date").notNull(),
   paidDate: timestamp("paid_date"),
+  paymentMethod: text("payment_method"),
+  transactionId: text("transaction_id"),
   billingPeriodStart: timestamp("billing_period_start").notNull(),
   billingPeriodEnd: timestamp("billing_period_end").notNull(),
   items: jsonb("items").notNull(),
+  billingDetails: jsonb("billing_details"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
