@@ -11,7 +11,21 @@ import {
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import { ChevronUpIcon, ChevronDownIcon, SearchIcon, DownloadIcon, EyeIcon, CreditCardIcon } from 'lucide-react';
+import EnhancedInvoiceTable from '../../components/admin/EnhancedInvoiceTable';
+import EnhancedInvoiceStats from '../../components/admin/EnhancedInvoiceStats';
+import { 
+  ChevronUpIcon, 
+  ChevronDownIcon, 
+  SearchIcon, 
+  DownloadIcon, 
+  EyeIcon, 
+  CreditCardIcon,
+  FilterIcon,
+  RefreshCwIcon,
+  FileTextIcon,
+  SortAscIcon,
+  SortDescIcon
+} from 'lucide-react';
 
 const Invoices = () => {
   const dispatch = useDispatch();
@@ -63,6 +77,13 @@ const Invoices = () => {
     exportError = null
   } = useSelector(state => state.invoices || {});
 
+  // Enhanced state for filters
+  const [activeFilters, setActiveFilters] = useState({
+    dateRange: '',
+    startDate: '',
+    endDate: ''
+  });
+
   // Fetch data when filters change
   useEffect(() => {
     const params = {
@@ -71,16 +92,18 @@ const Invoices = () => {
       sortBy,
       sortOrder,
       search: searchTerm,
-      status: statusFilter
+      status: statusFilter,
+      startDate: activeFilters.startDate,
+      endDate: activeFilters.endDate
     };
     dispatch(fetchInvoicesRequest(params));
     dispatch(fetchInvoiceStatsRequest());
-  }, [dispatch, currentPage, pageSize, sortBy, sortOrder, searchTerm, statusFilter]);
+  }, [dispatch, currentPage, pageSize, sortBy, sortOrder, searchTerm, statusFilter, activeFilters.startDate, activeFilters.endDate]);
 
   // Reset to first page when search/filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, activeFilters.startDate, activeFilters.endDate]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -245,336 +268,181 @@ const Invoices = () => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-                <p className="text-2xl font-bold text-gray-900">{invoiceStats.total}</p>
-              </div>
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-lg">📄</span>
-              </div>
-            </div>
-          </Card>
+        {/* Enhanced Statistics Cards */}
+        <EnhancedInvoiceStats stats={invoiceStats} isLoading={invoicesLoading && invoices.length === 0} />
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Paid</p>
-                <p className="text-2xl font-bold text-green-600">{invoiceStats.paid}</p>
-                <p className="text-sm text-gray-500">{formatCurrency(invoiceStats.paidAmount)}</p>
-              </div>
-              <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-lg">✅</span>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Unpaid</p>
-                <p className="text-2xl font-bold text-yellow-600">{invoiceStats.unpaid}</p>
-                <p className="text-sm text-gray-500">{formatCurrency(invoiceStats.unpaidAmount)}</p>
-              </div>
-              <div className="h-10 w-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-yellow-600 text-lg">⏰</span>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">{invoiceStats.overdue}</p>
-                <p className="text-sm text-gray-500">{formatCurrency(invoiceStats.overdueAmount)}</p>
-              </div>
-              <div className="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <span className="text-red-600 text-lg">⚠️</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Filters and Actions */}
-        <Card className="p-5">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              {/* Search */}
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        {/* Enhanced Filters and Actions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Search and Filters Section */}
+            <div className="flex-1 space-y-4 lg:space-y-0 lg:space-x-4 lg:flex lg:items-center">
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by Invoice ID..."
+                  placeholder="Search invoices..."
                   value={searchTerm}
                   onChange={handleSearchChange}
-                  className="pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
+                  className="pl-10 pr-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
                 />
               </div>
 
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="overdue">Overdue</option>
-              </select>
-
-              {/* Page Size */}
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={10}>10 per page</option>
-                <option value={25}>25 per page</option>
-                <option value={50}>50 per page</option>
-              </select>
-            </div>
-
-            {/* Export Dropdown */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                onClick={() => setShowExportDropdown(!showExportDropdown)}
-                disabled={exportLoading}
-              >
-                <DownloadIcon className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              
-              {showExportDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                  <div className="py-1">
-                    <button
-                      onClick={() => handleExport('pdf')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Export as PDF
-                    </button>
-                    <button
-                      onClick={() => handleExport('csv')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Export as CSV
-                    </button>
-                    <button
-                      onClick={() => handleExport('xlsx')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Export as Excel
-                    </button>
-                  </div>
+              {/* Filter Controls */}
+              <div className="flex flex-wrap gap-3">
+                {/* Status Filter */}
+                <div className="relative">
+                  <FilterIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <select
+                    value={statusFilter}
+                    onChange={handleStatusFilterChange}
+                    className="pl-9 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white text-sm font-medium"
+                  >
+                    <option value="">All Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
                 </div>
-              )}
-            </div>
-          </div>
-        </Card>
 
-        {/* Invoices Table */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Invoices</h2>
-              <p className="text-sm text-gray-500">
-                Showing {invoices.length} of {invoicesMeta.total} invoices
-              </p>
-            </div>
-          </div>
+                {/* Date Range Filter */}
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    placeholder="Start Date"
+                    value={activeFilters.startDate}
+                    onChange={(e) => setActiveFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <input
+                    type="date"
+                    placeholder="End Date"
+                    value={activeFilters.endDate}
+                    onChange={(e) => setActiveFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
 
-          {/* Error Display */}
-          {invoicesError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-red-600">Error loading invoices: {invoicesError}</p>
-            </div>
-          )}
-
-          {/* Export Error */}
-          {exportError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-red-600">Failed to export. Please try again.</p>
-            </div>
-          )}
-
-          {/* Payment Success */}
-          {paymentSuccess && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <p className="text-green-600">Payment successful. Receipt available for download.</p>
-            </div>
-          )}
-
-          {invoices.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">
-                {searchTerm || statusFilter ? "No results found." : "No invoices available."}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('invoiceNumber')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Invoice ID
-                        {getSortIcon('invoiceNumber')}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('issueDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Invoice Date
-                        {getSortIcon('issueDate')}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('dueDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Due Date
-                        {getSortIcon('dueDate')}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('totalAmount')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Amount
-                        {getSortIcon('totalAmount')}
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {invoice.invoiceNumber}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(invoice.issueDate)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(invoice.dueDate)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(invoice.totalAmount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(invoice.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="small"
-                            onClick={() => handleViewInvoice(invoice)}
-                          >
-                            <EyeIcon className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                          
-                          {(invoice.status === 'unpaid' || invoice.status === 'overdue') && (
-                            <Button 
-                              variant="primary" 
-                              size="small"
-                              onClick={() => handlePayInvoice(invoice)}
-                            >
-                              <CreditCardIcon className="h-4 w-4 mr-1" />
-                              Pay
-                            </Button>
-                          )}
-                          
-                          {invoice.status === 'paid' && (
-                            <Button 
-                              variant="secondary" 
-                              size="small"
-                              onClick={() => handleDownloadReceipt(invoice)}
-                            >
-                              <DownloadIcon className="h-4 w-4 mr-1" />
-                              Receipt
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {invoicesMeta.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-              <div className="text-sm text-gray-600">
-                Page {invoicesMeta.page} of {invoicesMeta.totalPages} • {invoicesMeta.total} total invoices
+                {/* Clear Filters */}
+                {(searchTerm || statusFilter || activeFilters.startDate || activeFilters.endDate) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('');
+                      setActiveFilters({ dateRange: '', startDate: '', endDate: '' });
+                    }}
+                    className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+                  >
+                    <RefreshCwIcon className="h-4 w-4" />
+                    Clear
+                  </Button>
+                )}
               </div>
+            </div>
+
+            {/* Actions Section */}
+            <div className="flex items-center gap-3">
+              {/* Sort Options */}
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="small"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                <span className="text-sm text-gray-600">Sort by:</span>
+                <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [field, order] = e.target.value.split('-');
+                    setSortBy(field);
+                    setSortOrder(order);
+                  }}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                 >
-                  Previous
+                  <option value="issueDate-desc">Newest First</option>
+                  <option value="issueDate-asc">Oldest First</option>
+                  <option value="totalAmount-desc">Highest Amount</option>
+                  <option value="totalAmount-asc">Lowest Amount</option>
+                  <option value="invoiceNumber-asc">Invoice Number</option>
+                  <option value="dueDate-asc">Due Date</option>
+                </select>
+              </div>
+
+              {/* Export Dropdown */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  disabled={exportLoading}
+                  className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                  Export
                 </Button>
                 
-                {/* Page numbers */}
-                {Array.from({ length: Math.min(5, invoicesMeta.totalPages) }, (_, i) => {
-                  const page = i + 1;
-                  return (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "primary" : "outline"}
-                      size="small"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  );
-                })}
-                
-                <Button 
-                  variant="outline" 
-                  size="small"
-                  disabled={currentPage >= invoicesMeta.totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
+                {showExportDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                    <div className="py-2">
+                      <button
+                        onClick={() => handleExport('csv')}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <FileTextIcon className="h-4 w-4" />
+                        Export as CSV
+                      </button>
+                      <button
+                        onClick={() => handleExport('pdf')}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <FileTextIcon className="h-4 w-4" />
+                        Export as PDF
+                      </button>
+                      <button
+                        onClick={() => handleExport('excel')}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <FileTextIcon className="h-4 w-4" />
+                        Export as Excel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-        </Card>
+          </div>
+        </div>
+
+        {/* Status Messages */}
+        {invoicesError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600">Error loading invoices: {invoicesError}</p>
+          </div>
+        )}
+
+        {exportError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600">Failed to export. Please try again.</p>
+          </div>
+        )}
+
+        {paymentSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-600">Payment successful. Receipt available for download.</p>
+          </div>
+        )}
+
+        {/* Enhanced Invoices Table */}
+        <EnhancedInvoiceTable
+          invoices={invoices}
+          isLoading={invoicesLoading}
+          onViewInvoice={handleViewInvoice}
+          onProcessPayment={handlePayInvoice}
+          onDownloadReceipt={handleDownloadReceipt}
+          pagination={{
+            page: currentPage,
+            limit: pageSize,
+            total: invoicesMeta.total || 0,
+            totalPages: invoicesMeta.totalPages || 1
+          }}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
 
         {/* Invoice Details Modal */}
         {showDetailsModal && selectedInvoice && (
