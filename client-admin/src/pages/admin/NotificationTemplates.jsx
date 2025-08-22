@@ -391,7 +391,7 @@ const NotificationTemplates = () => {
     );
   };
 
-  // Skeleton Loading Component
+  // Skeleton Loading Components - Match actual table structure
   const SkeletonCard = () => (
     <Card className="p-3">
       <div className="flex items-center justify-between">
@@ -404,24 +404,80 @@ const NotificationTemplates = () => {
     </Card>
   );
 
-  const SkeletonTable = () => (
-    <Card className="p-3 mb-4">
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex space-x-4">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+  const SkeletonTableRow = () => (
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-1 animate-pulse"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
           </div>
-        ))}
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <div className="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div className="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div className="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div className="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        </div>
+      </td>
+    </tr>
+  );
+
+  const SkeletonTable = () => (
+    <Card className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+              </th>
+              <th className="px-6 py-3 text-left">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 animate-pulse"></div>
+              </th>
+              <th className="px-6 py-3 text-left">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+              </th>
+              <th className="px-6 py-3 text-left">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+              </th>
+              <th className="px-6 py-3 text-left">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 animate-pulse"></div>
+              </th>
+              <th className="px-6 py-3 text-right">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse ml-auto"></div>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {[...Array(pageSize)].map((_, i) => (
+              <SkeletonTableRow key={i} />
+            ))}
+          </tbody>
+        </table>
       </div>
     </Card>
   );
 
-  // Loading state with skeletons
-  if (templatesLoading && templates.length === 0) {
+  // Show skeleton during initial loading OR when searching/filtering
+  const showSkeleton = templatesLoading && (templates.length === 0 || searchTerm || templateTypeFilter || statusFilter);
+
+  if (showSkeleton) {
     return (
       <div className="p-4 max-w-7xl mx-auto">
         {/* Header */}
@@ -440,6 +496,50 @@ const NotificationTemplates = () => {
             <SkeletonCard key={i} />
           ))}
         </div>
+
+        {/* Filters and Controls - Show actual controls during search */}
+        <Card className="p-3 mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search templates..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
+              
+              <select
+                value={templateTypeFilter}
+                onChange={(e) => setTemplateTypeFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              >
+                <option value="">All Types</option>
+                <option value="compliance_result">Compliance Result</option>
+                <option value="audit_log">Audit Log</option>
+                <option value="user_notification">User Notification</option>
+                <option value="system_alert">System Alert</option>
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              >
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
+          </div>
+        </Card>
 
         {/* Table Skeleton */}
         <SkeletonTable />
@@ -598,8 +698,14 @@ const NotificationTemplates = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {templates.map((template) => {
-                  const config = templateTypeConfig[template.templateType];
+                {templatesLoading && templates.length === 0 ? (
+                  // Show skeleton rows when loading and no existing data
+                  [...Array(pageSize)].map((_, i) => (
+                    <SkeletonTableRow key={`skeleton-${i}`} />
+                  ))
+                ) : (
+                  templates.map((template) => {
+                    const config = templateTypeConfig[template.templateType];
                   const IconComponent = config?.icon || Mail;
 
                   return (
@@ -673,7 +779,8 @@ const NotificationTemplates = () => {
                       </td>
                     </tr>
                   );
-                })}
+                  })
+                )}
               </tbody>
             </table>
           </div>
