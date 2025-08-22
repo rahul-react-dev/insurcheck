@@ -12,7 +12,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import Pagination from '../../components/ui/Pagination';
+
 import { useToast, ToastContainer } from '../../components/ui/Toast';
 import {
   CompliancePassFailChart,
@@ -88,9 +88,7 @@ const ComplianceAnalytics = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+
 
   // Fetch data on component mount and filter changes
   useEffect(() => {
@@ -98,15 +96,13 @@ const ComplianceAnalytics = () => {
       timeRange,
       documentType: documentTypeFilter,
       user: userFilter,
-      dateRange: dateRange.start && dateRange.end ? dateRange : null,
-      page: currentPage,
-      limit: itemsPerPage
+      dateRange: dateRange.start && dateRange.end ? dateRange : null
     };
     
     dispatch(fetchComplianceAnalyticsRequest(filterParams));
     dispatch(fetchComplianceTrendsRequest(filterParams));
     dispatch(fetchComplianceChartsRequest(filterParams));
-  }, [dispatch, timeRange, documentTypeFilter, userFilter, dateRange, currentPage, itemsPerPage]);
+  }, [dispatch, timeRange, documentTypeFilter, userFilter, dateRange]);
 
   // Handle filter changes
   const handleTimeRangeChange = (range) => {
@@ -141,24 +137,12 @@ const ComplianceAnalytics = () => {
       timeRange,
       documentType: documentTypeFilter,
       user: userFilter,
-      dateRange: dateRange.start && dateRange.end ? dateRange : null,
-      page: currentPage,
-      limit: itemsPerPage
+      dateRange: dateRange.start && dateRange.end ? dateRange : null
     };
     
     dispatch(fetchComplianceAnalyticsRequest(filterParams));
     dispatch(fetchComplianceTrendsRequest(filterParams));
     dispatch(fetchComplianceChartsRequest(filterParams));
-  };
-
-  // Handle pagination changes
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   // Handle export
@@ -595,39 +579,7 @@ const ComplianceAnalytics = () => {
           )}
         </Card>
 
-        {/* Pagination */}
-        {analytics && (
-          <Card className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
-                  Items per page:
-                </label>
-                <select
-                  id="itemsPerPage"
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  data-testid="select-items-per-page"
-                >
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-              
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil((analytics?.totalDocuments || 0) / itemsPerPage)}
-                totalItems={analytics?.totalDocuments || 0}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                disabled={analyticsLoading}
-                className="flex-1 justify-end"
-              />
-            </div>
-          </Card>
-        )}
+
 
       </div>
     </div>

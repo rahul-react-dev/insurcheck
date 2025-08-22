@@ -65,7 +65,7 @@ function* fetchComplianceAnalyticsSaga(action) {
     
     if (response.success) {
       yield put(fetchComplianceAnalyticsSuccess(response.data));
-      yield call(showToastNotification, 'success', 'Success', 'Analytics data loaded successfully');
+      // Don't show success toast for initial data loading
     } else {
       const errorMessage = response.message || 'Failed to fetch analytics';
       yield put(fetchComplianceAnalyticsFailure(errorMessage));
@@ -100,7 +100,7 @@ function* fetchComplianceTrendsSaga(action) {
     
     if (response.success) {
       yield put(fetchComplianceTrendsSuccess(response.data));
-      yield call(showToastNotification, 'success', 'Success', 'Trends data loaded successfully');
+      // Don't show success toast for initial data loading
     } else {
       const errorMessage = response.message || 'Failed to fetch trends';
       yield put(fetchComplianceTrendsFailure(errorMessage));
@@ -135,7 +135,7 @@ function* fetchComplianceChartsSaga(action) {
     
     if (response.success) {
       yield put(fetchComplianceChartsSuccess(response.data));
-      yield call(showToastNotification, 'success', 'Success', 'Chart data loaded successfully');
+      // Don't show success toast for initial data loading
     } else {
       const errorMessage = response.message || 'Failed to fetch charts';
       yield put(fetchComplianceChartsFailure(errorMessage));
