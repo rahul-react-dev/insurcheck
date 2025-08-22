@@ -479,7 +479,7 @@ const NotificationTemplates = () => {
 
   if (showSkeleton) {
     return (
-      <div className="p-1 max-w-7xl mx-auto">
+      <div className="p-1">
         {/* Header */}
         <div className="mb-3">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
