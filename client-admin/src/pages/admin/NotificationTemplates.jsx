@@ -42,7 +42,8 @@ import {
   FileText,
   Calendar,
   User,
-  Activity
+  Activity,
+  ChevronDown
 } from 'lucide-react';
 
 const NotificationTemplates = () => {
@@ -403,108 +404,161 @@ const NotificationTemplates = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          Configure Notification Templates
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Customize email notifications for compliance results and audit logs to align with organizational branding.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white shadow-lg">
+                  <Mail className="h-6 w-6" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    Notification Templates
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">System Active</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+                Design and customize professional email notifications for compliance results, audit logs, and system alerts. 
+                Maintain consistent branding across all automated communications.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => dispatch(fetchStatsRequest())}
+                variant="outline" 
+                size="sm"
+                disabled={statsLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${statsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+        </div>
+
+      {/* Enhanced Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="p-6 bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900 border-blue-200 dark:border-blue-700 shadow-lg hover:shadow-xl transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Total Templates</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+                {statsLoading ? <RefreshCw className="h-6 w-6 animate-spin text-blue-500" /> : templateStats.total}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">All notification templates</p>
+            </div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-800 rounded-full">
+              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-green-900 border-green-200 dark:border-green-700 shadow-lg hover:shadow-xl transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">Active Templates</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+                {statsLoading ? <RefreshCw className="h-6 w-6 animate-spin text-green-500" /> : templateStats.active}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ready for notifications</p>
+            </div>
+            <div className="p-3 bg-green-100 dark:bg-green-800 rounded-full">
+              <Activity className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900 border-purple-200 dark:border-purple-700 shadow-lg hover:shadow-xl transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Compliance</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+                {statsLoading ? <RefreshCw className="h-6 w-6 animate-spin text-purple-500" /> : (templateStats.byType?.compliance_result || 0)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Compliance notifications</p>
+            </div>
+            <div className="p-3 bg-purple-100 dark:bg-purple-800 rounded-full">
+              <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-white to-orange-50 dark:from-gray-800 dark:to-orange-900 border-orange-200 dark:border-orange-700 shadow-lg hover:shadow-xl transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Audit Logs</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+                {statsLoading ? <RefreshCw className="h-6 w-6 animate-spin text-orange-500" /> : (templateStats.byType?.audit_log || 0)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Security notifications</p>
+            </div>
+            <div className="p-3 bg-orange-100 dark:bg-orange-800 rounded-full">
+              <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Templates</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {statsLoading ? <RefreshCw className="h-5 w-5 animate-spin" /> : templateStats.total}
-              </p>
-            </div>
-            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Templates</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {statsLoading ? <RefreshCw className="h-5 w-5 animate-spin" /> : templateStats.active}
-              </p>
-            </div>
-            <Activity className="h-8 w-8 text-green-600 dark:text-green-400" />
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Compliance Templates</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {statsLoading ? <RefreshCw className="h-5 w-5 animate-spin" /> : (templateStats.byType?.compliance_result || 0)}
-              </p>
-            </div>
-            <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Audit Templates</p>
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {statsLoading ? <RefreshCw className="h-5 w-5 animate-spin" /> : (templateStats.byType?.audit_log || 0)}
-              </p>
-            </div>
-            <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Filters and Controls */}
-      <Card className="p-4 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      {/* Enhanced Filters and Controls */}
+      <Card className="p-6 mb-8 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 h-4 w-4 transition-colors" />
               <Input
-                placeholder="Search templates..."
+                placeholder="Search templates, subjects, or types..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="pl-10 w-full sm:w-64"
+                className="pl-10 w-full sm:w-80 h-11 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
             
-            <select
-              value={templateTypeFilter}
-              onChange={(e) => setTemplateTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">All Types</option>
-              <option value="compliance_result">Compliance Result</option>
-              <option value="audit_log">Audit Log</option>
-              <option value="user_notification">User Notification</option>
-              <option value="system_alert">System Alert</option>
-            </select>
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
+              <select
+                value={templateTypeFilter}
+                onChange={(e) => setTemplateTypeFilter(e.target.value)}
+                className="pl-10 pr-8 h-11 w-full sm:w-48 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:border-gray-400 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+              >
+                <option value="">All Types</option>
+                <option value="compliance_result">🛡️ Compliance Result</option>
+                <option value="audit_log">📊 Audit Log</option>
+                <option value="user_notification">📧 User Notification</option>
+                <option value="system_alert">⚠️ System Alert</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+            </div>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+            <div className="relative">
+              <Activity className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-10 pr-8 h-11 w-full sm:w-44 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:border-gray-400 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+              >
+                <option value="">All Status</option>
+                <option value="true">✅ Active</option>
+                <option value="false">⏸️ Inactive</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+            </div>
           </div>
 
-          <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+          <Button 
+            onClick={() => setShowCreateModal(true)} 
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+          >
             <Plus className="h-4 w-4" />
-            Create Template
+            Create New Template
           </Button>
         </div>
       </Card>
@@ -1062,6 +1116,7 @@ const NotificationTemplates = () => {
           )}
         </div>
       </Modal>
+      </div>
     </div>
   );
 };
