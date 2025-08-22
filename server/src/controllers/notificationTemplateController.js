@@ -1,4 +1,4 @@
-import { eq, desc, like, or, and, count, sql } from 'drizzle-orm';
+import { eq, desc, like, or, and, count } from 'drizzle-orm';
 import { notificationTemplates, notificationTemplateAuditLogs, users } from '../../../shared/schema.ts';
 import { db } from '../../db.js';
 
@@ -25,7 +25,7 @@ const logTemplateChange = async (templateId, action, oldValues, newValues, userI
 // Get all notification templates for tenant with pagination and search
 export const getNotificationTemplates = async (req, res) => {
   try {
-    const { tenantId, userId, role } = req.user;
+    const { tenantId } = req.user;
     const { 
       page = 1, 
       limit = 10, 
@@ -35,19 +35,6 @@ export const getNotificationTemplates = async (req, res) => {
       templateType = '',
       isActive = ''
     } = req.query;
-
-    console.log(`📧 [${new Date().toISOString()}] Notification Templates Request:`, {
-      tenantId,
-      userId,
-      role,
-      search: search || '(empty)',
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-      templateType: templateType || '(all)',
-      isActive: isActive || '(all)'
-    });
 
     // Convert string boolean values to actual boolean
     let isActiveBool = null;
@@ -92,8 +79,7 @@ export const getNotificationTemplates = async (req, res) => {
         or(
           like(notificationTemplates.name, `%${searchTerm}%`),
           like(notificationTemplates.subject, `%${searchTerm}%`),
-          // Cast enum to text for LIKE operation to prevent type errors
-          like(sql`${notificationTemplates.templateType}::text`, `%${searchTerm}%`)
+          like(notificationTemplates.templateType, `%${searchTerm}%`)
         )
       );
     }
@@ -182,23 +168,10 @@ export const getNotificationTemplates = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [Get notification templates error]:', {
-      message: error.message,
-      stack: error.stack,
-      code: error.code,
-      detail: error.detail,
-      query: error.query
-    });
-    
+    console.error('Get notification templates error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch notification templates. Please try again.',
-      ...(process.env.NODE_ENV === 'development' && {
-        debug: {
-          error: error.message,
-          code: error.code
-        }
-      })
+      message: 'Failed to fetch notification templates. Please try again.'
     });
   }
 };
