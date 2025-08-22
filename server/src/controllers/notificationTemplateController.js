@@ -1,4 +1,4 @@
-import { eq, desc, like, or, and, count } from 'drizzle-orm';
+import { eq, desc, like, ilike, or, and, count } from 'drizzle-orm';
 import { notificationTemplates, notificationTemplateAuditLogs, users } from '../../../shared/schema.ts';
 import { db } from '../../db.js';
 
@@ -79,9 +79,9 @@ export const getNotificationTemplates = async (req, res) => {
       console.log(`🔍 Applying search filter: "${searchTerm}"`);
       whereConditions.push(
         or(
-          like(notificationTemplates.name, `%${searchTerm}%`),
-          like(notificationTemplates.subject, `%${searchTerm}%`),
-          like(notificationTemplates.templateType, `%${searchTerm}%`)
+          ilike(notificationTemplates.name, `%${searchTerm}%`),
+          ilike(notificationTemplates.subject, `%${searchTerm}%`),
+          ilike(notificationTemplates.templateType, `%${searchTerm}%`)
         )
       );
     }
