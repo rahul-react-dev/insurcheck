@@ -1,4 +1,4 @@
-import { eq, desc, like, or, and, count, sql } from 'drizzle-orm';
+import { eq, desc, like, ilike, or, and, count, sql } from 'drizzle-orm';
 import { notificationTemplates, notificationTemplateAuditLogs, users } from '../../../shared/schema.ts';
 import { db } from '../../db.js';
 
@@ -80,11 +80,9 @@ export const getNotificationTemplates = async (req, res) => {
     if (search && search.trim()) {
       const searchTerm = search.trim();
       console.log(`🔍 Applying search filter: "${searchTerm}"`);
+      // Use sql function for more reliable search matching
       whereConditions.push(
-        or(
-          like(notificationTemplates.name, `%${searchTerm}%`),
-          like(notificationTemplates.subject, `%${searchTerm}%`)
-        )
+        sql`(${notificationTemplates.name} ILIKE ${`%${searchTerm}%`} OR ${notificationTemplates.subject} ILIKE ${`%${searchTerm}%`})`
       );
     }
 
@@ -155,19 +153,39 @@ export const getNotificationTemplates = async (req, res) => {
         query.limit(limit).offset(skip),
         totalCountQuery
       ]);
+      
+      // Debug: Log template IDs and names when searching
+      if (search && search.trim()) {
+        console.log('🔍 DEBUG: Raw template data found:', templatesData.length);
+        templatesData.forEach((t, i) => {
+          console.log(`  ${i+1}. ${t.name} (${t.id})`);
+        });
+      }
     } catch (queryError) {
       console.error('Database query execution error:', queryError);
       throw new Error('Database query failed');
     }
 
-    const formattedTemplates = templatesData.map(template => ({
-      ...template,
-      createdByName: template.createdByName && template.createdByLastName 
-        ? `${template.createdByName} ${template.createdByLastName}`
-        : template.createdByEmail || 'Unknown User'
-    }));
+    const formattedTemplates = templatesData.map(template => {
+      // Debug: Log each template's join data
+      if (search && search.trim()) {
+        console.log(`🔍 DEBUG: Template "${template.name}" - createdBy: ${template.createdByName}, email: ${template.createdByEmail}`);
+      }
+      
+      return {
+        ...template,
+        createdByName: template.createdByName && template.createdByLastName 
+          ? `${template.createdByName} ${template.createdByLastName}`
+          : template.createdByEmail || 'Unknown User'
+      };
+    });
 
     console.log(`✅ Notification Templates: Found ${formattedTemplates.length} templates (${totalCount[0].count} total)`);
+    
+    // Debug: Log all template names when searching
+    if (search && search.trim()) {
+      console.log('🔍 DEBUG: Template names found:', formattedTemplates.map(t => t.name));
+    }
 
     res.json({
       success: true,

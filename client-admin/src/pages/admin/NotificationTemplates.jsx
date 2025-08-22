@@ -479,7 +479,7 @@ const NotificationTemplates = () => {
 
   if (showSkeleton) {
     return (
-      <div className="p-2 max-w-7xl mx-auto">
+      <div className="p-1 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-3">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -491,14 +491,14 @@ const NotificationTemplates = () => {
         </div>
 
         {/* Statistics Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 mb-2">
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
 
         {/* Filters and Controls - Show actual controls during search */}
-        <Card className="p-2 mb-3">
+        <Card className="p-1 mb-2">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative">
@@ -548,9 +548,9 @@ const NotificationTemplates = () => {
   }
 
   return (
-    <div className="p-2 max-w-7xl mx-auto">
+    <div className="p-1 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-3">
+      <div className="mb-2">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Configure Notification Templates
         </h1>
@@ -560,8 +560,8 @@ const NotificationTemplates = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-        <Card className="p-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 mb-2">
+        <Card className="p-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Templates</p>
@@ -573,7 +573,7 @@ const NotificationTemplates = () => {
           </div>
         </Card>
 
-        <Card className="p-2">
+        <Card className="p-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Templates</p>
@@ -585,7 +585,7 @@ const NotificationTemplates = () => {
           </div>
         </Card>
 
-        <Card className="p-2">
+        <Card className="p-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Compliance Templates</p>
@@ -597,7 +597,7 @@ const NotificationTemplates = () => {
           </div>
         </Card>
 
-        <Card className="p-2">
+        <Card className="p-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Audit Templates</p>
@@ -611,7 +611,7 @@ const NotificationTemplates = () => {
       </div>
 
       {/* Filters and Controls */}
-      <Card className="p-2 mb-3">
+      <Card className="p-1 mb-2">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative">
