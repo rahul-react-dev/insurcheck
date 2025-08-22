@@ -12,7 +12,7 @@ import adminInvoicesRoutes from './src/routes/adminInvoices.js';
 import complianceAnalyticsRoutes from './src/routes/complianceAnalytics.js';
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '5000', 10);
+const PORT = parseInt(process.env.PORT || '5001', 10);
 
 // Middleware - Enhanced CORS configuration
 app.use(cors({

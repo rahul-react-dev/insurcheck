@@ -391,13 +391,58 @@ const NotificationTemplates = () => {
     );
   };
 
+  // Skeleton Loading Component
+  const SkeletonCard = () => (
+    <Card className="p-3">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16 animate-pulse"></div>
+        </div>
+        <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+      </div>
+    </Card>
+  );
+
+  const SkeletonTable = () => (
+    <Card className="p-3 mb-4">
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex space-x-4">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  // Loading state with skeletons
   if (templatesLoading && templates.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <RefreshCw className="h-5 w-5 animate-spin" />
-          <span>Loading notification templates...</span>
+      <div className="p-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Configure Notification Templates
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Customize email notifications for compliance results and audit logs to align with organizational branding.
+          </p>
         </div>
+
+        {/* Statistics Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <SkeletonTable />
       </div>
     );
   }
@@ -416,7 +461,7 @@ const NotificationTemplates = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <Card className="p-4">
+        <Card className="p-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Templates</p>
@@ -428,7 +473,7 @@ const NotificationTemplates = () => {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Templates</p>
@@ -440,7 +485,7 @@ const NotificationTemplates = () => {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Compliance Templates</p>
@@ -452,7 +497,7 @@ const NotificationTemplates = () => {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Audit Templates</p>

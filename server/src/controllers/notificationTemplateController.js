@@ -1,4 +1,4 @@
-import { eq, desc, like, or, and, count } from 'drizzle-orm';
+import { eq, desc, like, or, and, count, sql } from 'drizzle-orm';
 import { notificationTemplates, notificationTemplateAuditLogs, users } from '../../../shared/schema.ts';
 import { db } from '../../db.js';
 
@@ -25,6 +25,9 @@ const logTemplateChange = async (templateId, action, oldValues, newValues, userI
 // Get all notification templates for tenant with pagination and search
 export const getNotificationTemplates = async (req, res) => {
   try {
+    console.log('🔍 GET /api/admin/notification-templates - Starting request');
+    console.log('🔍 Request user:', req.user);
+    
     const { tenantId } = req.user;
     const { 
       page = 1, 
@@ -80,8 +83,7 @@ export const getNotificationTemplates = async (req, res) => {
       whereConditions.push(
         or(
           like(notificationTemplates.name, `%${searchTerm}%`),
-          like(notificationTemplates.subject, `%${searchTerm}%`),
-          like(notificationTemplates.templateType, `%${searchTerm}%`)
+          like(notificationTemplates.subject, `%${searchTerm}%`)
         )
       );
     }
@@ -179,10 +181,12 @@ export const getNotificationTemplates = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get notification templates error:', error);
+    console.error('❌ Get notification templates error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch notification templates. Please try again.'
+      message: 'Failed to fetch notification templates. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
