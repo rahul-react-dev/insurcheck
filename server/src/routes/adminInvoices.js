@@ -37,8 +37,16 @@ router.get(
     query('sortBy').optional().isIn(['invoiceNumber', 'issueDate', 'dueDate', 'totalAmount', 'amount', 'status', 'createdAt']).withMessage('Invalid sort field'),
     query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
     query('status').optional().isIn(['paid', 'unpaid', 'overdue', 'pending', '']).withMessage('Invalid status filter'),
-    query('startDate').optional().isISO8601().withMessage('Start date must be valid ISO date'),
-    query('endDate').optional().isISO8601().withMessage('End date must be valid ISO date')
+    query('startDate').optional().custom((value) => {
+      if (!value || value === '') return true;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    }).withMessage('Start date must be valid date'),
+    query('endDate').optional().custom((value) => {
+      if (!value || value === '') return true;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    }).withMessage('End date must be valid date')
   ],
   handleValidationErrors,
   getAdminInvoices
@@ -129,8 +137,16 @@ router.get(
   [
     param('format').isIn(['csv', 'pdf', 'excel']).withMessage('Format must be csv, pdf, or excel'),
     query('status').optional().isIn(['paid', 'unpaid', 'overdue', 'pending', '']).withMessage('Invalid status filter'),
-    query('startDate').optional().isISO8601().withMessage('Start date must be valid ISO date'),
-    query('endDate').optional().isISO8601().withMessage('End date must be valid ISO date')
+    query('startDate').optional().custom((value) => {
+      if (!value || value === '') return true;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    }).withMessage('Start date must be valid date'),
+    query('endDate').optional().custom((value) => {
+      if (!value || value === '') return true;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    }).withMessage('End date must be valid date')
   ],
   handleValidationErrors,
   exportAdminInvoices
