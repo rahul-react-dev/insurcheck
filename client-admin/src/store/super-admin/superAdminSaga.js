@@ -21,9 +21,13 @@ import {
 // Saga workers
 function* loginSaga(action) {
   try {
+    console.log('🚀 Super Admin loginSaga started with payload:', action.payload);
+    
     // Make API call
     const response = yield call(superAdminAPI.login, action.payload);
     console.log('✅ Login API response received:', response);
+    console.log('📊 Response type:', typeof response);
+    console.log('🔍 Response keys:', response ? Object.keys(response) : 'null');
 
     // Extract data from response
     const responseData = response.data || response;
@@ -42,6 +46,11 @@ function* loginSaga(action) {
     console.log('✅ Super Admin login successful');
   } catch (error) {
     console.error('❌ Super Admin login error:', error);
+    console.error('🔍 Error type:', typeof error);
+    console.error('📊 Error properties:', error ? Object.keys(error) : 'null');
+    console.error('🌐 Error response:', error?.response);
+    console.error('📄 Error response data:', error?.response?.data);
+    console.error('📈 Error response status:', error?.response?.status);
 
     let errorMessage = 'Login failed. Please try again.';
 

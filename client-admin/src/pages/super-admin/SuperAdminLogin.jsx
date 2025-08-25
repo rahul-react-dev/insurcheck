@@ -133,7 +133,8 @@ const SuperAdminLogin = () => {
                   <i className="fas fa-exclamation-triangle text-red-400"></i>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-red-700 break-words">{error}</p>
+                  <p className="text-sm text-red-700 break-words" data-testid="error-message">{error}</p>
+                  {console.log('🖥️ UI Rendering error:', error)}
                 </div>
                 <div className="ml-auto pl-3">
                   <button
