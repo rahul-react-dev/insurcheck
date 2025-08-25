@@ -211,21 +211,35 @@ const TenantPlanAssignment = () => {
               </div>
               
               {/* Plan Features Preview */}
-              {tenant.planLimits?.features && tenant.planLimits.features.length > 0 && (
-                <div className="mt-3 pt-3 border-t">
-                  <div className="text-xs text-gray-500 mb-1">Plan Features:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {tenant.planLimits.features.slice(0, 2).map((feature, index) => (
-                      <span key={index} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                        {feature}
-                      </span>
-                    ))}
-                    {tenant.planLimits.features.length > 2 && (
-                      <span className="text-xs text-gray-400">+{tenant.planLimits.features.length - 2} more</span>
-                    )}
+              {(() => {
+                // Safely parse features - handle both array and JSON string
+                let features = [];
+                try {
+                  if (tenant.planLimits?.features) {
+                    features = Array.isArray(tenant.planLimits.features) 
+                      ? tenant.planLimits.features 
+                      : JSON.parse(tenant.planLimits.features);
+                  }
+                } catch (e) {
+                  features = [];
+                }
+                
+                return features && features.length > 0 && (
+                  <div className="mt-3 pt-3 border-t">
+                    <div className="text-xs text-gray-500 mb-1">Plan Features:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {features.slice(0, 2).map((feature, index) => (
+                        <span key={index} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                          {feature}
+                        </span>
+                      ))}
+                      {features.length > 2 && (
+                        <span className="text-xs text-gray-400">+{features.length - 2} more</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <div className="border-t pt-4 mt-4">
