@@ -19,10 +19,6 @@ const SuperAdminLogin = () => {
     (state) => state.superAdmin,
   );
   
-  // Debug logging to track error state changes
-  useEffect(() => {
-    console.log('🔍 SuperAdminLogin - Error state changed:', error);
-  }, [error]);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -134,7 +130,6 @@ const SuperAdminLogin = () => {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-700 break-words" data-testid="error-message">{error}</p>
-                  {console.log('🖥️ UI Rendering error:', error)}
                 </div>
                 <div className="ml-auto pl-3">
                   <button
