@@ -4,7 +4,6 @@ import {
   loginRequest,
   loginSuccess,
   loginFailure,
-  incrementLoginAttempts,
   fetchSystemMetricsRequest,
   fetchSystemMetricsSuccess,
   fetchSystemMetricsFailure,
@@ -82,8 +81,19 @@ function* loginSaga(action) {
       }
     }
 
-    yield put(loginFailure(errorMessage));
-    yield put(incrementLoginAttempts());
+    // Handle lockout state from backend response
+    if (error.response?.status === 423 && error.response?.data?.lockoutTime) {
+      yield put(loginFailure({
+        message: errorMessage,
+        isLocked: true,
+        lockoutTime: error.response.data.lockoutTime
+      }));
+    } else {
+      yield put(loginFailure({
+        message: errorMessage,
+        attemptsRemaining: error.response?.data?.attemptsRemaining
+      }));
+    }
   }
 }
 

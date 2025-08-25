@@ -60,12 +60,26 @@ const superAdminSlice = createSlice({
     loginFailure: (state, action) => {
       console.log('🔴 LoginFailure reducer called with:', action.payload);
       state.isLoading = false;
-      state.error = action.payload;
-      state.loginAttempts += 1;
-
-      if (state.loginAttempts >= 5) {
-        state.isLocked = true;
-        state.lockoutTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      
+      // Handle payload as object or string
+      const payload = action.payload;
+      
+      if (typeof payload === 'object' && payload !== null) {
+        state.error = payload.message || payload;
+        
+        // Handle lockout from backend
+        if (payload.isLocked && payload.lockoutTime) {
+          state.isLocked = true;
+          state.lockoutTime = payload.lockoutTime;
+          console.log('🔒 Account locked until:', payload.lockoutTime);
+        }
+        
+        // Update attempts remaining (don't increment locally)
+        if (payload.attemptsRemaining !== undefined) {
+          state.loginAttempts = 5 - payload.attemptsRemaining;
+        }
+      } else {
+        state.error = payload;
       }
       
       console.log('🔍 Updated error state:', state.error);
@@ -78,18 +92,14 @@ const superAdminSlice = createSlice({
       if (state.isLocked && state.lockoutTime) {
         const now = new Date();
         const lockoutEnd = new Date(state.lockoutTime);
+        console.log('⏰ Checking lockout - Now:', now.toISOString(), 'Lockout ends:', lockoutEnd.toISOString());
         if (now >= lockoutEnd) {
+          console.log('✅ Lockout expired, unlocking account');
           state.isLocked = false;
           state.lockoutTime = null;
           state.loginAttempts = 0;
+          state.error = null;
         }
-      }
-    },
-    incrementLoginAttempts: (state) => {
-      state.loginAttempts += 1;
-      if (state.loginAttempts >= 5) {
-        state.isLocked = true;
-        state.lockoutTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
       }
     },
     // Logout action
