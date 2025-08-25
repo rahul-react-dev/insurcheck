@@ -681,12 +681,19 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
     }
 
     const [tenantsData, totalCount, statusCounts] = await Promise.all([
-      // Get paginated tenants using raw SQL
+      // Get paginated tenants with subscription info using raw SQL
       db.execute(sql.raw(`
-        SELECT id, name, email, domain, status, created_at, updated_at 
-        FROM tenants 
+        SELECT 
+          t.id, t.name, t.email, t.domain, t.status, t.created_at, t.updated_at,
+          sp.name as subscription_plan_name,
+          s.status as subscription_status,
+          (SELECT COUNT(*) FROM users WHERE tenant_id = t.id AND is_active = true) as user_count,
+          (SELECT COUNT(*) FROM documents WHERE tenant_id = t.id AND deleted_at IS NULL) as document_count
+        FROM tenants t
+        LEFT JOIN subscriptions s ON s.tenant_id = t.id AND s.status = 'active'
+        LEFT JOIN subscription_plans sp ON sp.id = s.plan_id
         ${whereClause}
-        ORDER BY created_at DESC 
+        ORDER BY t.created_at DESC 
         LIMIT ${parseInt(limit)} OFFSET ${offset}
       `)),
       
@@ -713,9 +720,10 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
       status: tenant.status,
       createdAt: tenant.created_at,
       updatedAt: tenant.updated_at,
-      subscriptionPlan: 'Basic', // Simplified for working demo
-      subscriptionStatus: 'active', // Simplified for working demo
-      userCount: 3 // Placeholder count
+      subscriptionPlan: tenant.subscription_plan_name || 'No plan assigned',
+      subscriptionStatus: tenant.subscription_status || 'inactive',
+      userCount: tenant.user_count || 0,
+      documentCount: tenant.document_count || 0
     }));
 
     const total = Number(totalCount.rows[0]?.count) || 0;
