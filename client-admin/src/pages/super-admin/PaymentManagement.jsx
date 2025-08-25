@@ -5,6 +5,7 @@ import Card from "../../components/ui/Card";
 import InvoiceTable from "../../components/super-admin/InvoiceTable";
 import InvoiceModal from "../../components/super-admin/InvoiceModal";
 import InvoiceFilters from "../../components/super-admin/InvoiceFilters";
+import ConfirmationDialog from "../../components/super-admin/ConfirmationDialog";
 import {
   fetchInvoicesRequest,
   fetchTenantsRequest,
@@ -17,6 +18,11 @@ const PaymentManagement = () => {
   const dispatch = useDispatch();
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    invoiceId: null,
+    invoiceNumber: null
+  });
   const [filters, setFilters] = useState({
     tenantName: "",
     status: "",
@@ -81,9 +87,22 @@ const PaymentManagement = () => {
   };
 
   const handleMarkPaid = (invoiceId, invoiceNumber = "this invoice") => {
-    if (window.confirm(`Are you sure you want to mark ${invoiceNumber} as paid? This action cannot be undone.`)) {
-      dispatch(markInvoicePaidRequest(invoiceId));
+    setConfirmDialog({
+      isOpen: true,
+      invoiceId,
+      invoiceNumber
+    });
+  };
+
+  const handleConfirmMarkPaid = () => {
+    if (confirmDialog.invoiceId) {
+      dispatch(markInvoicePaidRequest(confirmDialog.invoiceId));
+      setConfirmDialog({ isOpen: false, invoiceId: null, invoiceNumber: null });
     }
+  };
+
+  const handleCancelMarkPaid = () => {
+    setConfirmDialog({ isOpen: false, invoiceId: null, invoiceNumber: null });
   };
 
   const handleFilterChange = (newFilters) => {
@@ -295,30 +314,12 @@ const PaymentManagement = () => {
 
       {/* Filters and Actions */}
       <Card className="p-4 sm:p-6 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex-1">
-            <InvoiceFilters
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              tenants={tenants}
-              onExportAll={handleExportAll}
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            <Button
-              onClick={handleRefresh}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-sm"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-              ) : (
-                <i className="fas fa-sync-alt mr-2"></i>
-              )}
-              Refresh
-            </Button>
-          </div>
-        </div>
+        <InvoiceFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          tenants={tenants}
+          onExportAll={handleExportAll}
+        />
       </Card>
 
       {/* Invoice Table */}
@@ -349,6 +350,19 @@ const PaymentManagement = () => {
           onMarkPaid={handleMarkPaid}
         />
       )}
+
+      {/* Confirmation Dialog for Mark as Paid */}
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={handleCancelMarkPaid}
+        onConfirm={handleConfirmMarkPaid}
+        title="Mark Invoice as Paid"
+        message={`Are you sure you want to mark invoice ${confirmDialog.invoiceNumber} as paid? This action cannot be undone.`}
+        confirmText="Mark as Paid"
+        cancelText="Cancel"
+        confirmStyle="bg-green-600 hover:bg-green-700"
+        isLoading={isLoading}
+      />
     </div>
   );
 };

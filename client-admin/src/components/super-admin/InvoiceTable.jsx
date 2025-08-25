@@ -218,7 +218,7 @@ const InvoiceTable = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-900">
-                    #{invoice.invoiceId}
+                    #{invoice.invoiceNumber || invoice.invoiceId}
                   </span>
                   {isOverdue(invoice.dueDate, invoice.status) && (
                     <i className="fas fa-exclamation-triangle text-red-500 text-sm"></i>
@@ -257,23 +257,16 @@ const InvoiceTable = ({
                     <i className="fas fa-eye mr-1"></i>
                     View
                   </Button>
-                  <Button
-                    onClick={() => onDownloadInvoice(invoice.id)}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-xs py-2"
-                  >
-                    <i className="fas fa-download mr-1"></i>
-                    Download
-                  </Button>
+                  {invoice.status.toLowerCase() !== "paid" && (
+                    <Button
+                      onClick={() => onMarkPaid(invoice.id, invoice.invoiceNumber || invoice.invoiceId)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2"
+                    >
+                      <i className="fas fa-check mr-1"></i>
+                      Mark Paid
+                    </Button>
+                  )}
                 </div>
-                {invoice.status.toLowerCase() !== "paid" && (
-                  <Button
-                    onClick={() => onMarkPaid(invoice.id, invoice.invoiceNumber || invoice.invoiceId)}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white text-xs py-2"
-                  >
-                    <i className="fas fa-check mr-1"></i>
-                    Mark Paid
-                  </Button>
-                )}
               </div>
             </div>
           ))}
@@ -317,7 +310,7 @@ const InvoiceTable = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <span className="text-sm font-medium text-gray-900">
-                      #{invoice.invoiceId}
+                      #{invoice.invoiceNumber || invoice.invoiceId}
                     </span>
                     {isOverdue(invoice.dueDate, invoice.status) && (
                       <i
@@ -360,13 +353,6 @@ const InvoiceTable = ({
                     >
                       <i className="fas fa-eye mr-1"></i>
                       View
-                    </Button>
-                    <Button
-                      onClick={() => onDownloadInvoice(invoice.id)}
-                      className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-3 py-1"
-                    >
-                      <i className="fas fa-download mr-1"></i>
-                      Download
                     </Button>
                     {invoice.status.toLowerCase() !== "paid" && (
                       <Button
