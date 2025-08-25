@@ -18,6 +18,11 @@ const SuperAdminLogin = () => {
   const { isLoading, error, isAuthenticated, user } = useSelector(
     (state) => state.superAdmin,
   );
+  
+  // Debug logging to track error state changes
+  useEffect(() => {
+    console.log('🔍 SuperAdminLogin - Error state changed:', error);
+  }, [error]);
 
   const [formData, setFormData] = useState({
     email: "",

@@ -58,6 +58,7 @@ const superAdminSlice = createSlice({
       }
     },
     loginFailure: (state, action) => {
+      console.log('🔴 LoginFailure reducer called with:', action.payload);
       state.isLoading = false;
       state.error = action.payload;
       state.loginAttempts += 1;
@@ -66,6 +67,9 @@ const superAdminSlice = createSlice({
         state.isLocked = true;
         state.lockoutTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
       }
+      
+      console.log('🔍 Updated error state:', state.error);
+      console.log('🔢 Login attempts:', state.loginAttempts);
     },
     clearLoginError: (state) => {
       state.error = null;
