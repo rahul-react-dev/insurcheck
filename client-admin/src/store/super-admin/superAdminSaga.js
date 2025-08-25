@@ -51,7 +51,18 @@ function* loginSaga(action) {
     } else if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     } else if (error.message) {
-      errorMessage = error.message;
+      // Handle JSON stringified error messages from apiCall
+      try {
+        const parsedError = JSON.parse(error.message);
+        if (parsedError && parsedError.message) {
+          errorMessage = parsedError.message;
+        } else {
+          errorMessage = error.message;
+        }
+      } catch (parseError) {
+        // If it's not JSON, use the original error message
+        errorMessage = error.message;
+      }
     }
 
     yield put(loginFailure(errorMessage));
