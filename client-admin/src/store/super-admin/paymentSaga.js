@@ -65,7 +65,20 @@ function* fetchInvoicesSaga(action) {
     const params = action.payload || { page: 1, limit: 10 };
     console.log('📡 fetchInvoicesSaga triggered with params:', params);
 
-    const response = yield call(invoiceAPI.getAll, params);
+    // Fix dateRange serialization for API
+    const apiParams = { ...params };
+    if (params.dateRange && typeof params.dateRange === 'object') {
+      if (params.dateRange.start) {
+        apiParams.startDate = params.dateRange.start;
+      }
+      if (params.dateRange.end) {
+        apiParams.endDate = params.dateRange.end;
+      }
+      delete apiParams.dateRange; // Remove the object, use individual date params
+    }
+
+    console.log('📡 API params after dateRange fix:', apiParams);
+    const response = yield call(invoiceAPI.getAll, apiParams);
     console.log('✅ Invoices API response received:', response);
 
     const responseData = response.data || response;
