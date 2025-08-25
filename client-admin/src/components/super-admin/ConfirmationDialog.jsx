@@ -60,13 +60,13 @@ const ConfirmationDialog = ({
                 confirmText
               )}
             </Button>
-            <Button
+            <button
               onClick={onClose}
               disabled={isLoading}
-              className="mt-3 sm:mt-0 w-full sm:w-auto bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium shadow-sm"
+              className="mt-3 sm:mt-0 w-full sm:w-auto bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium shadow-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50"
             >
               {cancelText}
-            </Button>
+            </button>
           </div>
         </div>
       </div>

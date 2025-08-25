@@ -131,6 +131,15 @@ function* markInvoicePaidSaga(action) {
       paymentData
     }));
 
+    // Refresh the invoices list to show updated status
+    yield put(fetchInvoicesRequest({ 
+      page: 1, 
+      limit: 5, 
+      tenantName: '', 
+      status: '', 
+      dateRange: { start: '', end: '' } 
+    }));
+
     if (window.showNotification) {
       window.showNotification('Invoice marked as paid successfully', 'success');
     }
