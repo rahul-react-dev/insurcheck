@@ -218,10 +218,10 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4 sm:gap-6">
             {isLoadingMetrics ? (
               // Enhanced Loading skeleton
-              Array.from({ length: 4 }).map((_, index) => (
+              Array.from({ length: 7 }).map((_, index) => (
                 <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
                   <div className="flex items-center space-x-4">
                     <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gray-200 rounded-xl flex-shrink-0"></div>

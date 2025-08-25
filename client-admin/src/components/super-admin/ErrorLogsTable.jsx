@@ -184,6 +184,9 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     User
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Document
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -212,6 +215,9 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {log.userEmail || log.user || 'System'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {log.affectedDocument || log.documentName || 'N/A'}
                     </td>
                   </tr>
                 ))}
@@ -250,7 +256,7 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-200">
                     <div>
                       <p className="text-xs text-gray-500 font-medium">Tenant</p>
                       <p className="text-sm text-gray-900 truncate">{log.affectedTenant || log.tenantName || log.tenant || 'N/A'}</p>
@@ -258,6 +264,10 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
                     <div>
                       <p className="text-xs text-gray-500 font-medium">User</p>
                       <p className="text-sm text-gray-900 truncate">{log.userEmail || log.user || 'System'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Document</p>
+                      <p className="text-sm text-gray-900 truncate">{log.affectedDocument || log.documentName || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

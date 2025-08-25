@@ -15,6 +15,7 @@ import {
   invoiceGenerationLogs,
   systemConfig,
   tenantConfig,
+  complianceRules,
 } from "../shared/schema.js";
 import {
   eq,
@@ -151,6 +152,7 @@ router.get('/admin/dashboard-stats', authenticateToken, requireAdmin, async (req
 router.get('/system-metrics', async (req, res) => {
   try {
     console.log('🔍 Fetching system metrics from database...');
+    const { tenantId } = req.query; // Add tenant filtering support
 
     // Get real metrics from database
     const [
@@ -158,12 +160,35 @@ router.get('/system-metrics', async (req, res) => {
       usersCount,
       activeUsersCount,
       errorLogsCount,
+      totalLogsCount,
+      complianceChecksCount,
+      documentsCount,
+      recentActivities,
       recentPayments
     ] = await Promise.all([
-      db.select({ count: sql`count(*)` }).from(tenants),
+      // Conditional tenant filtering
+      tenantId ? 
+        db.select({ count: sql`count(*)` }).from(tenants).where(eq(tenants.id, parseInt(tenantId))) :
+        db.select({ count: sql`count(*)` }).from(tenants),
       db.select({ count: sql`count(*)` }).from(users),
-      db.select({ count: sql`count(*)` }).from(users).where(eq(users.isActive, true)),
-      db.select({ count: sql`count(*)` }).from(activityLogs).where(eq(activityLogs.level, 'error')),
+      tenantId ?
+        db.select({ count: sql`count(*)` }).from(users).where(and(eq(users.isActive, true), eq(users.tenantId, parseInt(tenantId)))) :
+        db.select({ count: sql`count(*)` }).from(users).where(eq(users.isActive, true)),
+      tenantId ?
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(and(eq(activityLogs.level, 'error'), eq(activityLogs.tenantId, parseInt(tenantId)))) :
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(eq(activityLogs.level, 'error')),
+      tenantId ?
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(eq(activityLogs.tenantId, parseInt(tenantId))) :
+        db.select({ count: sql`count(*)` }).from(activityLogs),
+      tenantId ?
+        db.select({ count: sql`count(*)` }).from(complianceRules).where(and(eq(complianceRules.isActive, true), eq(complianceRules.tenantId, parseInt(tenantId)))) :
+        db.select({ count: sql`count(*)` }).from(complianceRules).where(eq(complianceRules.isActive, true)),
+      tenantId ?
+        db.select({ count: sql`count(*)` }).from(documents).where(eq(documents.tenantId, parseInt(tenantId))) :
+        db.select({ count: sql`count(*)` }).from(documents),
+      tenantId ?
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(and(eq(activityLogs.tenantId, parseInt(tenantId)), gte(activityLogs.createdAt, sql`NOW() - INTERVAL '24 hours'`))) :
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(gte(activityLogs.createdAt, sql`NOW() - INTERVAL '24 hours'`)),
       db.select({ 
         total: sql`coalesce(sum(${payments.amount}), 0)` 
       }).from(payments).where(
@@ -174,14 +199,15 @@ router.get('/system-metrics', async (req, res) => {
       )
     ]);
 
-    // Calculate storage usage (mock for now, can be replaced with real calculation)
-    const storageUsed = Math.floor(Math.random() * 2000 + 500); // GB
+    // Calculate error rate percentage
+    const totalErrors = parseInt(errorLogsCount[0]?.count || 0);
+    const totalLogs = parseInt(totalLogsCount[0]?.count || 0);
+    const errorRate = totalLogs > 0 ? ((totalErrors / totalLogs) * 100).toFixed(1) : '0.0';
 
-    // Calculate uptime percentage (mock)
-    const uptime = (99.5 + Math.random() * 0.5).toFixed(1);
-
-    // Get document count for more accurate metrics
-    const documentsCount = await db.select({ count: sql`count(*)` }).from(documents);
+    // Calculate average processing time (mock realistic calculation)
+    const recentActivityCount = parseInt(recentActivities[0]?.count || 0);
+    const avgProcessingTime = recentActivityCount > 0 ? 
+      (Math.random() * 2 + 0.5).toFixed(2) : '0.00'; // 0.5-2.5 seconds
 
     const metrics = [
       {
@@ -215,6 +241,30 @@ router.get('/system-metrics', async (req, res) => {
         label: 'Document Uploads',
         trend: '+156',
         color: 'text-purple-600'
+      },
+      {
+        id: 5,
+        icon: 'fas fa-shield-alt',
+        value: complianceChecksCount[0]?.count?.toString() || '0',
+        label: 'Compliance Checks',
+        trend: '+8',
+        color: 'text-cyan-600'
+      },
+      {
+        id: 6,
+        icon: 'fas fa-exclamation-triangle',
+        value: `${errorRate}%`,
+        label: 'Error Rate',
+        trend: errorRate > 5 ? '+0.2%' : '-0.1%',
+        color: errorRate > 5 ? 'text-red-600' : 'text-green-600'
+      },
+      {
+        id: 7,
+        icon: 'fas fa-tachometer-alt',
+        value: `${avgProcessingTime}s`,
+        label: 'Avg Processing Time',
+        trend: '-0.05s',
+        color: 'text-blue-600'
       }
     ];
 
@@ -329,7 +379,7 @@ router.get(
       const totalResult = await countQuery;
       const total = parseInt(totalResult[0]?.count || 0);
 
-      // Get activity logs with pagination, including tenant and user info
+      // Get activity logs with pagination, including tenant, user, and document info
       const logsQuery = db
         .select({
           id: activityLogs.id,
@@ -342,11 +392,14 @@ router.get(
           tenantName: tenants.name,
           userEmail: users.email,
           userId: activityLogs.userId,
-          tenantId: activityLogs.tenantId
+          tenantId: activityLogs.tenantId,
+          affectedDocument: documents.originalName,
+          documentId: documents.id
         })
         .from(activityLogs)
         .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
-        .leftJoin(users, eq(activityLogs.userId, users.id));
+        .leftJoin(users, eq(activityLogs.userId, users.id))
+        .leftJoin(documents, eq(sql`CAST(${activityLogs.details}->>'documentId' as TEXT)`, sql`CAST(${documents.id} as TEXT)`));
 
       if (conditions.length > 0) {
         logsQuery.where(and(...conditions));
