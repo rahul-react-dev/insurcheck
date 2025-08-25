@@ -98,6 +98,28 @@ const invoiceGenerationSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Generate invoices for all tenants
+    generateAllInvoicesRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    generateAllInvoicesSuccess: (state, action) => {
+      state.isLoading = false;
+      // Add new log entries
+      if (action.payload.logs && Array.isArray(action.payload.logs)) {
+        state.logs = [...action.payload.logs, ...state.logs];
+      }
+      // Update summary
+      if (action.payload.summary) {
+        state.summary = { ...state.summary, ...action.payload.summary };
+      }
+      state.error = null;
+    },
+    generateAllInvoicesFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
     // Fetch invoice logs
     fetchInvoiceLogsRequest: (state, action) => {
       console.log('📊 fetchInvoiceLogsRequest dispatched with payload:', action.payload);
@@ -206,6 +228,9 @@ export const {
   generateInvoiceRequest,
   generateInvoiceSuccess,
   generateInvoiceFailure,
+  generateAllInvoicesRequest,
+  generateAllInvoicesSuccess,
+  generateAllInvoicesFailure,
   fetchInvoiceLogsRequest,
   fetchInvoiceLogsSuccess,
   fetchInvoiceLogsFailure,

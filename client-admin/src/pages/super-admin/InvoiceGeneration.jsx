@@ -330,7 +330,11 @@ const InvoiceGeneration = () => {
               </Button>
               {activeTab === 'configuration' && (
                 <Button
-                  onClick={() => dispatch(generateInvoiceRequest('all'))}
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to generate invoices for all active tenants?")) {
+                      dispatch(generateAllInvoicesRequest());
+                    }
+                  }}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm"
                   disabled={isLoading}
                 >

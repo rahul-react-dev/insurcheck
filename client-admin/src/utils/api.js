@@ -335,20 +335,23 @@ export const superAdminAPI = {
   }),
   
   // Invoice Management
-  generateInvoice: (tenantId) => apiCall(`/api/invoices/generate/${tenantId}`, {
+  generateInvoice: (tenantId) => apiCall(`/api/super-admin/invoice-generate/${tenantId}`, {
+    method: 'POST',
+  }),
+  generateAllInvoices: () => apiCall('/api/super-admin/invoice-generate-all', {
     method: 'POST',
   }),
   downloadInvoice: (id) => apiCall(`/api/invoices/${id}/download`),
   getInvoiceLogs: (params) => {
     const queryString = new URLSearchParams(params || {}).toString();
-    return apiCall(`/api/invoices/logs?${queryString}`);
+    return apiCall(`/api/super-admin/invoice-logs?${queryString}`);
   },
-  retryInvoiceGeneration: (logId) => apiCall(`/api/invoices/retry/${logId}`, {
+  retryInvoiceGeneration: (logId) => apiCall(`/api/super-admin/invoice-retry/${logId}`, {
     method: 'POST',
   }),
-  getInvoiceConfig: () => apiCall('/api/invoices/config'),
-  updateInvoiceConfig: (config) => apiCall('/api/invoices/config', {
-    method: 'PUT',
+  getInvoiceConfig: () => apiCall('/api/super-admin/invoice-config'),
+  updateInvoiceConfig: (config) => apiCall('/api/super-admin/invoice-config', {
+    method: 'POST',
     body: JSON.stringify(config),
   }),
   

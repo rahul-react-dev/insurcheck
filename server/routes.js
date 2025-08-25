@@ -2021,7 +2021,113 @@ router.get('/super-admin/invoice-logs', authenticateToken, requireSuperAdmin, as
   }
 });
 
-// Manual invoice generation for a tenant
+// Manual invoice generation for a specific tenant
+router.post('/super-admin/invoice-generate/:tenantId', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    console.log('🔄 Generating invoice for tenant:', tenantId);
+
+    // Generate for specific tenant
+    const tenant = await db.select({ name: tenants.name })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    if (!tenant.length) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    const result = await generateInvoiceForTenant(tenantId, tenant[0].name);
+    
+    console.log('✅ Invoice generation completed for tenant:', tenantId);
+    res.json({ 
+      message: 'Invoice generation initiated successfully',
+      result 
+    });
+  } catch (error) {
+    console.error('❌ Error generating invoice:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate invoice',
+      message: error.message 
+    });
+  }
+});
+
+// Alias route for frontend compatibility - Generate All
+router.post('/invoices/generate/all', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('🔄 Generating invoices for all active tenants (alias route)');
+
+    // Generate for all active tenants with configurations
+    const activeConfigs = await db.select({
+      tenantId: invoiceGenerationConfigs.tenantId,
+      tenantName: tenants.name,
+    })
+    .from(invoiceGenerationConfigs)
+    .leftJoin(tenants, eq(invoiceGenerationConfigs.tenantId, tenants.id))
+    .where(and(
+      eq(invoiceGenerationConfigs.isActive, true),
+      eq(tenants.status, 'active')
+    ));
+
+    const results = [];
+    for (const config of activeConfigs) {
+      const result = await generateInvoiceForTenant(config.tenantId, config.tenantName);
+      results.push(result);
+    }
+
+    console.log(`✅ Generated invoices for ${results.length} tenants`);
+    res.json({ 
+      message: `Invoice generation initiated for ${results.length} tenants`,
+      results 
+    });
+  } catch (error) {
+    console.error('❌ Error generating invoices for all tenants:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate invoices for all tenants',
+      message: error.message 
+    });
+  }
+});
+
+// Generate invoices for all active tenants
+router.post('/super-admin/invoice-generate-all', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('🔄 Generating invoices for all active tenants');
+
+    // Generate for all active tenants with configurations
+    const activeConfigs = await db.select({
+      tenantId: invoiceGenerationConfigs.tenantId,
+      tenantName: tenants.name,
+    })
+    .from(invoiceGenerationConfigs)
+    .leftJoin(tenants, eq(invoiceGenerationConfigs.tenantId, tenants.id))
+    .where(and(
+      eq(invoiceGenerationConfigs.isActive, true),
+      eq(tenants.status, 'active')
+    ));
+
+    const results = [];
+    for (const config of activeConfigs) {
+      const result = await generateInvoiceForTenant(config.tenantId, config.tenantName);
+      results.push(result);
+    }
+
+    console.log(`✅ Generated invoices for ${results.length} tenants`);
+    res.json({ 
+      message: `Invoice generation initiated for ${results.length} tenants`,
+      results 
+    });
+  } catch (error) {
+    console.error('❌ Error generating invoices for all tenants:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate invoices for all tenants',
+      message: error.message 
+    });
+  }
+});
+
+// Manual invoice generation for a tenant (legacy route)
 router.post('/super-admin/generate-invoice', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { tenantId } = req.body;
@@ -2079,7 +2185,52 @@ router.post('/super-admin/generate-invoice', authenticateToken, requireSuperAdmi
   }
 });
 
-// Retry failed invoice generation
+// Retry failed invoice generation (new route)
+router.post('/super-admin/invoice-retry/:logId', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { logId } = req.params;
+    console.log('🔄 Retrying invoice generation for log:', logId);
+
+    const log = await db.select()
+      .from(invoiceGenerationLogs)
+      .where(eq(invoiceGenerationLogs.id, logId))
+      .limit(1);
+
+    if (!log.length) {
+      return res.status(404).json({ error: 'Generation log not found' });
+    }
+
+    if (log[0].status !== 'failed') {
+      return res.status(400).json({ error: 'Only failed generations can be retried' });
+    }
+
+    // Update log to retrying status
+    await db.update(invoiceGenerationLogs)
+      .set({
+        status: 'retrying',
+        retryCount: sql`${invoiceGenerationLogs.retryCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(invoiceGenerationLogs.id, logId));
+
+    // Attempt to regenerate
+    const result = await generateInvoiceForTenant(log[0].tenantId, log[0].tenantName);
+    
+    console.log('✅ Invoice generation retry completed for log:', logId);
+    res.json({ 
+      message: 'Invoice generation retry initiated successfully',
+      result 
+    });
+  } catch (error) {
+    console.error('❌ Error retrying invoice generation:', error);
+    res.status(500).json({ 
+      error: 'Failed to retry invoice generation',
+      message: error.message 
+    });
+  }
+});
+
+// Retry failed invoice generation (legacy route)
 router.post('/super-admin/invoice-logs/:logId/retry', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { logId } = req.params;

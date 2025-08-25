@@ -5,6 +5,9 @@ import {
   generateInvoiceRequest,
   generateInvoiceSuccess,
   generateInvoiceFailure,
+  generateAllInvoicesRequest,
+  generateAllInvoicesSuccess,
+  generateAllInvoicesFailure,
   fetchInvoiceLogsRequest,
   fetchInvoiceLogsSuccess,
   fetchInvoiceLogsFailure,
@@ -43,6 +46,32 @@ function* generateInvoiceSaga(action) {
     console.error('❌ Error in generateInvoiceSaga:', error);
     const errorMessage = error?.message || 'Failed to generate invoice';
     yield put(generateInvoiceFailure(errorMessage));
+
+    if (window.showNotification) {
+      window.showNotification(errorMessage, 'error');
+    }
+  }
+}
+
+function* generateAllInvoicesSaga(action) {
+  try {
+    console.log('📡 generateAllInvoicesSaga triggered');
+
+    const response = yield call(superAdminAPI.generateAllInvoices);
+    console.log('✅ Generate all invoices API response received:', response);
+
+    yield put(generateAllInvoicesSuccess(response));
+
+    if (window.showNotification) {
+      window.showNotification(response.message || 'Invoice generation started for all active tenants', 'success');
+    }
+
+    // Refresh invoice logs after generation
+    yield put(fetchInvoiceLogsRequest({ page: 1, limit: 5 }));
+  } catch (error) {
+    console.error('❌ Error in generateAllInvoicesSaga:', error);
+    const errorMessage = error?.message || 'Failed to generate invoices for all tenants';
+    yield put(generateAllInvoicesFailure(errorMessage));
 
     if (window.showNotification) {
       window.showNotification(errorMessage, 'error');
@@ -182,6 +211,10 @@ function* watchGenerateInvoice() {
   yield takeEvery(generateInvoiceRequest.type, generateInvoiceSaga);
 }
 
+function* watchGenerateAllInvoices() {
+  yield takeEvery(generateAllInvoicesRequest.type, generateAllInvoicesSaga);
+}
+
 function* watchFetchInvoiceLogs() {
   yield takeLatest(fetchInvoiceLogsRequest.type, fetchInvoiceLogsSaga);
 }
@@ -206,6 +239,7 @@ function* watchDownloadInvoice() {
 export default function* invoiceGenerationSaga() {
   yield all([
     fork(watchGenerateInvoice),
+    fork(watchGenerateAllInvoices),
     fork(watchFetchInvoiceLogs),
     fork(watchFetchInvoiceConfig),
     fork(watchUpdateInvoiceConfig),
