@@ -41,6 +41,7 @@ const PaymentManagement = () => {
     invoices,
     tenants,
     isLoading,
+    isMarkingPaid,
     error,
     totalInvoices,
     totalPaid,
@@ -364,7 +365,7 @@ const PaymentManagement = () => {
         confirmText="Mark as Paid"
         cancelText="Cancel"
         confirmStyle="bg-green-600 hover:bg-green-700"
-        isLoading={isLoading}
+        isLoading={isMarkingPaid}
       />
     </div>
   );

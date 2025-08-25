@@ -4,6 +4,7 @@ const initialState = {
   invoices: [],
   tenants: [],
   isLoading: false,
+  isMarkingPaid: false,
   error: null,
   totalInvoices: 0,
   totalPaid: 0,
@@ -169,11 +170,11 @@ const paymentSlice = createSlice({
 
     // Mark invoice as paid
     markInvoicePaidRequest: (state, action) => {
-      state.isLoading = true;
+      state.isMarkingPaid = true;
       state.error = null;
     },
     markInvoicePaidSuccess: (state, action) => {
-      state.isLoading = false;
+      state.isMarkingPaid = false;
       const { invoiceId, paidDate } = action.payload;
       const invoiceIndex = state.invoices.findIndex(inv => inv.id === invoiceId);
       if (invoiceIndex !== -1) {
@@ -186,7 +187,7 @@ const paymentSlice = createSlice({
       state.error = null;
     },
     markInvoicePaidFailure: (state, action) => {
-      state.isLoading = false;
+      state.isMarkingPaid = false;
       state.error = action.payload;
     },
 

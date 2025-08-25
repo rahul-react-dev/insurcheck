@@ -1,4 +1,4 @@
-import { call, put, takeEvery, takeLatest, all, fork } from 'redux-saga/effects';
+import { call, put, takeEvery, takeLatest, all, fork, select } from 'redux-saga/effects';
 import { paymentAPI, invoiceAPI, tenantAPI } from '../../utils/api';
 import {
   fetchPaymentsRequest,
@@ -131,13 +131,12 @@ function* markInvoicePaidSaga(action) {
       paidDate: new Date().toISOString()
     }));
 
-    // Refresh the invoices list to show updated status
+    // Refresh the invoices list to show updated status while preserving current pagination
+    const currentState = yield select(state => state.payment);
     yield put(fetchInvoicesRequest({ 
-      page: 1, 
-      limit: 5, 
-      tenantName: '', 
-      status: '', 
-      dateRange: { start: '', end: '' } 
+      ...currentState.filters,
+      page: currentState.pagination.page,
+      limit: currentState.pagination.limit
     }));
 
     if (window.showNotification) {
