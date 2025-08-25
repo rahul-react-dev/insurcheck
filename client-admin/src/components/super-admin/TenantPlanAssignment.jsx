@@ -191,13 +191,41 @@ const TenantPlanAssignment = () => {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Users:</span>
-                  <span className="ml-2 font-medium">{tenant.userCount}</span>
+                  <span className="ml-2 font-medium">
+                    {tenant.planLimits?.maxUsers > 0 
+                      ? `${tenant.userCount}/${tenant.planLimits.maxUsers === 1000 ? '∞' : tenant.planLimits.maxUsers}` 
+                      : tenant.userCount || 0}
+                  </span>
+                  {tenant.planLimits?.maxUsers > 0 && tenant.userCount >= tenant.planLimits.maxUsers * 0.8 && (
+                    <span className="ml-2 text-xs text-amber-600">⚠️ Near limit</span>
+                  )}
                 </div>
                 <div>
-                  <span className="text-gray-600">Documents:</span>
-                  <span className="ml-2 font-medium">{tenant.documentCount}</span>
+                  <span className="text-gray-600">Storage:</span>
+                  <span className="ml-2 font-medium">
+                    {tenant.planLimits?.storageLimit > 0 
+                      ? `${Math.round((tenant.documentCount * 0.1) * 10) / 10}/${tenant.planLimits.storageLimit}GB` 
+                      : `${tenant.documentCount || 0} docs`}
+                  </span>
                 </div>
               </div>
+              
+              {/* Plan Features Preview */}
+              {tenant.planLimits?.features && tenant.planLimits.features.length > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="text-xs text-gray-500 mb-1">Plan Features:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {tenant.planLimits.features.slice(0, 2).map((feature, index) => (
+                      <span key={index} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                        {feature}
+                      </span>
+                    ))}
+                    {tenant.planLimits.features.length > 2 && (
+                      <span className="text-xs text-gray-400">+{tenant.planLimits.features.length - 2} more</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border-t pt-4 mt-4">

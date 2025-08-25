@@ -681,11 +681,14 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
     }
 
     const [tenantsData, totalCount, statusCounts] = await Promise.all([
-      // Get paginated tenants with subscription info using raw SQL
+      // Get paginated tenants with subscription info and plan limits using raw SQL
       db.execute(sql.raw(`
         SELECT 
           t.id, t.name, t.email, t.domain, t.status, t.created_at, t.updated_at,
           sp.name as subscription_plan_name,
+          sp.max_users as plan_max_users,
+          sp.storage_limit_gb as plan_storage_limit_gb,
+          sp.features as plan_features,
           s.status as subscription_status,
           (SELECT COUNT(*) FROM users WHERE tenant_id = t.id AND is_active = true) as user_count,
           (SELECT COUNT(*) FROM documents WHERE tenant_id = t.id AND deleted_at IS NULL) as document_count
@@ -723,7 +726,13 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
       subscriptionPlan: tenant.subscription_plan_name || 'No plan assigned',
       subscriptionStatus: tenant.subscription_status || 'inactive',
       userCount: tenant.user_count || 0,
-      documentCount: tenant.document_count || 0
+      documentCount: tenant.document_count || 0,
+      // Plan limits and features
+      planLimits: {
+        maxUsers: tenant.plan_max_users || 0,
+        storageLimit: tenant.plan_storage_limit_gb || 0,
+        features: tenant.plan_features || []
+      }
     }));
 
     const total = Number(totalCount.rows[0]?.count) || 0;
