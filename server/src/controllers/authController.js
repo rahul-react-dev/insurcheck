@@ -162,13 +162,51 @@ export const superAdminLogin = async (req, res) => {
       });
     }
 
+    // Check if account is locked
+    const now = new Date();
+    if (user.accountLockedUntil && user.accountLockedUntil > now) {
+      const remainingTime = Math.ceil((user.accountLockedUntil - now) / 1000 / 60); // minutes
+      return res.status(423).json({
+        success: false,
+        message: `Account locked. Try again in ${remainingTime} minutes.`,
+        lockoutTime: user.accountLockedUntil.toISOString()
+      });
+    }
+
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       console.log(`Invalid password for user: ${email}`);
+      
+      // Increment failed login attempts
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      let updateData = { failedLoginAttempts: failedAttempts };
+      
+      // Lock account after 5 failed attempts for 15 minutes
+      if (failedAttempts >= 5) {
+        const lockoutTime = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
+        updateData.accountLockedUntil = lockoutTime;
+        
+        await db.update(users)
+          .set(updateData)
+          .where(eq(users.id, user.id));
+          
+        return res.status(423).json({
+          success: false,
+          message: 'Account locked. Try again in 15 minutes.',
+          lockoutTime: lockoutTime.toISOString()
+        });
+      }
+      
+      await db.update(users)
+        .set(updateData)
+        .where(eq(users.id, user.id));
+      
+      const remainingAttempts = 5 - failedAttempts;
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: `Invalid credentials. ${remainingAttempts} attempts remaining.`,
+        attemptsRemaining: remainingAttempts
       });
     }
 
@@ -186,7 +224,7 @@ export const superAdminLogin = async (req, res) => {
 
     console.log(`Super Admin login successful for user: ${email}`);
 
-    // Update last login
+    // Update last login and reset failed attempts
     await db.update(users)
       .set({ 
         lastLoginAt: new Date(),
