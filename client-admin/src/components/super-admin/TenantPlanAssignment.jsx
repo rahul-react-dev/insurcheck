@@ -20,14 +20,19 @@ const TenantPlanAssignment = () => {
   const [selectedPlan, setSelectedPlan] = useState('');
   const [showAssignmentSection, setShowAssignmentSection] = useState(false);
 
+  // Track successful assignment to reset form
+  const [lastAssignmentAttempt, setLastAssignmentAttempt] = useState(null);
+  
   // Reset form when assignment succeeds
   useEffect(() => {
-    if (!isAssigning && !error && selectedTenant && selectedPlan) {
+    // Only reset if we just completed an assignment successfully
+    if (lastAssignmentAttempt && !isAssigning && !error) {
       setSelectedTenant('');
       setSelectedPlan('');
       setShowAssignmentSection(false);
+      setLastAssignmentAttempt(null);
     }
-  }, [isAssigning, error, selectedTenant, selectedPlan]);
+  }, [isAssigning, error, lastAssignmentAttempt]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -49,6 +54,9 @@ const TenantPlanAssignment = () => {
       tenantId: parseInt(selectedTenant),
       planId: parseInt(selectedPlan)
     });
+
+    // Track that we're attempting an assignment
+    setLastAssignmentAttempt(Date.now());
 
     dispatch(assignPlanToTenantRequest({
       tenantId: parseInt(selectedTenant),
