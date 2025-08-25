@@ -56,7 +56,14 @@ export const apiCall = async (endpoint, options = {}) => {
   if (!response.ok) {
     const error = await response.json();
     console.error('[API] Error response:', error);
-    throw new Error(JSON.stringify(error));
+    
+    // Create an error object with the response data for proper handling
+    const apiError = new Error(error.message || 'API Error');
+    apiError.response = {
+      status: response.status,
+      data: error
+    };
+    throw apiError;
   }
 
   return response.json();

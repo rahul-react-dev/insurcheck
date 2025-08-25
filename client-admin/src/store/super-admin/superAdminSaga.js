@@ -49,9 +49,17 @@ function* loginSaga(action) {
     if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
       errorMessage = 'Unable to connect to server. Please check if the server is running.';
     } else if (error.response?.data?.message) {
+      // Handle API error responses with proper structure
       errorMessage = error.response.data.message;
+      
+      // Handle account lockout (HTTP 423)
+      if (error.response.status === 423) {
+        console.log('🔒 Account locked, lockout time:', error.response.data.lockoutTime);
+      }
+      
+      console.log('🔍 Attempts remaining:', error.response.data.attemptsRemaining);
     } else if (error.message) {
-      // Handle JSON stringified error messages from apiCall
+      // Fallback: Handle JSON stringified error messages from old API calls
       try {
         const parsedError = JSON.parse(error.message);
         if (parsedError && parsedError.message) {
