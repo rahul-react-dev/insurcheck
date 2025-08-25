@@ -128,7 +128,7 @@ function* markInvoicePaidSaga(action) {
     yield put(markInvoicePaidSuccess({
       invoiceId,
       updatedInvoice,
-      paymentData
+      paidDate: new Date().toISOString()
     }));
 
     // Refresh the invoices list to show updated status

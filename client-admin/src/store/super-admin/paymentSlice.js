@@ -174,13 +174,13 @@ const paymentSlice = createSlice({
     },
     markInvoicePaidSuccess: (state, action) => {
       state.isLoading = false;
-      const invoiceId = action.payload.invoiceId;
+      const { invoiceId, paidDate } = action.payload;
       const invoiceIndex = state.invoices.findIndex(inv => inv.id === invoiceId);
       if (invoiceIndex !== -1) {
         state.invoices[invoiceIndex] = {
           ...state.invoices[invoiceIndex],
           status: 'paid',
-          paidDate: action.payload.paidDate
+          paidDate: paidDate || new Date().toISOString()
         };
       }
       state.error = null;

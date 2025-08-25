@@ -1527,7 +1527,8 @@ router.get('/super-admin/invoices', authenticateToken, requireSuperAdmin, async 
 router.post('/super-admin/invoices/:id/paid', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const invoiceId = req.params.id;
-    console.log(`💳 Marking invoice ${invoiceId} as paid`);
+    const userId = req.user.userId;
+    console.log(`💳 Marking invoice ${invoiceId} as paid by user ${userId}`);
 
     const [updatedInvoice] = await db.update(invoices)
       .set({
@@ -1543,6 +1544,26 @@ router.post('/super-admin/invoices/:id/paid', authenticateToken, requireSuperAdm
         error: 'Invoice not found',
         message: 'Invoice does not exist'
       });
+    }
+
+    // Create audit log entry
+    try {
+      await db.insert(activityLogs).values({
+        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        user_id: userId,
+        action: 'mark_invoice_paid',
+        resource: 'invoice',
+        resource_id: invoiceId,
+        details: `Invoice ${updatedInvoice.invoiceNumber} marked as paid - Amount: $${updatedInvoice.totalAmount}`,
+        ip_address: req.ip || req.connection?.remoteAddress || 'unknown',
+        user_agent: req.get('User-Agent') || 'unknown',
+        level: 'info',
+        created_at: new Date()
+      });
+      console.log('📝 Audit log created for invoice payment action');
+    } catch (auditError) {
+      console.warn('⚠️ Failed to create audit log:', auditError.message);
+      // Don't fail the main operation due to audit log failure
     }
 
     console.log('✅ Invoice marked as paid successfully:', updatedInvoice);
