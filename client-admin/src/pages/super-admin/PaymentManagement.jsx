@@ -78,6 +78,15 @@ const PaymentManagement = () => {
     dispatch(fetchTenantsRequest());
   }, [dispatch]);
 
+  // Cleanup debounced timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+    };
+  }, []);
+
   const handleViewInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
@@ -109,14 +118,25 @@ const PaymentManagement = () => {
     setConfirmDialog({ isOpen: false, invoiceId: null, invoiceNumber: null });
   };
 
+  // Debounced filter change to avoid excessive API calls
+  const debouncedFetchRef = React.useRef(null);
+  
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     // Reset to first page when filters change
     setPagination((prev) => ({ ...prev, page: 1 }));
-    // Trigger immediate fetch with new filters
-    dispatch(
-      fetchInvoicesRequest({ ...newFilters, page: 1, limit: pagination.limit }),
-    );
+    
+    // Clear any pending debounced call
+    if (debouncedFetchRef.current) {
+      clearTimeout(debouncedFetchRef.current);
+    }
+    
+    // Only trigger API call after 500ms delay to avoid excessive calls during date selection
+    debouncedFetchRef.current = setTimeout(() => {
+      dispatch(
+        fetchInvoicesRequest({ ...newFilters, page: 1, limit: pagination.limit }),
+      );
+    }, 500);
   };
 
   const handlePageChange = (newPage) => {
