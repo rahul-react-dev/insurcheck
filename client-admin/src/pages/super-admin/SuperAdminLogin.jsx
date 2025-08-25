@@ -8,6 +8,7 @@ import {
   clearErrors,
   resetLoadingState,
   hydrateAuth,
+  checkLockout,
 } from "../../store/super-admin/superAdminSlice";
 import { SUPER_ADMIN_MESSAGES } from "../../constants/superAdmin";
 
@@ -15,9 +16,15 @@ const SuperAdminLogin = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { isLoading, error, isAuthenticated, user } = useSelector(
-    (state) => state.superAdmin,
-  );
+  const { 
+    isLoading, 
+    error, 
+    isAuthenticated, 
+    user,
+    loginAttempts,
+    isLocked,
+    lockoutTime
+  } = useSelector((state) => state.superAdmin);
   
 
   const [formData, setFormData] = useState({
@@ -27,7 +34,32 @@ const SuperAdminLogin = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({}); // State to manage form errors
-  const [isLocked, setIsLocked] = useState(false); // State to handle potential future lockouts
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  // Check lockout status on component mount
+  useEffect(() => {
+    dispatch(checkLockout());
+  }, [dispatch]);
+
+  // Calculate remaining lockout time
+  useEffect(() => {
+    if (isLocked && lockoutTime) {
+      const interval = setInterval(() => {
+        const now = new Date();
+        const lockEnd = new Date(lockoutTime);
+        const remaining = Math.max(0, Math.floor((lockEnd - now) / 1000));
+        
+        setRemainingTime(remaining);
+        
+        if (remaining === 0) {
+          dispatch(checkLockout());
+          clearInterval(interval);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isLocked, lockoutTime, dispatch]);
 
   // Initial setup - runs only once on component mount
   useEffect(() => {
@@ -51,6 +83,12 @@ const SuperAdminLogin = () => {
       navigate("/super-admin/dashboard", { replace: true });
     }
   }, [isAuthenticated, user, navigate]); // This runs when auth state changes
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -213,7 +251,12 @@ const SuperAdminLogin = () => {
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isLoading || isLocked}
             >
-              {isLoading ? (
+              {isLocked ? (
+                <>
+                  <i className="fas fa-lock"></i>
+                  <span>Locked ({formatTime(remainingTime)})</span>
+                </>
+              ) : isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   <span>Signing In...</span>
