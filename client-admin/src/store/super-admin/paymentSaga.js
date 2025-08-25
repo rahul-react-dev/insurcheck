@@ -74,7 +74,7 @@ function* fetchInvoicesSaga(action) {
       summary: {
         totalInvoices: responseData.summary?.totalInvoices || responseData.total || 0,
         totalPaid: responseData.summary?.totalPaid || 0,
-        totalPending: responseData.summary?.totalPending || 0,
+        totalSent: responseData.summary?.totalSent || 0,
         totalOverdue: responseData.summary?.totalOverdue || 0
       },
       pagination: responseData.pagination || {

@@ -7,7 +7,7 @@ const initialState = {
   error: null,
   totalInvoices: 0,
   totalPaid: 0,
-  totalPending: 0,
+  totalSent: 0,
   totalOverdue: 0,
   filters: {
     tenantName: '',
@@ -137,7 +137,7 @@ const paymentSlice = createSlice({
       state.invoices = action.payload.invoices || [];
       state.totalInvoices = action.payload.summary?.totalInvoices || 0;
       state.totalPaid = action.payload.summary?.totalPaid || 0;
-      state.totalPending = action.payload.summary?.totalPending || 0;
+      state.totalSent = action.payload.summary?.totalSent || 0;
       state.totalOverdue = action.payload.summary?.totalOverdue || 0;
       
       // Update pagination with response data

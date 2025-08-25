@@ -90,9 +90,11 @@ const InvoiceFilters = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
               <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
               <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
               <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
 

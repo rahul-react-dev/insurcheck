@@ -29,18 +29,29 @@ const InvoiceTable = ({
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      draft: {
+        color: "bg-gray-100 text-gray-800",
+        icon: "fas fa-file-alt",
+      },
+      sent: { 
+        color: "bg-blue-100 text-blue-800", 
+        icon: "fas fa-paper-plane" 
+      },
       paid: {
         color: "bg-green-100 text-green-800",
         icon: "fas fa-check-circle",
       },
-      pending: { color: "bg-yellow-100 text-yellow-800", icon: "fas fa-clock" },
       overdue: {
         color: "bg-red-100 text-red-800",
         icon: "fas fa-exclamation-triangle",
       },
+      cancelled: {
+        color: "bg-purple-100 text-purple-800",
+        icon: "fas fa-times-circle",
+      },
     };
 
-    const config = statusConfig[status.toLowerCase()] || statusConfig.pending;
+    const config = statusConfig[status.toLowerCase()] || statusConfig.sent;
 
     return (
       <span
