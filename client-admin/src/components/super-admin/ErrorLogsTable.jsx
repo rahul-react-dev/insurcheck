@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import Pagination from '../ui/Pagination';
 
 const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagination, onPageChange }) => {
   // Debug pagination data
@@ -134,12 +135,56 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Loading State - Skeleton */}
       {isLoading && (
-        <div className="p-8 text-center">
-          <div className="inline-flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-600">Loading error logs...</span>
+        <div className="space-y-4">
+          {/* Desktop skeleton */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index} className="animate-pulse">
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="h-4 bg-gray-200 rounded w-32"></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="h-6 bg-gray-200 rounded w-16"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-48"></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="h-4 bg-gray-200 rounded w-24"></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="h-4 bg-gray-200 rounded w-28"></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile skeleton */}
+          <div className="lg:hidden space-y-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="p-4 animate-pulse">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="h-4 bg-gray-200 rounded w-16"></div>
+                    <div className="h-6 bg-gray-200 rounded w-20"></div>
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-200">
+                    <div><div className="h-3 bg-gray-200 rounded w-12 mb-1"></div><div className="h-4 bg-gray-200 rounded w-20"></div></div>
+                    <div><div className="h-3 bg-gray-200 rounded w-8 mb-1"></div><div className="h-4 bg-gray-200 rounded w-24"></div></div>
+                    <div><div className="h-3 bg-gray-200 rounded w-16 mb-1"></div><div className="h-4 bg-gray-200 rounded w-16"></div></div>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       )}
@@ -275,37 +320,18 @@ const ErrorLogsTable = ({ logs, isLoading, error, onFilterChange, filters, pagin
             ))}
           </div>
 
-          {/* Pagination Controls - Show when we have logs */}
-          {logs && logs.length > 0 && (
-            <div className="flex items-center justify-between p-4 bg-gray-50 border-t">
-              <div className="text-sm text-gray-700">
-                {pagination ? (
-                  `Showing page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total logs)`
-                ) : (
-                  `Showing ${logs.length} logs`
-                )}
-              </div>
-              {pagination && pagination.totalPages > 1 && (
-                <div className="flex items-center space-x-2">
-                  <Button
-                    onClick={() => onPageChange && onPageChange(pagination.page - 1)}
-                    disabled={!pagination || pagination.page <= 1}
-                    className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
-                  >
-                    Previous
-                  </Button>
-                  <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded font-medium">
-                    {pagination.page}
-                  </span>
-                  <Button
-                    onClick={() => onPageChange && onPageChange(pagination.page + 1)}
-                    disabled={!pagination || pagination.page >= pagination.totalPages}
-                    className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
+          {/* Enhanced Pagination Controls */}
+          {logs && logs.length > 0 && pagination && (
+            <div className="p-4 bg-gray-50 border-t">
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                itemsPerPage={pagination.limit}
+                onPageChange={onPageChange}
+                disabled={isLoading}
+                className=""
+              />
             </div>
           )}
         </>

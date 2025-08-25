@@ -218,7 +218,7 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {isLoadingMetrics ? (
               // Enhanced Loading skeleton
               Array.from({ length: 7 }).map((_, index) => (
