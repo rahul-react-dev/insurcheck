@@ -410,7 +410,7 @@ export const invoiceAPI = {
     method: 'PUT',
     body: JSON.stringify(data),
   }),
-  markPaid: (id) => apiCall(`/api/invoices/${id}/mark-paid`, {
+  markPaid: (id) => apiCall(`/api/super-admin/invoices/${id}/paid`, {
     method: 'POST',
   }),
   delete: (id) => apiCall(`/api/invoices/${id}`, {

@@ -96,8 +96,11 @@ const PaymentManagement = () => {
 
   const handleConfirmMarkPaid = () => {
     if (confirmDialog.invoiceId) {
+      console.log('🚀 Dispatching markInvoicePaidRequest with invoiceId:', confirmDialog.invoiceId);
       dispatch(markInvoicePaidRequest(confirmDialog.invoiceId));
       setConfirmDialog({ isOpen: false, invoiceId: null, invoiceNumber: null });
+    } else {
+      console.error('❌ No invoice ID found in confirmDialog:', confirmDialog);
     }
   };
 

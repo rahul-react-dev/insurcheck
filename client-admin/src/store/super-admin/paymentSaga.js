@@ -113,7 +113,14 @@ function* fetchTenantsSaga() {
 
 function* markInvoicePaidSaga(action) {
   try {
-    const { invoiceId, paymentData } = action.payload;
+    console.log('🔧 markInvoicePaidSaga called with payload:', action.payload);
+    const invoiceId = typeof action.payload === 'string' ? action.payload : action.payload?.invoiceId;
+    console.log('📋 Invoice ID to mark as paid:', invoiceId);
+    
+    if (!invoiceId) {
+      throw new Error('Invoice ID is required');
+    }
+    
     const response = yield call(invoiceAPI.markPaid, invoiceId);
     const responseData = response.data || response;
     const updatedInvoice = responseData.invoice || responseData;

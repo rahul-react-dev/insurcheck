@@ -49,7 +49,7 @@ const ConfirmationDialog = ({
             <Button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`w-full sm:w-auto sm:ml-3 ${confirmStyle} text-white px-4 py-2 text-sm`}
+              className={`w-full sm:w-auto sm:ml-3 ${confirmStyle} text-white px-4 py-2 text-sm font-medium`}
             >
               {isLoading ? (
                 <>
@@ -63,7 +63,7 @@ const ConfirmationDialog = ({
             <Button
               onClick={onClose}
               disabled={isLoading}
-              className="mt-3 sm:mt-0 w-full sm:w-auto bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm"
+              className="mt-3 sm:mt-0 w-full sm:w-auto bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium shadow-sm"
             >
               {cancelText}
             </Button>
