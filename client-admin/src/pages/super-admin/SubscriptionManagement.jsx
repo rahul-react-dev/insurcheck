@@ -221,12 +221,7 @@ const SubscriptionManagement = () => {
               </p>
             </div>
 
-            <TenantPlanAssignment
-              tenants={tenants}
-              plans={plans}
-              onAssignPlan={handleAssignPlan}
-              isLoading={isLoading}
-            />
+            <TenantPlanAssignment />
           </div>
         )}
       </div>

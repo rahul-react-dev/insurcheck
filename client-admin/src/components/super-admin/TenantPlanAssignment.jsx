@@ -7,7 +7,14 @@ import { assignPlanToTenantRequest, fetchTenantsRequest, fetchPlansRequest } fro
 
 const TenantPlanAssignment = () => {
   const dispatch = useDispatch();
-  const { tenants, plans, isAssigning, error, isLoadingTenants, isLoadingPlans } = useSelector(state => state.subscription);
+  const { 
+    tenants = [], 
+    plans = [], 
+    isAssigning = false, 
+    error, 
+    isLoadingTenants = false, 
+    isLoadingPlans = false 
+  } = useSelector(state => state.subscription);
   
   const [selectedTenant, setSelectedTenant] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('');
@@ -37,6 +44,11 @@ const TenantPlanAssignment = () => {
       }
       return;
     }
+
+    console.log('🔄 TenantPlanAssignment: Dispatching assignment request', {
+      tenantId: parseInt(selectedTenant),
+      planId: parseInt(selectedPlan)
+    });
 
     dispatch(assignPlanToTenantRequest({
       tenantId: parseInt(selectedTenant),
