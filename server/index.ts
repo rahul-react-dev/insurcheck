@@ -1,6 +1,8 @@
 
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { db } from './db';
 import routes from './routes.js';
 import authRoutes from './src/routes/auth.js';
@@ -12,7 +14,11 @@ import adminInvoicesRoutes from './src/routes/adminInvoices.js';
 import complianceAnalyticsRoutes from './src/routes/complianceAnalytics.js';
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '5001', 10);
+const PORT = parseInt(process.env.PORT || '5000', 10);
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware - Enhanced CORS configuration
 app.use(cors({
@@ -109,6 +115,9 @@ app.use('/api/admin/compliance-analytics', complianceAnalyticsRoutes);
 // API routes
 app.use('/api', routes);
 
+// Serve static files from client-admin build directory
+app.use(express.static(path.join(__dirname, '../client-admin/dist')));
+
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', error);
@@ -118,19 +127,12 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// 404 handler for API routes
-app.use('*', (req, res) => {
+// Handle SPA routing - serve index.html for non-API routes
+app.get('*', (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     res.status(404).json({ error: 'API route not found' });
   } else {
-    res.status(404).json({ 
-      error: 'Frontend not served by this server',
-      message: 'Run client-admin or client-user separately',
-      instructions: {
-        admin: 'cd client-admin && npm run dev',
-        user: 'cd client-user && npm run dev'
-      }
-    });
+    res.sendFile(path.join(__dirname, '../client-admin/dist/index.html'));
   }
 });
 
