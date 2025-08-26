@@ -221,7 +221,7 @@ const TenantTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Contact:</span>
                   <span className="text-sm text-gray-900">
-                    {tenant.email}
+                    {tenant.email || 'No email set'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -337,7 +337,7 @@ const TenantTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {tenant.email}
+                    {tenant.email || <span className="text-gray-400 italic">No email set</span>}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

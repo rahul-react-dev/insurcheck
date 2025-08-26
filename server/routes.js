@@ -793,12 +793,19 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
   try {
     console.log('➕ Creating new tenant:', req.body);
     
-    const { name, email, status = 'unverified' } = req.body;
+    // Handle both old and new field names for compatibility
+    const name = req.body.name || req.body.tenantName;
+    const email = req.body.email || req.body.primaryContactEmail;
+    const subscriptionPlan = req.body.subscriptionPlan;
+    const description = req.body.description;
+    const status = req.body.status || 'active';
+    
+    console.log('🔍 Extracted fields:', { name, email, subscriptionPlan, description, status });
     
     if (!name || !email) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Name and email are required'
+        message: 'Tenant name and primary contact email are required'
       });
     }
 
@@ -815,18 +822,50 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
       });
     }
 
+    // Create the tenant
     const [newTenant] = await db.insert(tenants)
       .values({
         name,
         email,
+        domain: `${name.toLowerCase().replace(/\s+/g, '-')}.insurcheck.com`,
         status,
+        description: description || null,
         createdAt: new Date(),
         updatedAt: new Date()
       })
       .returning();
 
+    // If a subscription plan is specified, create the subscription
+    if (subscriptionPlan && subscriptionPlan !== 'No Plan') {
+      try {
+        const planResult = await db.select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.name, subscriptionPlan))
+          .limit(1);
+        
+        if (planResult.length > 0) {
+          await db.insert(subscriptions)
+            .values({
+              tenantId: newTenant.id,
+              planId: planResult[0].id,
+              status: 'active',
+              startDate: new Date(),
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+          console.log(`✅ Subscription created for tenant ${newTenant.id} with plan ${subscriptionPlan}`);
+        }
+      } catch (subError) {
+        console.error('⚠️ Warning: Failed to create subscription:', subError);
+        // Don't fail the tenant creation if subscription fails
+      }
+    }
+
     console.log('✅ Tenant created successfully:', newTenant);
-    res.status(201).json(newTenant);
+    res.status(201).json({
+      ...newTenant,
+      subscriptionPlan: subscriptionPlan || 'No Plan'
+    });
   } catch (error) {
     console.error('❌ Error creating tenant:', error);
     res.status(500).json({ 
@@ -842,12 +881,17 @@ router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res
     const tenantId = parseInt(req.params.id);
     console.log(`📝 Updating tenant ${tenantId}:`, req.body);
     
-    const { name, email, status } = req.body;
+    // Handle both old and new field names for compatibility
+    const name = req.body.name || req.body.tenantName;
+    const email = req.body.email || req.body.primaryContactEmail;
+    const status = req.body.status;
+    const subscriptionPlan = req.body.subscriptionPlan;
+    const description = req.body.description;
     
-    if (!name || !email) {
+    if (!name) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Name and email are required'
+        message: 'Tenant name is required'
       });
     }
 
@@ -864,8 +908,8 @@ router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res
       });
     }
 
-    // Check if email is taken by another tenant
-    if (email !== existingTenant[0].email) {
+    // Check if email is taken by another tenant (only if email is provided and different)
+    if (email && email !== existingTenant[0].email) {
       const emailCheck = await db.select()
         .from(tenants)
         .where(and(
@@ -873,27 +917,80 @@ router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res
           sql`${tenants.id} != ${tenantId}`
         ))
         .limit(1);
-      
+        
       if (emailCheck.length > 0) {
         return res.status(409).json({
-          error: 'Email already taken',
-          message: 'Another tenant already uses this email'
+          error: 'Email already exists',
+          message: 'Another tenant already uses this email address'
         });
       }
     }
 
+    // Prepare update data
+    const updateData = {
+      updatedAt: new Date()
+    };
+    
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (status) updateData.status = status;
+    if (description !== undefined) updateData.description = description;
+    if (name) updateData.domain = `${name.toLowerCase().replace(/\s+/g, '-')}.insurcheck.com`;
+
+    // Update the tenant
     const [updatedTenant] = await db.update(tenants)
-      .set({
-        name,
-        email,
-        status,
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(eq(tenants.id, tenantId))
       .returning();
 
+    // Handle subscription plan update
+    if (subscriptionPlan && subscriptionPlan !== 'No Plan') {
+      try {
+        const planResult = await db.select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.name, subscriptionPlan))
+          .limit(1);
+        
+        if (planResult.length > 0) {
+          // Check if tenant already has a subscription
+          const existingSubscription = await db.select()
+            .from(subscriptions)
+            .where(eq(subscriptions.tenantId, tenantId))
+            .limit(1);
+          
+          if (existingSubscription.length > 0) {
+            // Update existing subscription
+            await db.update(subscriptions)
+              .set({
+                planId: planResult[0].id,
+                updatedAt: new Date()
+              })
+              .where(eq(subscriptions.tenantId, tenantId));
+          } else {
+            // Create new subscription
+            await db.insert(subscriptions)
+              .values({
+                tenantId: tenantId,
+                planId: planResult[0].id,
+                status: 'active',
+                startDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+          }
+          console.log(`✅ Subscription updated for tenant ${tenantId} with plan ${subscriptionPlan}`);
+        }
+      } catch (subError) {
+        console.error('⚠️ Warning: Failed to update subscription:', subError);
+        // Don't fail the tenant update if subscription fails
+      }
+    }
+
     console.log('✅ Tenant updated successfully:', updatedTenant);
-    res.json(updatedTenant);
+    res.json({
+      ...updatedTenant,
+      subscriptionPlan: subscriptionPlan || 'No Plan'
+    });
   } catch (error) {
     console.error('❌ Error updating tenant:', error);
     res.status(500).json({ 
