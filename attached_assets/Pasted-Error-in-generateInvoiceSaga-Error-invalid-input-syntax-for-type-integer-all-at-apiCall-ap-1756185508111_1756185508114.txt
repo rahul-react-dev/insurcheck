@@ -1,0 +1,49 @@
+Error in generateInvoiceSaga: Error: invalid input syntax for type integer: "all"
+    at apiCall (api.js:61:22)
+generateInvoiceSaga @ invoiceGenerationSaga.js:46
+next @ redux-saga.js?v=e220074f:896
+currCb @ redux-saga.js?v=e220074f:977
+(anonymous) @ redux-saga.js?v=e220074f:380
+Promise.then
+resolvePromise @ redux-saga.js?v=e220074f:379
+runCallEffect @ redux-saga.js?v=e220074f:469
+runEffect @ redux-saga.js?v=e220074f:944
+digestEffect @ redux-saga.js?v=e220074f:989
+next @ redux-saga.js?v=e220074f:913
+proc @ redux-saga.js?v=e220074f:890
+(anonymous) @ redux-saga.js?v=e220074f:518
+immediately @ redux-saga.js?v=e220074f:113
+runForkEffect @ redux-saga.js?v=e220074f:517
+runEffect @ redux-saga.js?v=e220074f:944
+digestEffect @ redux-saga.js?v=e220074f:989
+next @ redux-saga.js?v=e220074f:913
+currCb @ redux-saga.js?v=e220074f:977
+takeCb2 @ redux-saga.js?v=e220074f:453
+put @ redux-saga.js?v=e220074f:333
+(anonymous) @ redux-saga.js?v=e220074f:365
+exec @ redux-saga.js?v=e220074f:98
+flush @ redux-saga.js?v=e220074f:128
+asap @ redux-saga.js?v=e220074f:107
+chan.put @ redux-saga.js?v=e220074f:364
+(anonymous) @ redux-saga.js?v=e220074f:1096
+(anonymous) @ @reduxjs_toolkit.js?v=e220074f:1464
+(anonymous) @ @reduxjs_toolkit.js?v=e220074f:1118
+(anonymous) @ @reduxjs_toolkit.js?v=e220074f:1374
+(anonymous) @ @reduxjs_toolkit.js?v=e220074f:1207
+handleManualGenerate @ InvoiceGenerationConfig.jsx:176
+onClick @ InvoiceGenerationConfig.jsx:244
+callCallback2 @ chunk-R3VZBYWY.js?v=e220074f:3674
+invokeGuardedCallbackDev @ chunk-R3VZBYWY.js?v=e220074f:3699
+invokeGuardedCallback @ chunk-R3VZBYWY.js?v=e220074f:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-R3VZBYWY.js?v=e220074f:3736
+executeDispatch @ chunk-R3VZBYWY.js?v=e220074f:7014
+processDispatchQueueItemsInOrder @ chunk-R3VZBYWY.js?v=e220074f:7034
+processDispatchQueue @ chunk-R3VZBYWY.js?v=e220074f:7043
+dispatchEventsForPlugins @ chunk-R3VZBYWY.js?v=e220074f:7051
+(anonymous) @ chunk-R3VZBYWY.js?v=e220074f:7174
+batchedUpdates$1 @ chunk-R3VZBYWY.js?v=e220074f:18913
+batchedUpdates @ chunk-R3VZBYWY.js?v=e220074f:3579
+dispatchEventForPluginEventSystem @ chunk-R3VZBYWY.js?v=e220074f:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-R3VZBYWY.js?v=e220074f:5478
+dispatchEvent @ chunk-R3VZBYWY.js?v=e220074f:5472
+dispatchDiscreteEvent @ chunk-R3VZBYWY.js?v=e220074f:5449Understand this error
