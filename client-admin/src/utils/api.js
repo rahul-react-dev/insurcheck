@@ -347,10 +347,13 @@ export const superAdminAPI = {
     method: 'POST',
     body: JSON.stringify({ documentIds }),
   }),
-  restoreDocument: (id) => apiCall(`/api/documents/${id}/restore`, {
+  restoreDocument: (id) => apiCall(`/api/deleted-documents/${id}/restore`, {
     method: 'POST',
   }),
-  permanentlyDeleteDocument: (id) => apiCall(`/api/documents/${id}`, {
+  recoverDocument: (id) => apiCall(`/api/deleted-documents/${id}/restore`, {
+    method: 'POST',
+  }),
+  permanentlyDeleteDocument: (id) => apiCall(`/api/deleted-documents/${id}`, {
     method: 'DELETE',
   }),
   

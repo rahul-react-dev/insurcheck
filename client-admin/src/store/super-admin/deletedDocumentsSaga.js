@@ -79,10 +79,43 @@ function* restoreDocumentSaga(action) {
   } catch (error) {
     console.error(`❌ Error in restoreDocumentSaga for document ID ${action.payload}:`, error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to restore document';
-    yield put(restoreDocumentFailure(errorMessage));
+    yield put(restoreDocumentFailure({ documentId, error: errorMessage }));
 
     if (typeof window !== 'undefined' && window.showNotification) {
       window.showNotification('Failed to restore document', 'error');
+    }
+  }
+}
+
+function* recoverDocumentSaga(action) {
+  try {
+    const documentId = action.payload.documentId;
+    console.log(`📡 Recovering document with ID: ${documentId}`);
+    
+    yield put(restoreDocumentRequest(documentId));
+    
+    const response = yield call(superAdminAPI.restoreDocument, documentId);
+    // Ensure we handle response data consistently
+    const recoveredDocument = response.data || response;
+
+    yield put(restoreDocumentSuccess({
+      documentId,
+      restoredDocument: recoveredDocument
+    }));
+
+    if (typeof window !== 'undefined' && window.showNotification) {
+      window.showNotification('Document recovered successfully', 'success');
+    }
+
+    // Refresh the documents list after a successful recovery
+    yield put(fetchDeletedDocumentsRequest({ page: 1, limit: 10 }));
+  } catch (error) {
+    console.error(`❌ Error in recoverDocumentSaga for document ID ${action.payload.documentId}:`, error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to recover document';
+    yield put(restoreDocumentFailure({ documentId: action.payload.documentId, error: errorMessage }));
+
+    if (typeof window !== 'undefined' && window.showNotification) {
+      window.showNotification('Failed to recover document', 'error');
     }
   }
 }
@@ -104,7 +137,35 @@ function* permanentlyDeleteDocumentSaga(action) {
   } catch (error) {
     console.error(`❌ Error in permanentlyDeleteDocumentSaga for document ID ${action.payload}:`, error);
     const errorMessage = error?.message || error?.response?.data?.message || 'Failed to permanently delete document';
-    yield put(permanentlyDeleteDocumentFailure(errorMessage));
+    yield put(permanentlyDeleteDocumentFailure({ documentId, error: errorMessage }));
+
+    if (typeof window !== 'undefined' && window.showNotification) {
+      window.showNotification('Failed to permanently delete document', 'error');
+    }
+  }
+}
+
+function* permanentDeleteDocumentSaga(action) {
+  try {
+    const documentId = action.payload.documentId;
+    console.log(`📡 Permanently deleting document with ID: ${documentId}`);
+    
+    yield put(permanentlyDeleteDocumentRequest(documentId));
+    
+    yield call(superAdminAPI.permanentlyDeleteDocument, documentId);
+
+    yield put(permanentlyDeleteDocumentSuccess(documentId));
+
+    if (typeof window !== 'undefined' && window.showNotification) {
+      window.showNotification('Document permanently deleted', 'success');
+    }
+
+    // Refresh the documents list after a successful permanent delete
+    yield put(fetchDeletedDocumentsRequest({ page: 1, limit: 10 }));
+  } catch (error) {
+    console.error(`❌ Error in permanentDeleteDocumentSaga for document ID ${action.payload.documentId}:`, error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to permanently delete document';
+    yield put(permanentlyDeleteDocumentFailure({ documentId: action.payload.documentId, error: errorMessage }));
 
     if (typeof window !== 'undefined' && window.showNotification) {
       window.showNotification('Failed to permanently delete document', 'error');
@@ -191,10 +252,12 @@ function* watchFetchDeletedDocuments() {
 function* watchRestoreDocument() {
   // Use takeEvery for operations that should be processed for every dispatched action
   yield takeEvery(restoreDocumentRequest.type, restoreDocumentSaga);
+  yield takeEvery('RECOVER_DOCUMENT_REQUEST', recoverDocumentSaga);
 }
 
 function* watchPermanentlyDeleteDocument() {
   yield takeEvery(permanentlyDeleteDocumentRequest.type, permanentlyDeleteDocumentSaga);
+  yield takeEvery('PERMANENTLY_DELETE_DOCUMENT_REQUEST', permanentlyDeleteDocumentSaga);
 }
 
 function* watchBulkRestoreDocuments() {

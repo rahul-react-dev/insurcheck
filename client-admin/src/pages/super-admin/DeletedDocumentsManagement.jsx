@@ -184,6 +184,10 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handleRecoverDocument = (document) => {
+    console.log('🔄 Recover button clicked for document:', document);
+    console.log('🔍 Document ID:', document.id);
+    console.log('🔍 Document name:', document.name);
+    
     setSelectedDocument(document);
     setConfirmAction({
       type: "recover",
@@ -191,6 +195,7 @@ const DeletedDocumentsManagement = () => {
       message: `Are you sure you want to recover "${document.name}"? This will restore it to the original owner's admin panel.`,
       confirmText: "Recover",
       onConfirm: () => {
+        console.log('✅ Confirm recovery for document ID:', document.id);
         dispatch(recoverDocument(document.id));
         setIsConfirmModalOpen(false);
         setSelectedDocument(null);
@@ -200,6 +205,10 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handlePermanentDelete = (document) => {
+    console.log('🗑️ Delete button clicked for document:', document);
+    console.log('🔍 Document ID:', document.id);
+    console.log('🔍 Document name:', document.name);
+    
     setSelectedDocument(document);
     setConfirmAction({
       type: "delete",
@@ -207,6 +216,7 @@ const DeletedDocumentsManagement = () => {
       message: `Are you sure you want to permanently delete "${document.name}"? This action cannot be undone.`,
       confirmText: "Delete Permanently",
       onConfirm: () => {
+        console.log('✅ Confirm permanent delete for document ID:', document.id);
         dispatch(permanentlyDeleteDocument(document.id));
         setIsConfirmModalOpen(false);
         setSelectedDocument(null);
