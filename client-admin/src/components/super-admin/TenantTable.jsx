@@ -113,11 +113,12 @@ const TenantTable = ({
               <tr>
                 {[
                   "Tenant ID",
-                  "Tenant Name",
+                  "Tenant Information",
                   "Primary Contact",
                   "Status",
+                  "Trial Information",
                   "Created Date",
-                  "Subscription Plan",
+                  "Last State Change",
                   "Users",
                   "Actions",
                 ].map((header) => (
@@ -154,6 +155,12 @@ const TenantTable = ({
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-6 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-4 bg-gray-200 rounded w-12"></div>
@@ -225,13 +232,31 @@ const TenantTable = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Domain:</span>
+                  <span className="text-sm text-gray-900">
+                    {tenant.domain || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Plan:</span>
-                  {getPlanBadge(tenant.subscriptionPlan)}
+                  {getPlanBadge(tenant.subscriptionPlan || tenant.subscription_plan_name)}
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Trial Status:</span>
+                  <span className="text-xs text-gray-900">
+                    {tenant.subscription_status || 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Created:</span>
                   <span className="text-sm text-gray-900">
                     {formatDate(tenant.createdAt)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Last Change:</span>
+                  <span className="text-sm text-gray-900">
+                    {tenant.updatedAt ? formatDate(tenant.updatedAt) : 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -294,7 +319,7 @@ const TenantTable = ({
                 Tenant ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tenant Name
+                Tenant Information
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Primary Contact Email
@@ -303,10 +328,13 @@ const TenantTable = ({
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trial Information
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Created Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Subscription Plan
+                Last State Change
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Users
@@ -332,6 +360,9 @@ const TenantTable = ({
                     {tenant.name}
                   </div>
                   <div className="text-sm text-gray-500">
+                    {tenant.domain && `Domain: ${tenant.domain}`}
+                  </div>
+                  <div className="text-xs text-gray-400">
                     ID: {tenant.id}
                   </div>
                 </td>
@@ -343,11 +374,22 @@ const TenantTable = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(tenant.status)}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900 font-medium">
+                    {getPlanBadge(tenant.subscriptionPlan || tenant.subscription_plan_name)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Status: {tenant.subscription_status || 'N/A'}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {tenant.plan_max_users && `Max Users: ${tenant.plan_max_users}`}
+                  </div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(tenant.createdAt)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getPlanBadge(tenant.subscriptionPlan)}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {tenant.updatedAt ? formatDate(tenant.updatedAt) : <span className="text-gray-400 italic">N/A</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
