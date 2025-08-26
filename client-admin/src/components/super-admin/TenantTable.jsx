@@ -232,19 +232,19 @@ const TenantTable = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Domain:</span>
+                  <span className="text-sm text-gray-500">Storage:</span>
                   <span className="text-sm text-gray-900">
-                    {tenant.domain || 'N/A'}
+                    {tenant.storageUsed || 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Plan:</span>
-                  {getPlanBadge(tenant.subscriptionPlan || tenant.subscription_plan_name)}
+                  {getPlanBadge(tenant.subscriptionPlan)}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Trial Status:</span>
                   <span className="text-xs text-gray-900">
-                    {tenant.subscription_status || 'N/A'}
+                    {tenant.subscriptionStatus || 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -256,14 +256,14 @@ const TenantTable = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Last Change:</span>
                   <span className="text-sm text-gray-900">
-                    {tenant.updatedAt ? formatDate(tenant.updatedAt) : 'N/A'}
+                    {tenant.lastActivity ? formatDate(tenant.lastActivity) : 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Users:</span>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-bold text-gray-900">
-                      {tenant.actualUserCount !== undefined ? tenant.actualUserCount : (tenant.userCount || 0)}
+                      {tenant.userCount || 0}
                     </span>
                     <button
                       onClick={() => onViewUsers(tenant)}
@@ -360,7 +360,7 @@ const TenantTable = ({
                     {tenant.name}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {tenant.domain && `Domain: ${tenant.domain}`}
+                    {tenant.email && `Email: ${tenant.email}`}
                   </div>
                   <div className="text-xs text-gray-400">
                     ID: {tenant.id}
@@ -376,25 +376,25 @@ const TenantTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900 font-medium">
-                    {getPlanBadge(tenant.subscriptionPlan || tenant.subscription_plan_name)}
+                    {getPlanBadge(tenant.subscriptionPlan)}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Status: {tenant.subscription_status || 'N/A'}
+                    Sub Status: {tenant.subscriptionStatus || 'N/A'}
                   </div>
                   <div className="text-xs text-gray-400">
-                    {tenant.plan_max_users && `Max Users: ${tenant.plan_max_users}`}
+                    Storage: {tenant.storageUsed || 'N/A'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(tenant.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {tenant.updatedAt ? formatDate(tenant.updatedAt) : <span className="text-gray-400 italic">N/A</span>}
+                  {tenant.lastActivity ? formatDate(tenant.lastActivity) : <span className="text-gray-400 italic">N/A</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-3">
                     <span className="text-lg font-bold text-gray-900 min-w-[50px] text-center">
-                      {tenant.actualUserCount !== undefined ? tenant.actualUserCount : (tenant.userCount || 0)}
+                      {tenant.userCount || 0}
                     </span>
                     <button
                       onClick={() => onViewUsers(tenant)}
