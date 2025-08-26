@@ -30,6 +30,8 @@ function* generateInvoiceSaga(action) {
   try {
     const tenantId = action.payload;
     console.log('📡 generateInvoiceSaga triggered for tenant:', tenantId);
+    console.log('📡 Action type:', action.type);
+    console.log('📡 Full action:', action);
 
     const response = yield call(superAdminAPI.generateInvoice, tenantId);
     console.log('✅ Generate invoice API response received:', response);
@@ -56,6 +58,8 @@ function* generateInvoiceSaga(action) {
 function* generateAllInvoicesSaga(action) {
   try {
     console.log('📡 generateAllInvoicesSaga triggered');
+    console.log('📡 Action type:', action.type);
+    console.log('📡 Full action:', action);
 
     const response = yield call(superAdminAPI.generateAllInvoices);
     console.log('✅ Generate all invoices API response received:', response);

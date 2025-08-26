@@ -333,6 +333,7 @@ const InvoiceGeneration = () => {
                 <Button
                   onClick={() => {
                     if (window.confirm("Are you sure you want to generate invoices for all active tenants?")) {
+                      console.log('🚀 Dispatching generateAllInvoicesRequest action');
                       dispatch(generateAllInvoicesRequest());
                     }
                   }}
