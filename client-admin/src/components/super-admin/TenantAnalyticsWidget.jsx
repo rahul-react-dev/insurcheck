@@ -11,6 +11,8 @@ const TenantAnalyticsWidget = () => {
     analyticsError 
   } = useSelector(state => state.tenant);
 
+  console.log('TenantAnalyticsWidget - State:', { usageAnalytics, isLoadingAnalytics, analyticsError });
+
   useEffect(() => {
     // Fetch analytics data when component mounts
     dispatch(fetchTenantAnalyticsRequest());
@@ -41,7 +43,7 @@ const TenantAnalyticsWidget = () => {
     );
   }
 
-  const { totalDocuments, activeUsers, complianceRate, monthlyUploads } = usageAnalytics;
+  const { totalDocuments, activeUsers, complianceRate, monthlyUploads } = usageAnalytics || {};
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -96,7 +98,7 @@ const TenantAnalyticsWidget = () => {
           <div>
             <p className="text-sm font-medium text-orange-600">Monthly Uploads</p>
             <p className="text-2xl font-bold text-orange-900" data-testid="monthly-uploads">
-              {monthlyUploads?.reduce((sum, item) => sum + (item.uploads || 0), 0) || '0'}
+              {Array.isArray(monthlyUploads) ? monthlyUploads.reduce((sum, item) => sum + (item.uploads || 0), 0) : '0'}
             </p>
           </div>
           <div className="p-2 bg-orange-200 rounded-lg">

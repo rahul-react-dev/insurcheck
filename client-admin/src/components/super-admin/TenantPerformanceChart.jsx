@@ -20,7 +20,7 @@ const TenantPerformanceChart = () => {
     );
   }
 
-  const { tenantPerformance = [] } = usageAnalytics;
+  const { tenantPerformance = [] } = usageAnalytics || {};
 
   return (
     <Card className="p-6">

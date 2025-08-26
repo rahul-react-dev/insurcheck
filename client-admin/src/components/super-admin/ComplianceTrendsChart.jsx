@@ -16,7 +16,7 @@ const ComplianceTrendsChart = () => {
     );
   }
 
-  const { complianceTrends = [] } = usageAnalytics;
+  const { complianceTrends = [] } = usageAnalytics || {};
 
   // Calculate max value for scaling
   const maxPassRate = Math.max(...complianceTrends.map(item => item.passRate || 0));
