@@ -14,7 +14,12 @@ const InvoiceGenerationLogs = ({
   onRetryGeneration,
   onViewDetails,
 }) => {
-  const [localFilters, setLocalFilters] = useState(filters);
+  const [localFilters, setLocalFilters] = useState({
+    tenantName: '',
+    status: '',
+    dateRange: { start: '', end: '' },
+    ...filters
+  });
 
   const handleFilterSubmit = () => {
     onFilterChange(localFilters);
@@ -133,11 +138,14 @@ const InvoiceGenerationLogs = ({
             <Input
               label="Start Date"
               type="date"
-              value={localFilters.dateRange.start}
+              value={localFilters?.dateRange?.start || ''}
               onChange={(e) =>
                 setLocalFilters((prev) => ({
                   ...prev,
-                  dateRange: { ...prev.dateRange, start: e.target.value },
+                  dateRange: { 
+                    ...(prev.dateRange || {}), 
+                    start: e.target.value 
+                  },
                 }))
               }
             />
@@ -147,11 +155,14 @@ const InvoiceGenerationLogs = ({
             <Input
               label="End Date"
               type="date"
-              value={localFilters.dateRange.end}
+              value={localFilters?.dateRange?.end || ''}
               onChange={(e) =>
                 setLocalFilters((prev) => ({
                   ...prev,
-                  dateRange: { ...prev.dateRange, end: e.target.value },
+                  dateRange: { 
+                    ...(prev.dateRange || {}), 
+                    end: e.target.value 
+                  },
                 }))
               }
             />
