@@ -25,8 +25,7 @@ import store from "./store";
 import TenantManagement from './pages/super-admin/TenantManagement'; // Import the new TenantManagement component
 import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsManagement';
 import SystemConfiguration from './pages/super-admin/SystemConfiguration';
-// Import the new AnalyticsDashboard component
-import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
+
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -218,16 +217,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Add the new Analytics Dashboard route */}
-            <Route
-              path="/super-admin/analytics"
-              element={
-                <ProtectedRoute>
-                  <AnalyticsDashboard />
-                </ProtectedRoute>
-              }
-            />
-
 
             {/* Admin/Tenant Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
