@@ -835,6 +835,26 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
       })
       .returning();
 
+    // Create tenant admin user (inactive until password is set)
+    const invitationToken = require('crypto').randomBytes(32).toString('hex');
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    const [tenantAdmin] = await db.insert(users)
+      .values({
+        email,
+        role: 'tenant-admin',
+        tenantId: newTenant.id,
+        isActive: false, // Inactive until password setup
+        passwordResetToken: invitationToken,
+        passwordResetExpires: tokenExpiry,
+        password: 'PENDING_SETUP', // Placeholder until setup
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+
+    console.log(`✅ Tenant admin user created: ${tenantAdmin.id} for tenant ${newTenant.id}`);
+
     // If a subscription plan is specified, create the subscription
     if (subscriptionPlan && subscriptionPlan !== 'No Plan') {
       try {
@@ -861,10 +881,21 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
       }
     }
 
-    console.log('✅ Tenant created successfully:', newTenant);
+    // TODO: Send invitation email (implement email service)
+    console.log(`📧 Would send invitation email to: ${email}`);
+    console.log(`🔗 Setup link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/setup-password?token=${invitationToken}`);
+
+    console.log('✅ Tenant and admin user created successfully:', newTenant);
     res.status(201).json({
       ...newTenant,
-      subscriptionPlan: subscriptionPlan || 'No Plan'
+      subscriptionPlan: subscriptionPlan || 'No Plan',
+      adminUser: {
+        id: tenantAdmin.id,
+        email: tenantAdmin.email,
+        setupRequired: true,
+        invitationToken: invitationToken, // Include in response for development
+        setupLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/setup-password?token=${invitationToken}`
+      }
     });
   } catch (error) {
     console.error('❌ Error creating tenant:', error);
@@ -4496,6 +4527,114 @@ router.get('/analytics', authenticateToken, requireSuperAdmin, async (req, res) 
     res.status(500).json({ 
       error: 'Failed to fetch analytics',
       message: error.message 
+    });
+  }
+});
+
+// Password setup endpoint for new tenant admins
+router.post('/admin/setup-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Token and password are required'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: 'Weak password',
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // Find user with valid token
+    const [user] = await db.select()
+      .from(users)
+      .where(sql`password_reset_token = ${token} AND password_reset_expires > NOW()`)
+      .limit(1);
+
+    if (!user) {
+      return res.status(400).json({
+        error: 'Invalid or expired token',
+        message: 'The setup link is invalid or has expired. Please contact your super admin.'
+      });
+    }
+
+    // Hash password and activate account
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    await db.update(users)
+      .set({
+        password: hashedPassword,
+        isActive: true,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, user.id));
+
+    console.log(`✅ Password setup completed for tenant admin: ${user.email}`);
+    
+    res.json({
+      success: true,
+      message: 'Password setup completed successfully. You can now login.',
+      redirectUrl: '/admin/login'
+    });
+
+  } catch (error) {
+    console.error('❌ Error setting up password:', error);
+    res.status(500).json({
+      error: 'Setup failed',
+      message: 'Failed to setup password. Please try again.'
+    });
+  }
+});
+
+// Check setup token validity
+router.get('/admin/verify-setup-token/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      tenantId: users.tenantId
+    })
+    .from(users)
+    .leftJoin(tenants, eq(users.tenantId, tenants.id))
+    .where(sql`password_reset_token = ${token} AND password_reset_expires > NOW()`)
+    .limit(1);
+
+    if (!user) {
+      return res.status(400).json({
+        valid: false,
+        message: 'Invalid or expired setup token'
+      });
+    }
+
+    // Get tenant info
+    const [tenant] = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, user.tenantId))
+      .limit(1);
+
+    res.json({
+      valid: true,
+      user: {
+        email: user.email,
+        tenantName: tenant?.name || 'Unknown'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error verifying setup token:', error);
+    res.status(500).json({
+      valid: false,
+      message: 'Failed to verify token'
     });
   }
 });

@@ -36,6 +36,7 @@ import ComplianceRules from './pages/admin/ComplianceRules';
 import NotificationTemplates from './pages/admin/NotificationTemplates';
 import Invoices from './pages/admin/Invoices';
 import ComplianceAnalytics from './pages/admin/ComplianceAnalytics';
+import PasswordSetup from './pages/admin/PasswordSetup';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 // Notification Component
@@ -230,6 +231,7 @@ function App() {
 
             {/* Admin/Tenant Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/setup-password" element={<PasswordSetup />} />
             <Route
               path="/admin/dashboard"
               element={
