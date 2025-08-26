@@ -110,8 +110,8 @@ const InvoiceGenerationConfig = () => {
   const filteredTenants = useMemo(() => {
     if (!tenants) return [];
     return tenants.filter(tenant =>
-      tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tenant.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (tenant.name && tenant.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (tenant.email && tenant.email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [tenants, searchTerm]);
 
