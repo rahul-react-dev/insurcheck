@@ -1,5 +1,5 @@
 import { call, put, takeEvery, takeLatest } from 'redux-saga/effects';
-import { apiRequest } from '../../utils/api';
+import { superAdminAPI } from '../../utils/api';
 import {
   fetchUsageAnalyticsRequest,
   fetchUsageAnalyticsSuccess,
@@ -23,10 +23,7 @@ function* fetchUsageAnalyticsSaga(action) {
     if (filters?.tenantName) queryParams.append('tenantName', filters.tenantName);
     if (filters?.viewType) queryParams.append('viewType', filters.viewType);
 
-    const response = yield call(apiRequest, {
-      method: 'GET',
-      endpoint: `/api/super-admin/usage-analytics?${queryParams.toString()}`
-    });
+    const response = yield call(superAdminAPI.getUsageAnalytics, Object.fromEntries(queryParams));
 
     if (response.success) {
       yield put(fetchUsageAnalyticsSuccess({
@@ -53,10 +50,7 @@ function* fetchComplianceAnalyticsSaga(action) {
     if (filters?.tenantName) queryParams.append('tenantName', filters.tenantName);
     if (filters?.viewType) queryParams.append('viewType', filters.viewType);
 
-    const response = yield call(apiRequest, {
-      method: 'GET',
-      endpoint: `/api/super-admin/compliance-analytics?${queryParams.toString()}`
-    });
+    const response = yield call(superAdminAPI.getComplianceAnalytics, Object.fromEntries(queryParams));
 
     if (response.success) {
       yield put(fetchComplianceAnalyticsSuccess({
@@ -77,14 +71,10 @@ function* exportUsageReportSaga(action) {
   try {
     const { filters, includeCharts, format } = action.payload || {};
     
-    const response = yield call(apiRequest, {
-      method: 'POST',
-      endpoint: '/api/super-admin/usage-analytics/export',
-      data: {
-        filters,
-        includeCharts: includeCharts || true,
-        format: format || 'pdf'
-      }
+    const response = yield call(superAdminAPI.exportUsageReport, {
+      filters,
+      includeCharts: includeCharts || true,
+      format: format || 'pdf'
     });
 
     if (response.success) {

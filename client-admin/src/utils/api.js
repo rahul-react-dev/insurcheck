@@ -230,6 +230,20 @@ export const superAdminAPI = {
     return apiCall(`/api/analytics/export?${queryString}`);
   },
   
+  // Usage Analytics
+  getUsageAnalytics: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/super-admin/usage-analytics?${queryString}`);
+  },
+  getComplianceAnalytics: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/super-admin/compliance-analytics?${queryString}`);
+  },
+  exportUsageReport: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/super-admin/export-usage-report?${queryString}`);
+  },
+  
   // Activity Logs & Monitoring
   getActivityLogs: (params) => {
     const queryString = new URLSearchParams(params).toString();
