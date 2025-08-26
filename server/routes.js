@@ -645,11 +645,11 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
     const whereParts = [];
     
     if (tenantName) {
-      whereParts.push(`LOWER(name) LIKE LOWER('%${tenantName}%')`);
+      whereParts.push(`LOWER(t.name) LIKE LOWER('%${tenantName}%')`);
     }
     
     if (status) {
-      whereParts.push(`status = '${status}'`);
+      whereParts.push(`t.status = '${status}'`);
     }
     
     // Simplified subscription plan filter to match hardcoded data
@@ -669,11 +669,11 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
     }
     
     if (dateRange.start) {
-      whereParts.push(`created_at >= '${dateRange.start}'`);
+      whereParts.push(`t.created_at >= '${dateRange.start}'`);
     }
     
     if (dateRange.end) {
-      whereParts.push(`created_at <= '${dateRange.end}'`);
+      whereParts.push(`t.created_at <= '${dateRange.end}'`);
     }
     
     if (whereParts.length > 0) {
@@ -703,14 +703,14 @@ router.get('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =>
       // Get total count
       db.execute(sql.raw(`
         SELECT COUNT(*) as count 
-        FROM tenants 
+        FROM tenants t
         ${whereClause}
       `)),
       
       // Get status counts
       db.execute(sql.raw(`
         SELECT status, COUNT(*) as count 
-        FROM tenants 
+        FROM tenants t 
         GROUP BY status
       `))
     ]);
@@ -2418,11 +2418,11 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req, r
     const whereParts = [];
     
     if (tenantName) {
-      whereParts.push(`LOWER(name) LIKE LOWER('%${tenantName}%')`);
+      whereParts.push(`LOWER(t.name) LIKE LOWER('%${tenantName}%')`);
     }
     
     if (status) {
-      whereParts.push(`status = '${status}'`);
+      whereParts.push(`t.status = '${status}'`);
     }
     
     // Simplified subscription plan filter to match hardcoded data
@@ -2476,7 +2476,7 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req, r
       // Get paginated tenant states using raw SQL
       db.execute(sql.raw(`
         SELECT id, name, email, domain, status, created_at, updated_at 
-        FROM tenants 
+        FROM tenants t 
         ${whereClause}
         ORDER BY created_at DESC 
         LIMIT ${parseInt(limit)} OFFSET ${offset}
@@ -2485,14 +2485,14 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req, r
       // Get total count
       db.execute(sql.raw(`
         SELECT COUNT(*) as count 
-        FROM tenants 
+        FROM tenants t 
         ${whereClause}
       `)),
       
       // Get status counts
       db.execute(sql.raw(`
         SELECT status, COUNT(*) as count 
-        FROM tenants 
+        FROM tenants t 
         GROUP BY status
       `))
     ]);
