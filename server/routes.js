@@ -881,9 +881,22 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
       }
     }
 
-    // TODO: Send invitation email (implement email service)
-    console.log(`📧 Would send invitation email to: ${email}`);
-    console.log(`🔗 Setup link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/setup-password?token=${invitationToken}`);
+    // Send invitation email
+    const { sendTenantAdminInvitation } = require('./services/emailService');
+    const setupLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/setup-password?token=${invitationToken}`;
+    
+    const emailResult = await sendTenantAdminInvitation({
+      to: email,
+      tenantName: name,
+      setupLink,
+      invitedBy: req.user?.email || 'Super Admin'
+    });
+    
+    if (emailResult.success) {
+      console.log(`✅ Invitation email sent successfully to: ${email}`);
+    } else {
+      console.log(`📧 Email service unavailable - Setup link: ${setupLink}`);
+    }
 
     console.log('✅ Tenant and admin user created successfully:', newTenant);
     res.status(201).json({
@@ -4543,11 +4556,24 @@ router.post('/admin/setup-password', async (req, res) => {
       });
     }
 
-    // Validate password strength
-    if (password.length < 8) {
+    // Validate password strength (10+ characters with complexity)
+    if (password.length < 10) {
       return res.status(400).json({
         error: 'Weak password',
-        message: 'Password must be at least 8 characters long'
+        message: 'Password must be at least 10 characters with uppercase, lowercase, number, and special character.'
+      });
+    }
+
+    // Enhanced password validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      return res.status(400).json({
+        error: 'Weak password',
+        message: 'Password must be at least 10 characters with uppercase, lowercase, number, and special character.'
       });
     }
 
