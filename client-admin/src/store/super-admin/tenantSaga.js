@@ -40,7 +40,7 @@ function* fetchTenantsSaga(action) {
 
     // Ensure response has required structure
     const validatedResponse = {
-      tenants: response.tenants || response.data || [],
+      tenants: response.tenantStates || response.tenants || response.data || [],
       summary: {
         totalTenants: response.summary?.totalTenants || response.total || 0,
         statusCounts: response.summary?.statusCounts || {}
