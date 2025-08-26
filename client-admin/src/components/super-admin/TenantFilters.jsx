@@ -13,6 +13,7 @@ const TenantFilters = ({ filters, onFilterChange, subscriptionPlans = [] }) => {
       newFilters[field] = value;
     }
     
+    console.log('🔍 TenantFilters: Applying filter change:', { field, value, newFilters });
     onFilterChange(newFilters);
   };
 

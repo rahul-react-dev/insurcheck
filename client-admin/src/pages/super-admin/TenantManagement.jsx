@@ -156,13 +156,24 @@ const TenantManagement = () => {
   };
 
   const handleFilterChange = (newFilters) => {
+    console.log('🔍 TenantManagement: Filter change received:', newFilters);
     setFilters(newFilters);
     // Reset to first page when filters change
     setPagination((prev) => ({ ...prev, page: 1 }));
-    // Trigger immediate fetch with new filters
-    dispatch(
-      fetchTenantsRequest({ ...newFilters, page: 1, limit: pagination.limit }),
-    );
+    
+    // Transform filters to match API expectations
+    const apiParams = {
+      page: 1,
+      limit: pagination.limit,
+      tenantName: newFilters.tenantName || '',
+      status: newFilters.status || '',
+      subscriptionPlan: newFilters.subscriptionPlan || '',
+      startDate: newFilters.dateRange?.start || '',
+      endDate: newFilters.dateRange?.end || ''
+    };
+    
+    console.log('🚀 TenantManagement: Dispatching fetchTenantsRequest with params:', apiParams);
+    dispatch(fetchTenantsRequest(apiParams));
   };
 
   const handlePageChange = (newPage) => {
@@ -448,15 +459,46 @@ const TenantManagement = () => {
       />
 
       {/* Toast Container */}
-      <div className="fixed top-4 right-4 space-y-2 z-50">
+      <div className="fixed top-4 right-4 space-y-2 z-50 pointer-events-none">
         {toasts.map((toast) => (
-          <Toast
+          <div
             key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            duration={toast.duration}
-            onClose={() => removeToast(toast.id)}
-          />
+            className={`
+              max-w-sm w-full bg-white border rounded-lg shadow-lg p-4 pointer-events-auto
+              transform transition-all duration-300 ease-in-out
+              ${toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : ''}
+              ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : ''}
+              ${toast.type === 'warning' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : ''}
+              ${toast.type === 'info' ? 'bg-blue-50 border-blue-200 text-blue-800' : ''}
+            `}
+            role="alert"
+            aria-live="polite"
+            data-testid={`toast-${toast.type}`}
+          >
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {toast.type === 'success' && <i className="fas fa-check-circle text-green-500"></i>}
+                {toast.type === 'error' && <i className="fas fa-times-circle text-red-500"></i>}
+                {toast.type === 'warning' && <i className="fas fa-exclamation-triangle text-yellow-500"></i>}
+                {toast.type === 'info' && <i className="fas fa-info-circle text-blue-500"></i>}
+              </div>
+              <div className="ml-3 w-0 flex-1">
+                <p className="text-sm font-medium" data-testid="toast-message">
+                  {toast.message}
+                </p>
+              </div>
+              <div className="ml-4 flex-shrink-0 flex">
+                <button
+                  className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-md"
+                  onClick={() => removeToast(toast.id)}
+                  data-testid="toast-close"
+                  aria-label="Close notification"
+                >
+                  <i className="fas fa-times text-sm"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>
