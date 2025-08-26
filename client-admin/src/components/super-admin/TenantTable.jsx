@@ -15,17 +15,6 @@ const TenantTable = ({
   onPageChange,
   onPageSizeChange,
 }) => {
-  // Debug logging for tenant data
-  console.log('🔍 TenantTable received tenants:', tenants);
-  console.log('🔍 First tenant structure:', tenants[0]);
-  console.log('🔍 First tenant fields:', tenants[0] ? Object.keys(tenants[0]) : 'No tenants');
-  if (tenants[0]) {
-    console.log('🔍 subscriptionPlan:', tenants[0].subscriptionPlan);
-    console.log('🔍 subscriptionStatus:', tenants[0].subscriptionStatus);
-    console.log('🔍 lastActivity:', tenants[0].lastActivity);
-    console.log('🔍 storageUsed:', tenants[0].storageUsed);
-  }
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
