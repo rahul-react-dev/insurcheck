@@ -7,6 +7,7 @@ const initialState = {
   isLoading: false,
   isLoadingPlans: false,
   isLoadingUsers: false,
+  isLoadingAnalytics: false,
   error: null,
   totalTenants: 0,
   statusCounts: {
@@ -31,7 +32,17 @@ const initialState = {
     total: 0,
     totalPages: 0
   },
-  hasInitialLoad: false
+  hasInitialLoad: false,
+  // Analytics data
+  usageAnalytics: {
+    totalDocuments: 0,
+    activeUsers: 0,
+    complianceRate: 0,
+    monthlyUploads: [],
+    complianceTrends: [],
+    tenantPerformance: []
+  },
+  analyticsError: null,
 };
 
 const tenantSlice = createSlice({
@@ -317,6 +328,20 @@ const tenantSlice = createSlice({
     // Clear all data
     clearTenantData: (state) => {
       return initialState;
+    },
+
+    // Analytics actions
+    fetchTenantAnalyticsRequest: (state, action) => {
+      state.isLoadingAnalytics = true;
+      state.analyticsError = null;
+    },
+    fetchTenantAnalyticsSuccess: (state, action) => {
+      state.isLoadingAnalytics = false;
+      state.usageAnalytics = action.payload;
+    },
+    fetchTenantAnalyticsFailure: (state, action) => {
+      state.isLoadingAnalytics = false;
+      state.analyticsError = action.payload;
     }
   }
 });
@@ -362,7 +387,10 @@ export const {
   fetchTenantUsersSuccess,
   fetchTenantUsersFailure,
   updateTenantUserCount,
-  clearTenantData
+  clearTenantData,
+  fetchTenantAnalyticsRequest,
+  fetchTenantAnalyticsSuccess,
+  fetchTenantAnalyticsFailure
 } = tenantSlice.actions;
 
 export default tenantSlice.reducer;

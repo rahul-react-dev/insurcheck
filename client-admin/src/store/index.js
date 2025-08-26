@@ -21,7 +21,7 @@ import notificationTemplatesReducer from './admin/notificationTemplatesSlice';
 import invoicesReducer from './admin/invoicesSlice';
 import complianceAnalyticsReducer from './admin/complianceAnalyticsSlice';
 import complianceRulesReducer from './admin/complianceRulesSlice';
-import usageAnalyticsReducer from './super-admin/usageAnalyticsSlice';
+
 import rootSaga from './sagas';
 
 const persistConfig = {
@@ -47,7 +47,7 @@ const rootReducer = combineReducers({
   invoices: invoicesReducer,
   complianceAnalytics: complianceAnalyticsReducer,
   complianceRules: complianceRulesReducer,
-  usageAnalytics: usageAnalyticsReducer,
+
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

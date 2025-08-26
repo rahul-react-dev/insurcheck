@@ -27,7 +27,7 @@ import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsMana
 import SystemConfiguration from './pages/super-admin/SystemConfiguration';
 // Import the new AnalyticsDashboard component
 import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
-import UsageAnalyticsDashboard from './pages/super-admin/UsageAnalyticsDashboard';
+
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -227,15 +227,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Add the Usage Analytics Dashboard route */}
-            <Route
-              path="/super-admin/usage-analytics"
-              element={
-                <ProtectedRoute>
-                  <UsageAnalyticsDashboard />
-                </ProtectedRoute>
-              }
-            />
+
 
             {/* Admin/Tenant Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

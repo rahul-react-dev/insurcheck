@@ -23,7 +23,10 @@ import {
   fetchTenantUsersRequest,
   fetchTenantUsersSuccess,
   fetchTenantUsersFailure,
-  updateTenantUserCount
+  updateTenantUserCount,
+  fetchTenantAnalyticsRequest,
+  fetchTenantAnalyticsSuccess,
+  fetchTenantAnalyticsFailure
 } from './tenantSlice';
 
 // Saga functions
@@ -231,6 +234,22 @@ function* fetchTenantUsersSaga(action) {
   }
 }
 
+function* fetchTenantAnalyticsSaga(action) {
+  try {
+    console.log('📊 fetchTenantAnalyticsSaga called with:', action.payload);
+    
+    const filters = action.payload || {};
+    const response = yield call(superAdminAPI.getTenantAnalytics, filters);
+    console.log('✅ Tenant analytics API response:', response);
+    
+    yield put(fetchTenantAnalyticsSuccess(response.data || response));
+  } catch (error) {
+    console.error('❌ Error in fetchTenantAnalyticsSaga:', error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to fetch tenant analytics';
+    yield put(fetchTenantAnalyticsFailure(errorMessage));
+  }
+}
+
 // Watcher sagas
 function* watchFetchTenants() {
   console.log('🔧 watchFetchTenants started');
@@ -267,6 +286,11 @@ function* watchFetchTenantUsers() {
   yield takeEvery(fetchTenantUsersRequest.type, fetchTenantUsersSaga);
 }
 
+function* watchFetchTenantAnalytics() {
+  console.log('🔧 watchFetchTenantAnalytics started');
+  yield takeLatest(fetchTenantAnalyticsRequest.type, fetchTenantAnalyticsSaga);
+}
+
 // Root tenant saga
 export default function* tenantSaga() {
   console.log('🔧 Tenant saga initialized');
@@ -277,7 +301,8 @@ export default function* tenantSaga() {
     fork(watchUpdateTenant),
     fork(watchSuspendTenant),
     fork(watchDeleteTenant),
-    fork(watchFetchTenantUsers)
+    fork(watchFetchTenantUsers),
+    fork(watchFetchTenantAnalytics)
   ]);
   console.log('✅ Tenant saga watchers started');
 }

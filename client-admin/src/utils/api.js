@@ -244,6 +244,12 @@ export const superAdminAPI = {
     return apiCall(`/api/super-admin/export-usage-report?${queryString}`);
   },
   
+  // Tenant Analytics
+  getTenantAnalytics: (filters) => {
+    const queryString = new URLSearchParams(filters).toString();
+    return apiCall(`/api/super-admin/tenant-analytics?${queryString}`);
+  },
+  
   // Activity Logs & Monitoring
   getActivityLogs: (params) => {
     const queryString = new URLSearchParams(params).toString();

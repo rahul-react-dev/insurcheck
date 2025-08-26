@@ -8,6 +8,9 @@ import TenantFilters from "../../components/super-admin/TenantFilters";
 import TenantUsersModal from "../../components/super-admin/TenantUsersModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Toast from "../../components/ui/Toast";
+import TenantAnalyticsWidget from "../../components/super-admin/TenantAnalyticsWidget";
+import TenantPerformanceChart from "../../components/super-admin/TenantPerformanceChart";
+import ComplianceTrendsChart from "../../components/super-admin/ComplianceTrendsChart";
 import { useToast } from "../../hooks/useToast";
 import {
   fetchTenantsRequest,
@@ -218,10 +221,10 @@ const TenantManagement = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
-              Tenant Management
+              Tenant Management & Analytics
             </h1>
             <p className="text-purple-100 text-sm sm:text-base lg:text-lg">
-              Manage tenant accounts, subscriptions, and access controls
+              Manage tenant accounts, track usage analytics, and monitor compliance performance
             </p>
             <div className="flex items-center mt-3 sm:mt-4 text-xs sm:text-sm">
               <div className="flex items-center space-x-2">
@@ -260,6 +263,15 @@ const TenantManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Analytics Widgets */}
+      <TenantAnalyticsWidget />
+
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <TenantPerformanceChart />
+        <ComplianceTrendsChart />
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
