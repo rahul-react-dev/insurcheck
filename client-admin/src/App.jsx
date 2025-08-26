@@ -26,6 +26,7 @@ import TenantManagement from './pages/super-admin/TenantManagement'; // Import t
 import DeletedDocumentsManagement from './pages/super-admin/DeletedDocumentsManagement';
 import SystemConfiguration from './pages/super-admin/SystemConfiguration';
 import AnalyticsDashboard from './pages/super-admin/AnalyticsDashboard';
+import RouteHandler from './components/RouteHandler';
 
 
 import AdminLogin from './pages/admin/AdminLogin';
@@ -281,6 +282,9 @@ function App() {
 
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/login" replace />} />
+            
+            {/* Smart route handling for unknown routes */}
+            <Route path="*" element={<RouteHandler />} />
           </Routes>
         </div>
       </Router>
