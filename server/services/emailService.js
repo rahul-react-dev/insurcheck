@@ -3,7 +3,7 @@
  * Handles tenant admin invitation emails using SendGrid
  */
 
-const sgMail = require('@sendgrid/mail');
+import sgMail from '@sendgrid/mail';
 
 /**
  * Initialize SendGrid with API key
@@ -38,7 +38,7 @@ const sendTenantAdminInvitation = async ({ to, tenantName, setupLink, invitedBy 
     const msg = {
       to,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@insurcheck.com',
+        email: process.env.SENDGRID_FROM_EMAIL || 'rahul.soni@solulab.co',
         name: 'InsurCheck Platform'
       },
       subject: `Welcome to InsurCheck - Complete Your Account Setup`,
@@ -172,7 +172,7 @@ If you didn't expect this invitation, please ignore this email.
   `;
 };
 
-module.exports = {
+export {
   initializeEmailService,
   sendTenantAdminInvitation
 };

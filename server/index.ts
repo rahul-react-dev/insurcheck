@@ -151,6 +151,16 @@ async function testDatabaseConnection() {
 async function startServer() {
   try {
     await testDatabaseConnection();
+
+    // Environment variables logging
+    console.log('🔑 JWT_SECRET loaded:', process.env.JWT_SECRET ? 'Present' : 'Missing');
+    console.log('📧 SENDGRID_API_KEY loaded:', process.env.SENDGRID_API_KEY ? 'Present' : 'Missing');
+    console.log('📬 SENDGRID_FROM_EMAIL:', process.env.SENDGRID_FROM_EMAIL || 'Not set');
+    console.log('🌐 FRONTEND_URL:', process.env.FRONTEND_URL || 'Not set');
+
+    // Initialize email service
+    const emailService = await import('./services/emailService.js');
+    emailService.initializeEmailService();
     
     app.listen(PORT, '0.0.0.0', () => {
       const timestamp = new Date().toLocaleTimeString();
