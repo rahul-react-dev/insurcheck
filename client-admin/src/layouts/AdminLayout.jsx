@@ -82,6 +82,12 @@ const AdminLayout = ({ children }) => {
       icon: "fas fa-chart-line",
       roles: ["super-admin"],
     },
+    {
+      name: "Usage Analytics",
+      path: "/super-admin/usage-analytics",
+      icon: "fas fa-chart-bar",
+      roles: ["super-admin"],
+    },
   ];
 
   const filteredNavigation = navigationItems.filter(
@@ -208,9 +214,11 @@ const AdminLayout = ({ children }) => {
                               ? "Tenant Activity Logs"
                               : location.pathname.includes("system-config")
                                 ? "System Configuration"
-                                : location.pathname.includes("analytics")
-                                  ? "Analytics Dashboard"
-                                  : "Super Admin Panel"}
+                                : location.pathname.includes("usage-analytics")
+                                  ? "Usage Analytics Dashboard"
+                                  : location.pathname.includes("analytics")
+                                    ? "Analytics Dashboard"
+                                    : "Super Admin Panel"}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 hidden sm:block">
                   Monitor system performance and manage platform operations
