@@ -196,7 +196,7 @@ const DeletedDocumentsManagement = () => {
       confirmText: "Recover",
       onConfirm: () => {
         console.log('✅ Confirm recovery for document ID:', document.id);
-        dispatch(recoverDocument(document.id));
+        dispatch(recoverDocument({ documentId: document.id }));
         setIsConfirmModalOpen(false);
         setSelectedDocument(null);
       },
@@ -217,7 +217,7 @@ const DeletedDocumentsManagement = () => {
       confirmText: "Delete Permanently",
       onConfirm: () => {
         console.log('✅ Confirm permanent delete for document ID:', document.id);
-        dispatch(permanentlyDeleteDocument(document.id));
+        dispatch(permanentlyDeleteDocument({ documentId: document.id }));
         setIsConfirmModalOpen(false);
         setSelectedDocument(null);
       },
