@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import { config } from '../config/env.js';
 import { db } from '../../db.ts';
-import { users } from '@shared/schema';
+import { users, tenants } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 export const login = async (req, res) => {
@@ -336,6 +336,48 @@ export const adminLogin = async (req, res) => {
         success: false,
         message: 'Invalid email format or insufficient privileges'
       });
+    }
+
+    // For tenant-admin users, check if their tenant account is suspended or deactivated
+    if (user.role === 'tenant-admin' && user.tenantId) {
+      console.log(`Checking tenant status for tenant ID: ${user.tenantId}`);
+      
+      const tenantResult = await db.select()
+        .from(tenants)
+        .where(eq(tenants.id, user.tenantId))
+        .limit(1);
+      
+      if (tenantResult.length === 0) {
+        console.log(`Tenant not found for ID: ${user.tenantId}`);
+        return res.status(401).json({
+          success: false,
+          message: 'Account suspended. Please contact support.'
+        });
+      }
+      
+      const tenant = tenantResult[0];
+      console.log(`Tenant status check - Tenant: ${tenant.name}, Status: ${tenant.status}`);
+      
+      // Prevent login for suspended, deactivated, or cancelled tenants
+      if (['suspended', 'deactivated', 'cancelled', 'trial_expired'].includes(tenant.status)) {
+        console.log(`Login blocked - Tenant ${tenant.name} has status: ${tenant.status}`);
+        
+        // Return appropriate message based on tenant status
+        let message = 'Account suspended. Please contact support.';
+        if (tenant.status === 'deactivated') {
+          message = 'Account has been deactivated. Please contact support.';
+        } else if (tenant.status === 'cancelled') {
+          message = 'Account subscription has been cancelled. Please contact support.';
+        } else if (tenant.status === 'trial_expired') {
+          message = 'Trial period has expired. Please contact support.';
+        }
+        
+        return res.status(403).json({
+          success: false,
+          message: message,
+          tenantStatus: tenant.status
+        });
+      }
     }
 
     // Check if account is locked
