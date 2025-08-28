@@ -35,18 +35,45 @@ import {
 // Fetch invoices saga
 function* fetchInvoicesSaga(action) {
   try {
+    console.log('🔄 fetchInvoicesSaga: Starting invoices request');
     const response = yield call(
       adminAuthApi.getInvoices,
       action.payload
     );
+    console.log('✅ fetchInvoicesSaga: Successfully fetched invoices');
+    
     // Backend returns { success: true, invoices: [...], meta: {...} }
     yield put(fetchInvoicesSuccess({
       invoices: response.invoices || [],
       meta: response.meta || {}
     }));
   } catch (error) {
-    const errorData = JSON.parse(error.message || '{}');
-    yield put(fetchInvoicesFailure(errorData.message || 'Failed to fetch invoices'));
+    console.error('❌ fetchInvoicesSaga: Error caught:', error);
+    
+    let errorMessage = 'Failed to fetch invoices';
+    
+    // CRITICAL: Robust error handling
+    try {
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        if (error.message.startsWith('{')) {
+          try {
+            const errorData = JSON.parse(error.message);
+            errorMessage = errorData.message || errorMessage;
+          } catch (parseError) {
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+    } catch (parseError) {
+      console.error('❌ Error parsing fetchInvoices error:', parseError);
+      errorMessage = 'Failed to fetch invoices - please try again';
+    }
+    
+    yield put(fetchInvoicesFailure(errorMessage));
   }
 }
 
@@ -142,12 +169,43 @@ function* exportInvoicesSaga(action) {
 // Fetch invoice statistics saga
 function* fetchInvoiceStatsSaga(action) {
   try {
+    console.log('🔄 fetchInvoiceStatsSaga: Starting invoice stats request');
     const response = yield call(adminAuthApi.getInvoiceStats);
+    console.log('✅ fetchInvoiceStatsSaga: Successfully fetched stats', response);
+    
     // Backend returns { success: true, data: {...} }
     yield put(fetchInvoiceStatsSuccess(response.data));
   } catch (error) {
-    const errorData = JSON.parse(error.message || '{}');
-    yield put(fetchInvoiceStatsFailure(errorData.message || 'Failed to fetch invoice statistics'));
+    console.error('❌ fetchInvoiceStatsSaga: Error caught:', error);
+    console.error('❌ Error details:', error.endpoint, error.timestamp);
+    
+    let errorMessage = 'Failed to fetch invoice statistics';
+    
+    // CRITICAL: Robust error handling to prevent state corruption
+    try {
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        // Don't try to parse as JSON if it's already a string
+        if (error.message.startsWith('{')) {
+          try {
+            const errorData = JSON.parse(error.message);
+            errorMessage = errorData.message || errorMessage;
+          } catch (parseError) {
+            console.error('❌ JSON parse failed, using raw message:', error.message);
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+    } catch (parseError) {
+      console.error('❌ Error parsing saga error:', parseError);
+      errorMessage = 'Failed to fetch invoice statistics - please try again';
+    }
+    
+    console.log('🔄 fetchInvoiceStatsSaga: Dispatching failure with message:', errorMessage);
+    yield put(fetchInvoiceStatsFailure(errorMessage));
   }
 }
 

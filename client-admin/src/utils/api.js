@@ -89,24 +89,34 @@ export const apiCall = async (endpoint, options = {}) => {
     throw apiError;
   }
 
-    return response.json();
+  return response.json();
     
   } catch (error) {
     // Critical: Isolate errors to prevent blocking other API calls
-    console.error('[API] Request failed:', error);
-    console.error('[API] Endpoint:', endpoint);
-    console.error('[API] Error type:', error.name);
+    console.error('[API] 🚨 Request failed:', error);
+    console.error('[API] 🎯 Endpoint:', endpoint);
+    console.error('[API] 🔍 Error type:', error.name);
+    console.error('[API] 📋 Full error:', error);
+    
+    // CRITICAL: Check if this is already a processed API error
+    if (error.response && error.url) {
+      // This is already our processed API error, don't double-wrap it
+      console.error('[API] ⚠️ Re-throwing processed API error');
+      throw error;
+    }
     
     // Create isolated error that won't corrupt application state
     const isolatedError = new Error(error.message || 'Network Error');
     isolatedError.name = error.name || 'APIError';
     isolatedError.endpoint = endpoint;
     isolatedError.timestamp = new Date().toISOString();
+    isolatedError.isIsolated = true; // Mark as isolated
     
     if (error.name === 'AbortError') {
       isolatedError.message = 'Request timeout - please try again';
     }
     
+    console.error('[API] ✅ Created isolated error:', isolatedError);
     throw isolatedError;
   }
 };

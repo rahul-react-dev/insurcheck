@@ -108,22 +108,22 @@ export const getAdminInvoiceStats = async (req, res) => {
 
     console.log(`📊 Admin fetching invoice stats for tenant ${tenantId}`);
 
-    // Use raw SQL for complex aggregations to avoid Drizzle issues
-    const statsQuery = `
+    // Use Drizzle sql template for complex aggregations with correct enum values
+    console.log(`🔍 Using tenant ID: ${tenantId} for stats query`);
+
+    const result = await db.execute(sql`
       SELECT 
         COUNT(*) as total,
         COALESCE(SUM(total_amount), 0) as total_amount,
         COUNT(*) FILTER (WHERE status = 'paid') as paid_count,
         COALESCE(SUM(total_amount) FILTER (WHERE status = 'paid'), 0) as paid_amount,
-        COUNT(*) FILTER (WHERE status = 'unpaid') as unpaid_count,
-        COALESCE(SUM(total_amount) FILTER (WHERE status = 'unpaid'), 0) as unpaid_amount,
+        COUNT(*) FILTER (WHERE status IN ('draft', 'sent')) as unpaid_count,
+        COALESCE(SUM(total_amount) FILTER (WHERE status IN ('draft', 'sent')), 0) as unpaid_amount,
         COUNT(*) FILTER (WHERE status = 'overdue') as overdue_count,
         COALESCE(SUM(total_amount) FILTER (WHERE status = 'overdue'), 0) as overdue_amount
       FROM invoices 
-      WHERE tenant_id = $1
-    `;
-
-    const result = await db.execute(sql.raw(statsQuery, [tenantId]));
+      WHERE tenant_id = ${tenantId}
+    `);
     const stats = result.rows[0];
 
     console.log(`✅ Admin invoice stats retrieved for tenant ${tenantId}`);
