@@ -2644,14 +2644,20 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req, r
       id: tenant.id,
       tenantId: tenant.id,
       name: tenant.name,
+      tenantName: tenant.name, // Add tenantName field that frontend expects
       email: tenant.email,
       status: tenant.status,
       state: tenant.status, // Alias for state
       subscriptionPlan: 'Basic', // Simplified for working demo
       subscriptionStatus: 'active', // Simplified for working demo
+      trialStatus: tenant.status === 'trial' ? 'active' : 'completed', // Add trial status
+      trialStartDate: tenant.created_at, // Use created_at as trial start
+      trialEndDate: new Date(new Date(tenant.created_at).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from creation
+      accessLevel: tenant.status === 'active' ? 'full' : 'read-only', // Add access level
       userCount: 3, // Placeholder count
       storageUsed: '2.5 GB', // Placeholder
       lastActivity: tenant.updated_at,
+      lastStateChange: tenant.updated_at, // Add field for last state change
       createdAt: tenant.created_at,
       updatedAt: tenant.updated_at
     }));
@@ -2703,6 +2709,176 @@ router.get('/tenant-states', authenticateToken, requireSuperAdmin, async (req, r
     res.status(500).json({ 
       error: 'Failed to fetch tenant states',
       message: error.message 
+    });
+  }
+});
+
+// Update tenant state (deactivate, suspend, etc.)
+router.put('/tenant-states/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const tenantId = parseInt(req.params.id);
+    const { status, reason } = req.body;
+
+    console.log(`📝 Updating tenant state ${tenantId} to status: ${status}`);
+    
+    if (!['active', 'deactivated', 'suspended', 'trial', 'cancelled'].includes(status)) {
+      return res.status(400).json({
+        error: 'Invalid status',
+        message: 'Status must be one of: active, deactivated, suspended, trial, cancelled'
+      });
+    }
+
+    // Check if tenant exists
+    const existingTenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    
+    if (existingTenant.length === 0) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'The specified tenant does not exist'
+      });
+    }
+
+    // Update tenant status
+    const [updatedTenant] = await db.update(tenants)
+      .set({ 
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(tenants.id, tenantId))
+      .returning();
+
+    // If deactivating tenant, set all tenant users to inactive
+    if (status === 'deactivated') {
+      await db.update(users)
+        .set({ isActive: false })
+        .where(eq(users.tenantId, tenantId));
+      
+      console.log(`🔒 Deactivated all users for tenant ${tenantId}`);
+    }
+
+    // If reactivating tenant, set admin users to active
+    if (status === 'active') {
+      await db.update(users)
+        .set({ isActive: true })
+        .where(and(
+          eq(users.tenantId, tenantId),
+          eq(users.role, 'tenant-admin')
+        ));
+      
+      console.log(`🔓 Reactivated admin users for tenant ${tenantId}`);
+    }
+
+    // Log the state change activity (skip if logging fails)
+    try {
+      await db.insert(activityLogs).values({
+        tenantId,
+        userId: req.user.userId,
+        action: 'tenant_status_changed',
+        resource: 'tenant',
+        resourceId: tenantId.toString(),
+        details: { 
+          oldStatus: existingTenant[0].status, 
+          newStatus: status,
+          reason: reason || null,
+          adminId: req.user.userId,
+          adminEmail: req.user.email
+        },
+        level: 'info'
+      });
+    } catch (logError) {
+      console.warn('⚠️ Failed to log tenant state change:', logError.message);
+    }
+
+    console.log(`✅ Tenant state updated: ${tenantId} -> ${status}`);
+    res.json({
+      success: true,
+      message: 'Tenant state updated successfully',
+      data: updatedTenant,
+      accessLevel: status === 'active' ? 'full' : 'read-only'
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating tenant state:', error);
+    res.status(500).json({
+      error: 'Failed to update tenant state',
+      message: error.message
+    });
+  }
+});
+
+// End trial early
+router.put('/tenant-states/:id/end-trial', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const tenantId = parseInt(req.params.id);
+    const { reason } = req.body;
+
+    console.log(`⏰ Ending trial early for tenant ${tenantId}`);
+    
+    // Check if tenant exists and is on trial
+    const existingTenant = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    
+    if (existingTenant.length === 0) {
+      return res.status(404).json({
+        error: 'Tenant not found',
+        message: 'The specified tenant does not exist'
+      });
+    }
+
+    // Update tenant status to trial_expired
+    const [updatedTenant] = await db.update(tenants)
+      .set({ 
+        status: 'trial_expired',
+        updatedAt: new Date()
+      })
+      .where(eq(tenants.id, tenantId))
+      .returning();
+
+    // Set tenant users to read-only access
+    await db.update(users)
+      .set({ 
+        isActive: true, // Keep users active but with limited access
+        updatedAt: new Date()
+      })
+      .where(eq(users.tenantId, tenantId));
+
+    // Log the trial end activity (skip if logging fails)
+    try {
+      await db.insert(activityLogs).values({
+        tenantId,
+        userId: req.user.userId,
+        action: 'trial_ended_manually',
+        resource: 'tenant',
+        resourceId: tenantId.toString(),
+        details: { 
+          endedBy: req.user.email,
+          reason: reason || null,
+          originalStatus: existingTenant[0].status
+        },
+        level: 'warning'
+      });
+    } catch (logError) {
+      console.warn('⚠️ Failed to log trial end activity:', logError.message);
+    }
+
+    console.log(`✅ Trial ended for tenant ${tenantId}`);
+    res.json({
+      success: true,
+      message: 'Trial ended successfully',
+      data: updatedTenant,
+      accessLevel: 'read-only'
+    });
+
+  } catch (error) {
+    console.error('❌ Error ending trial:', error);
+    res.status(500).json({
+      error: 'Failed to end trial',
+      message: error.message
     });
   }
 });
