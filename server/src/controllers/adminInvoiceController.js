@@ -108,43 +108,50 @@ export const getAdminInvoiceStats = async (req, res) => {
 
     console.log(`📊 Admin fetching invoice stats for tenant ${tenantId}`);
 
-    const statsQuery = db
-      .select({
-        total: count(),
-        totalAmount: sql`coalesce(sum(${invoices.totalAmount}), 0)`,
-        paidCount: sql`count(*) filter (where ${invoices.status} = 'paid')`,
-        paidAmount: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'paid'), 0)`,
-        unpaidCount: sql`count(*) filter (where ${invoices.status} = 'unpaid')`,
-        unpaidAmount: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'unpaid'), 0)`,
-        overdueCount: sql`count(*) filter (where ${invoices.status} = 'overdue')`,
-        overdueAmount: sql`coalesce(sum(${invoices.totalAmount}) filter (where ${invoices.status} = 'overdue'), 0)`
-      })
-      .from(invoices)
-      .where(eq(invoices.tenantId, tenantId));
+    // Use raw SQL for complex aggregations to avoid Drizzle issues
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total,
+        COALESCE(SUM(total_amount), 0) as total_amount,
+        COUNT(*) FILTER (WHERE status = 'paid') as paid_count,
+        COALESCE(SUM(total_amount) FILTER (WHERE status = 'paid'), 0) as paid_amount,
+        COUNT(*) FILTER (WHERE status = 'unpaid') as unpaid_count,
+        COALESCE(SUM(total_amount) FILTER (WHERE status = 'unpaid'), 0) as unpaid_amount,
+        COUNT(*) FILTER (WHERE status = 'overdue') as overdue_count,
+        COALESCE(SUM(total_amount) FILTER (WHERE status = 'overdue'), 0) as overdue_amount
+      FROM invoices 
+      WHERE tenant_id = $1
+    `;
 
-    const stats = await statsQuery;
+    const result = await db.execute(sql.raw(statsQuery, [tenantId]));
+    const stats = result.rows[0];
 
     console.log(`✅ Admin invoice stats retrieved for tenant ${tenantId}`);
 
     res.json({
       success: true,
       data: {
-        total: parseInt(stats[0].total),
-        totalAmount: parseFloat(stats[0].totalAmount),
-        paid: parseInt(stats[0].paidCount),
-        paidAmount: parseFloat(stats[0].paidAmount),
-        unpaid: parseInt(stats[0].unpaidCount),
-        unpaidAmount: parseFloat(stats[0].unpaidAmount),
-        overdue: parseInt(stats[0].overdueCount),
-        overdueAmount: parseFloat(stats[0].overdueAmount)
+        total: parseInt(stats.total || 0),
+        totalAmount: parseFloat(stats.total_amount || 0),
+        paid: parseInt(stats.paid_count || 0),
+        paidAmount: parseFloat(stats.paid_amount || 0),
+        unpaid: parseInt(stats.unpaid_count || 0),
+        unpaidAmount: parseFloat(stats.unpaid_amount || 0),
+        overdue: parseInt(stats.overdue_count || 0),
+        overdueAmount: parseFloat(stats.overdue_amount || 0)
       }
     });
 
   } catch (error) {
-    console.error('Get admin invoice stats error:', error);
+    console.error('❌ Get admin invoice stats error:', error);
+    console.error('❌ Error details:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    
+    // Don't let this error crash the server or block other requests
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch invoice statistics'
+      message: 'Failed to fetch invoice statistics',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };

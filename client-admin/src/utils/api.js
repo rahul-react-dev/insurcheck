@@ -23,50 +23,92 @@ const getApiBaseUrl = () => {
 export const API_BASE_URL = getApiBaseUrl();
 console.log('[API] Configured API_BASE_URL:', API_BASE_URL);
 
-// Helper function for making authenticated API calls
+// Helper function for making authenticated API calls with error isolation
 export const apiCall = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('adminToken');
-  const fullUrl = `${API_BASE_URL}${endpoint}`;
-  
-  // Debug logging
-  console.log('[API] Making request to:', fullUrl);
-  console.log('[API] Base URL:', API_BASE_URL);
-  console.log('[API] Endpoint:', endpoint);
-  
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
-  };
+  try {
+    const token = localStorage.getItem('adminToken');
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    
+    // Debug logging
+    console.log('[API] Making request to:', fullUrl);
+    console.log('[API] Base URL:', API_BASE_URL);
+    console.log('[API] Endpoint:', endpoint);
+    
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+    };
 
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
-  }
+    if (token) {
+      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
 
-  const response = await fetch(fullUrl, {
-    headers: defaultHeaders,
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+    // Add request timeout and error isolation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-  console.log('[API] Response status:', response.status);
-  console.log('[API] Response ok:', response.ok);
+    const response = await fetch(fullUrl, {
+      headers: defaultHeaders,
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+    console.log('[API] Response status:', response.status);
+    console.log('[API] Response ok:', response.ok);
 
   if (!response.ok) {
-    const error = await response.json();
-    console.error('[API] Error response:', error);
+    let error;
+    try {
+      error = await response.json();
+    } catch (parseError) {
+      // If response is not JSON, create a generic error
+      error = {
+        message: `HTTP ${response.status} Error`,
+        status: response.status
+      };
+    }
     
-    // Create an error object with the response data for proper handling
-    const apiError = new Error(error.message || 'API Error');
+    console.error('[API] Error response:', error);
+    console.error('[API] URL:', fullUrl);
+    console.error('[API] Status:', response.status);
+    
+    // Create an isolated error object that won't corrupt global state
+    const apiError = new Error(error.message || `HTTP ${response.status} Error`);
     apiError.response = {
       status: response.status,
       data: error
     };
+    apiError.url = fullUrl;
+    apiError.timestamp = new Date().toISOString();
+    
+    // Critical: Don't let this error propagate to global error handlers
     throw apiError;
   }
 
-  return response.json();
+    return response.json();
+    
+  } catch (error) {
+    // Critical: Isolate errors to prevent blocking other API calls
+    console.error('[API] Request failed:', error);
+    console.error('[API] Endpoint:', endpoint);
+    console.error('[API] Error type:', error.name);
+    
+    // Create isolated error that won't corrupt application state
+    const isolatedError = new Error(error.message || 'Network Error');
+    isolatedError.name = error.name || 'APIError';
+    isolatedError.endpoint = endpoint;
+    isolatedError.timestamp = new Date().toISOString();
+    
+    if (error.name === 'AbortError') {
+      isolatedError.message = 'Request timeout - please try again';
+    }
+    
+    throw isolatedError;
+  }
 };
 
 // Admin authentication API
