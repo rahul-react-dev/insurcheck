@@ -77,6 +77,11 @@ const Invoices = () => {
     exportError = null,
   } = useSelector((state) => state.invoices || {});
 
+  // Debug logging for stats
+  console.log('🔍 Debug: invoiceStats from Redux:', invoiceStats);
+  console.log('🔍 Debug: invoiceStats.total:', invoiceStats.total);
+  console.log('🔍 Debug: typeof invoiceStats.total:', typeof invoiceStats.total);
+
   // Enhanced state for filters
   const [activeFilters, setActiveFilters] = useState({
     dateRange: "",

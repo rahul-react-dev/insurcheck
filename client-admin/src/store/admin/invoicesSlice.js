@@ -169,8 +169,10 @@ const invoicesSlice = createSlice({
     },
     fetchInvoiceStatsSuccess: (state, action) => {
       state.statsLoading = false;
-      state.invoiceStats = action.payload.data || state.invoiceStats;
+      // Saga sends response.data as payload directly
+      state.invoiceStats = action.payload || state.invoiceStats;
       state.statsError = null;
+      console.log('🔄 Redux: Updated invoiceStats with:', action.payload);
     },
     fetchInvoiceStatsFailure: (state, action) => {
       state.statsLoading = false;
