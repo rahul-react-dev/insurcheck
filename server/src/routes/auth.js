@@ -29,7 +29,7 @@ router.post('/super-admin/login', [
 
 // Admin-specific routes (tenant-admin) - following same pattern as super-admin
 router.post('/admin/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('email').isEmail().withMessage('Please enter a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], authController.adminLogin);
 
@@ -39,7 +39,7 @@ router.post('/admin/forgot-password', [
 
 // Keep legacy routes for backward compatibility
 router.post('/admin-login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('email').isEmail().withMessage('Please enter a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], authController.adminLogin);
 
