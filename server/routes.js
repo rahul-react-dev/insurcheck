@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { db } from "./db.js";
 import {
   users,
@@ -836,7 +837,7 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
       .returning();
 
     // Create tenant admin user (inactive until password is set)
-    const invitationToken = require('crypto').randomBytes(32).toString('hex');
+    const invitationToken = crypto.randomBytes(32).toString('hex');
     const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     const [tenantAdmin] = await db.insert(users)
