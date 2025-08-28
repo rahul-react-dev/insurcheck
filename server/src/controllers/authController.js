@@ -319,7 +319,7 @@ export const adminLogin = async (req, res) => {
     }
 
     const user = userResult[0];
-    console.log(`Found user - ID: ${user.id}, Role: ${user.role}, Active: ${user.isActive}`);
+    console.log(`Found user - ID: ${user.id}, Role: ${user.role}, Active: ${user.isActive}, TenantId: ${user.tenantId}`);
 
     // Check if user is active
     if (user.isActive === false) {
@@ -336,6 +336,51 @@ export const adminLogin = async (req, res) => {
         success: false,
         message: 'Invalid email format or insufficient privileges'
       });
+    }
+
+    // For tenant admins, check if their tenant is suspended/deactivated
+    if (user.role === 'tenant-admin' && user.tenantId) {
+      try {
+        const { tenants } = await import('@shared/schema');
+        const tenantResult = await db.select()
+          .from(tenants)
+          .where(eq(tenants.id, user.tenantId))
+          .limit(1);
+
+        if (tenantResult.length === 0) {
+          console.log(`Tenant not found for user: ${email}, tenantId: ${user.tenantId}`);
+          return res.status(401).json({
+            success: false,
+            message: 'Account suspended, please contact support'
+          });
+        }
+
+        const tenant = tenantResult[0];
+        console.log(`Tenant status check - TenantId: ${tenant.id}, Status: ${tenant.status}`);
+
+        // Block login if tenant is suspended, deactivated, or cancelled
+        if (['suspended', 'deactivated', 'cancelled'].includes(tenant.status)) {
+          console.log(`Login blocked - Tenant ${tenant.id} has status: ${tenant.status}`);
+          return res.status(401).json({
+            success: false,
+            message: 'Account suspended, please contact support'
+          });
+        }
+
+        // Optional: Block login if trial has expired  
+        if (tenant.status === 'trial_expired') {
+          console.log(`Login blocked - Tenant ${tenant.id} trial has expired`);
+          return res.status(401).json({
+            success: false,
+            message: 'Trial period has ended, please contact support to upgrade your account'
+          });
+        }
+
+      } catch (tenantCheckError) {
+        console.error('Error checking tenant status:', tenantCheckError);
+        // Continue with login if tenant check fails to avoid blocking valid logins
+        console.warn('⚠️ Continuing with login despite tenant check failure');
+      }
     }
 
     // Check if account is locked
