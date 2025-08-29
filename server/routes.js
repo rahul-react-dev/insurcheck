@@ -292,7 +292,7 @@ router.get(
       const { 
         page = 1, 
         limit = 10, 
-        level = 'error',
+        level,
         tenantId,
         tenantName,
         userId,
@@ -307,7 +307,8 @@ router.get(
       // Build query conditions
       const conditions = [];
 
-      if (level) {
+      // Only filter by level if explicitly provided
+      if (level && level !== '') {
         conditions.push(eq(activityLogs.level, level));
       }
 
@@ -412,7 +413,15 @@ router.get(
         .offset(offset);
 
       const logs = result.map(log => {
-        const isErrorLog = level === 'error';
+        // Parse details if it's a JSON string
+        let parsedDetails = log.details;
+        if (typeof log.details === 'string') {
+          try {
+            parsedDetails = JSON.parse(log.details);
+          } catch (e) {
+            parsedDetails = { message: log.details };
+          }
+        }
         
         // Create consistent log data structure
         const logData = {
@@ -428,31 +437,19 @@ router.get(
                    log.level === 'error' ? 'High' : 
                    log.level === 'warning' ? 'Medium' : 'Low',
           status: log.level === 'error' ? 'failed' : 'success',
-          userType: log.userEmail === 'System' ? 'system' : 'user',
+          userType: log.userEmail === 'System' ? 'system' : 
+                   log.userEmail && log.userEmail.includes('@') ? 'user' : 'admin',
           level: log.level,
-          resource: log.resource || 'System',
-          details: typeof log.details === 'object' ? 
-                  log.details?.message || log.action || 'No details available' : 
-                  log.details || log.action || 'No details available',
-          message: typeof log.details === 'object' ? 
-                  log.details?.message || log.action || 'No details available' : 
-                  log.details || log.action || 'No details available'
+          resource: log.resource || 'system',
+          details: parsedDetails?.message || parsedDetails?.reason || log.action || 'No details available',
+          message: parsedDetails?.message || parsedDetails?.reason || log.action || 'No details available',
+          errorType: log.action || 'Unknown',
+          affectedTenant: log.tenantName || 'System',
+          action: log.action,
+          tenant: log.tenantName || 'System'
         };
 
-        if (isErrorLog) {
-          return {
-            ...logData,
-            errorType: log.action || 'Unknown Error',
-            affectedTenant: log.tenantName || 'System'
-          };
-        } else {
-          return {
-            ...logData,
-            action: log.action,
-            tenant: log.tenantName || 'System',
-            affectedTenant: log.tenantName || 'System'
-          };
-        }
+        return logData;
       });
 
       const totalPages = Math.ceil(total / parseInt(limit));
@@ -469,7 +466,7 @@ router.get(
           totalPages
         },
         filters: {
-          level,
+          level: level || null,
           tenantId,
           tenantName,
           userId,
