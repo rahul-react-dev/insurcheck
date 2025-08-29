@@ -985,6 +985,30 @@ router.put('/tenants/:id', authenticateToken, requireSuperAdmin, async (req, res
       .where(eq(tenants.id, tenantId))
       .returning();
 
+    // Log status change activity if status was updated
+    if (status && status !== existingTenant[0].status) {
+      try {
+        await db.insert(activityLogs).values({
+          tenantId,
+          userId: req.user.userId,
+          action: 'tenant_status_changed',
+          resource: 'tenant',
+          resourceId: tenantId.toString(),
+          details: { 
+            oldStatus: existingTenant[0].status, 
+            newStatus: status,
+            reason: `Manual ${status === 'suspended' ? 'suspension' : status === 'active' ? 'activation' : status} by super admin`,
+            adminId: req.user.userId,
+            adminEmail: req.user.email
+          },
+          level: 'info'
+        });
+        console.log(`📝 Activity logged: Tenant ${tenantId} status changed from ${existingTenant[0].status} to ${status}`);
+      } catch (logError) {
+        console.warn('⚠️ Failed to log tenant status change:', logError.message);
+      }
+    }
+
     // Handle subscription plan update
     if (subscriptionPlan && subscriptionPlan !== 'No Plan') {
       try {
