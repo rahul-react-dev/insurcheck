@@ -100,7 +100,6 @@ export const documents = pgTable("documents", {
   originalName: text("original_name").notNull(),
   fileSize: integer("file_size").notNull(),
   mimeType: text("mime_type").notNull(),
-  storagePath: text("storage_path"), // Path in object storage
   status: documentStatusEnum("status").notNull().default('active'),
   deletedAt: timestamp("deleted_at"),
   deletedBy: varchar("deleted_by").references(() => users.id),

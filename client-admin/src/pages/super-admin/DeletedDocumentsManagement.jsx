@@ -82,12 +82,6 @@ const DeletedDocumentsManagement = () => {
     dispatch(fetchDeletedDocumentsRequest({ ...filters, sortBy, sortOrder, ...pagination }));
   };
 
-  const handleUploadComplete = (uploadedDocuments) => {
-    console.log('Documents uploaded successfully:', uploadedDocuments);
-    // Refresh the deleted documents list to show updated data
-    dispatch(fetchDeletedDocumentsRequest({ ...filters, ...pagination }));
-  };
-
   const handleExport = (format) => {
     dispatch(exportDeletedDocuments({ format, ...filters }));
     setExportDropdownOpen(false);
@@ -353,7 +347,6 @@ const DeletedDocumentsManagement = () => {
           onDownloadDocument={handleDownloadDocument}
           onRecoverDocument={handleRecoverDocument}
           onDeleteDocument={handlePermanentDelete}
-          onUploadComplete={handleUploadComplete}
         />
       </Card>
 
