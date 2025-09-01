@@ -18,6 +18,7 @@ import {
   tenantConfig,
   complianceRules,
 } from "../shared/schema.js";
+import { DocumentStorageService } from "./objectStorage.js";
 import {
   eq,
   and,
@@ -5373,6 +5374,253 @@ router.post('/super-admin/usage-analytics/export', authenticateToken, requireSup
       success: false,
       message: 'Failed to export usage analytics report',
       error: error.message
+    });
+  }
+});
+
+// ===================== DOCUMENT UPLOAD API ROUTES =====================
+
+// Get presigned upload URL for document upload
+router.post('/api/documents/upload-url', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const { fileName, tenantId, userId } = req.body;
+    
+    console.log('📤 Generating upload URL for document:', { fileName, tenantId, userId });
+
+    if (!fileName || !tenantId || !userId) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'fileName, tenantId, and userId are required'
+      });
+    }
+
+    const documentStorageService = new DocumentStorageService();
+    const uploadUrl = await documentStorageService.getDocumentUploadURL(
+      parseInt(tenantId),
+      userId,
+      fileName
+    );
+
+    console.log('✅ Upload URL generated successfully');
+    res.json({ 
+      uploadUrl,
+      fileName,
+      expiresIn: 900 // 15 minutes
+    });
+
+  } catch (error) {
+    console.error('❌ Error generating upload URL:', error);
+    res.status(500).json({
+      error: 'Failed to generate upload URL',
+      message: error.message
+    });
+  }
+});
+
+// Complete document upload and save to database
+router.post('/api/documents/complete-upload', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const {
+      fileName,
+      originalName,
+      fileSize,
+      mimeType,
+      tenantId,
+      userId,
+      uploadUrl
+    } = req.body;
+
+    console.log('✅ Completing document upload:', { fileName, originalName, tenantId, userId });
+
+    if (!fileName || !originalName || !fileSize || !mimeType || !tenantId || !userId || !uploadUrl) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'All document metadata fields are required'
+      });
+    }
+
+    // Extract storage path from upload URL
+    const urlObj = new URL(uploadUrl);
+    const storagePath = urlObj.pathname;
+
+    // Create document record in database
+    const [newDocument] = await db.insert(documents)
+      .values({
+        tenantId: parseInt(tenantId),
+        userId,
+        filename: fileName,
+        originalName,
+        fileSize: parseInt(fileSize),
+        mimeType,
+        storagePath,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+
+    // Log activity
+    await db.insert(activityLogs).values({
+      tenantId: parseInt(tenantId),
+      userId: req.user.userId,
+      action: 'document_uploaded',
+      resource: 'document',
+      resourceId: newDocument.id,
+      details: {
+        fileName: originalName,
+        fileSize,
+        mimeType,
+        uploadedBy: req.user.email
+      },
+      level: 'info'
+    });
+
+    console.log('✅ Document upload completed and recorded:', newDocument.id);
+    res.json({
+      message: 'Document uploaded successfully',
+      document: newDocument
+    });
+
+  } catch (error) {
+    console.error('❌ Error completing document upload:', error);
+    res.status(500).json({
+      error: 'Failed to complete document upload',
+      message: error.message
+    });
+  }
+});
+
+// Download document from storage
+router.get('/api/documents/:id/download', authenticateToken, async (req, res) => {
+  try {
+    const documentId = req.params.id;
+    console.log('⬇️ Downloading document:', documentId);
+
+    // Get document from database
+    const [document] = await db.select()
+      .from(documents)
+      .where(eq(documents.id, documentId))
+      .limit(1);
+
+    if (!document) {
+      return res.status(404).json({
+        error: 'Document not found',
+        message: 'The requested document does not exist'
+      });
+    }
+
+    // Check user permissions (Super Admin can access all, others need tenant match)
+    if (req.user.role !== 'super-admin' && document.tenantId !== req.user.tenantId) {
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'You do not have permission to access this document'
+      });
+    }
+
+    if (!document.storagePath) {
+      return res.status(404).json({
+        error: 'File not found',
+        message: 'Document file is not available in storage'
+      });
+    }
+
+    // Download from storage
+    const documentStorageService = new DocumentStorageService();
+    const file = await documentStorageService.getDocumentFile(document.storagePath);
+    
+    await documentStorageService.downloadDocument(file, res);
+
+    // Log download activity
+    await db.insert(activityLogs).values({
+      tenantId: document.tenantId,
+      userId: req.user.userId,
+      action: 'document_downloaded',
+      resource: 'document',
+      resourceId: document.id,
+      details: {
+        fileName: document.originalName,
+        downloadedBy: req.user.email
+      },
+      level: 'info'
+    });
+
+    console.log('✅ Document downloaded:', documentId);
+
+  } catch (error) {
+    console.error('❌ Error downloading document:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Failed to download document',
+        message: error.message
+      });
+    }
+  }
+});
+
+// Delete document (move to deleted status)
+router.delete('/api/documents/:id', authenticateToken, async (req, res) => {
+  try {
+    const documentId = req.params.id;
+    console.log('🗑️ Soft deleting document:', documentId);
+
+    // Get document from database
+    const [document] = await db.select()
+      .from(documents)
+      .where(eq(documents.id, documentId))
+      .limit(1);
+
+    if (!document) {
+      return res.status(404).json({
+        error: 'Document not found',
+        message: 'The requested document does not exist'
+      });
+    }
+
+    // Check permissions
+    if (req.user.role !== 'super-admin' && document.tenantId !== req.user.tenantId) {
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'You do not have permission to delete this document'
+      });
+    }
+
+    // Soft delete the document
+    const [deletedDocument] = await db.update(documents)
+      .set({
+        status: 'deleted',
+        deletedAt: new Date(),
+        deletedBy: req.user.userId,
+        updatedAt: new Date()
+      })
+      .where(eq(documents.id, documentId))
+      .returning();
+
+    // Log deletion activity
+    await db.insert(activityLogs).values({
+      tenantId: document.tenantId,
+      userId: req.user.userId,
+      action: 'document_deleted',
+      resource: 'document',
+      resourceId: document.id,
+      details: {
+        fileName: document.originalName,
+        deletedBy: req.user.email,
+        reason: 'User deletion'
+      },
+      level: 'warning'
+    });
+
+    console.log('✅ Document soft deleted:', documentId);
+    res.json({
+      message: 'Document deleted successfully',
+      document: deletedDocument
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting document:', error);
+    res.status(500).json({
+      error: 'Failed to delete document',
+      message: error.message
     });
   }
 });

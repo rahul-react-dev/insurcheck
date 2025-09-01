@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Button from "../ui/Button";
 import Pagination from "../ui/Pagination";
 import { TableSkeleton } from "../ui/SkeletonLoader";
+import DocumentUploader from "../ui/DocumentUploader";
 
 export const DeletedDocumentsTable = ({
   documents,
@@ -15,6 +16,7 @@ export const DeletedDocumentsTable = ({
   onDownloadDocument,
   onRecoverDocument,
   onDeleteDocument,
+  onUploadComplete,
   actionLoading = {},
 }) => {
   const [sortConfig, setSortConfig] = useState({
@@ -77,6 +79,13 @@ export const DeletedDocumentsTable = ({
     );
   };
 
+  const handleUploadComplete = (uploadedDocuments) => {
+    console.log('Documents uploaded:', uploadedDocuments);
+    if (onUploadComplete) {
+      onUploadComplete(uploadedDocuments);
+    }
+  };
+
   if (loading) {
     return (
       <div className="overflow-hidden">
@@ -95,12 +104,45 @@ export const DeletedDocumentsTable = ({
         <p className="text-gray-500">
           No deleted documents found matching your criteria.
         </p>
+        <div className="mt-6">
+          <DocumentUploader
+            onUploadComplete={handleUploadComplete}
+            tenantId={1} // Demo tenant ID for super admin uploads
+            userId="super-admin"
+            className="mx-auto"
+          />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="overflow-hidden">
+      {/* Table Header with Upload Button */}
+      <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Deleted Documents</h3>
+          <p className="text-sm text-gray-500">
+            {totalCount} document(s) found
+          </p>
+        </div>
+        <DocumentUploader
+          onUploadComplete={handleUploadComplete}
+          tenantId={1}
+          userId="super-admin"
+          trigger={
+            <Button
+              variant="outline"
+              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+              data-testid="button-upload-new-document"
+            >
+              <i className="fas fa-upload mr-2"></i>
+              Upload Document
+            </Button>
+          }
+        />
+      </div>
+
       {/* Desktop Table */}
       <div className="hidden lg:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
