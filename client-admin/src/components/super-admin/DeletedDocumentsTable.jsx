@@ -80,7 +80,7 @@ export const DeletedDocumentsTable = ({
   if (loading) {
     return (
       <div className="overflow-hidden">
-        <TableSkeleton rows={5} columns={7} />
+        <TableSkeleton rows={5} columns={8} />
       </div>
     );
   }
@@ -124,8 +124,23 @@ export const DeletedDocumentsTable = ({
                   <i className={getSortIcon("name")}></i>
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Version
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("tenantName")}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Tenant Name</span>
+                  <i className={getSortIcon("tenantName")}></i>
+                </div>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort("userName")}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>User Name</span>
+                  <i className={getSortIcon("userName")}></i>
+                </div>
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -143,15 +158,6 @@ export const DeletedDocumentsTable = ({
                 <div className="flex items-center space-x-1">
                   <span>Deletion Date</span>
                   <i className={getSortIcon("deletedAt")}></i>
-                </div>
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort("originalOwner")}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>Original Owner</span>
-                  <i className={getSortIcon("originalOwner")}></i>
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -180,27 +186,38 @@ export const DeletedDocumentsTable = ({
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getVersionBadge("1.0")}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div className="flex items-center">
+                    <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <i className="fas fa-building text-blue-600 text-xs"></i>
+                    </div>
+                    <span>{document.tenantName || "Unknown Tenant"}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div className="flex items-center">
+                    <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <i className="fas fa-user text-green-600 text-xs"></i>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{document.userName || "Unknown User"}</div>
+                      <div className="text-xs text-gray-500">{document.userEmail || ""}</div>
+                    </div>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="flex items-center">
                     <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
                       <i className="fas fa-user-shield text-red-600 text-xs"></i>
                     </div>
-                    <span>{document.deletedByEmail || "System Admin"}</span>
+                    <div>
+                      <div className="text-sm font-medium">{document.deletedByName || "System Admin"}</div>
+                      <div className="text-xs text-gray-500">{document.deletedByEmail || ""}</div>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(document.deletedAt)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <i className="fas fa-user text-blue-600 text-xs"></i>
-                    </div>
-                    <span>{document.userEmail || "Unknown User"}</span>
-                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">

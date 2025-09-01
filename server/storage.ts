@@ -625,22 +625,36 @@ export const storage = {
       tenantId: schema.documents.tenantId,
       tenantName: schema.tenants.name,
       userId: schema.documents.userId,
+      userName: sql<string>`COALESCE(${schema.users.firstName} || ' ' || ${schema.users.lastName}, ${schema.users.email})`.as('user_name'),
       userEmail: schema.users.email,
-      name: schema.documents.name,
+      filename: schema.documents.filename,
       originalName: schema.documents.originalName,
       mimeType: schema.documents.mimeType,
-      size: schema.documents.size,
+      fileSize: schema.documents.fileSize,
       deletedAt: schema.documents.deletedAt,
       deletedBy: schema.documents.deletedBy,
-      deletedByEmail: schema.users.email,
+      deletedByName: sql<string>`COALESCE(deleter.first_name || ' ' || deleter.last_name, deleter.email)`.as('deleted_by_name'),
+      deletedByEmail: sql<string>`deleter.email`.as('deleted_by_email'),
       createdAt: schema.documents.createdAt
     })
     .from(schema.documents)
     .leftJoin(schema.tenants, eq(schema.documents.tenantId, schema.tenants.id))
     .leftJoin(schema.users, eq(schema.documents.userId, schema.users.id))
+    .leftJoin({ deleter: schema.users }, eq(schema.documents.deletedBy, sql`deleter.id`))
     .where(eq(schema.documents.status, 'deleted'));
 
     const conditions = [eq(schema.documents.status, 'deleted')];
+
+    // Add search functionality
+    if (filters.searchTerm) {
+      conditions.push(
+        or(
+          ilike(schema.documents.filename, `%${filters.searchTerm}%`),
+          ilike(schema.documents.originalName, `%${filters.searchTerm}%`),
+          ilike(schema.tenants.name, `%${filters.searchTerm}%`)
+        )
+      );
+    }
 
     if (filters.tenantId) {
       conditions.push(eq(schema.documents.tenantId, filters.tenantId));
@@ -658,11 +672,23 @@ export const storage = {
       query = query.where(and(...conditions));
     }
 
+    // Apply sorting
+    if (filters.sortBy && filters.sortOrder) {
+      const sortField = filters.sortBy === 'tenantName' ? schema.tenants.name :
+                       filters.sortBy === 'userName' ? sql`COALESCE(${schema.users.firstName} || ' ' || ${schema.users.lastName}, ${schema.users.email})` :
+                       filters.sortBy === 'filename' ? schema.documents.filename :
+                       filters.sortBy === 'deletedAt' ? schema.documents.deletedAt :
+                       schema.documents.deletedAt; // default
+
+      query = filters.sortOrder === 'asc' ? query.orderBy(asc(sortField)) : query.orderBy(desc(sortField));
+    } else {
+      query = query.orderBy(desc(schema.documents.deletedAt));
+    }
+
     const totalQuery = db.select({ count: count() }).from(schema.documents).where(and(...conditions));
 
     const [data, total] = await Promise.all([
       query
-        .orderBy(desc(schema.documents.deletedAt))
         .limit(filters.limit)
         .offset((filters.page - 1) * filters.limit),
       totalQuery

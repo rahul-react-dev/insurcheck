@@ -2996,10 +2996,29 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
 
     console.log('📋 Fetching deleted documents with params:', req.query);
 
-    let query = db.select()
+    let query = db.select({
+      documentId: documents.id,
+      tenantId: documents.tenantId,
+      tenantName: tenants.name,
+      userId: documents.userId,
+      userFirstName: users.firstName,
+      userLastName: users.lastName,
+      userEmail: users.email,
+      filename: documents.filename,
+      originalName: documents.originalName,
+      mimeType: documents.mimeType,
+      fileSize: documents.fileSize,
+      deletedAt: documents.deletedAt,
+      deletedBy: documents.deletedBy,
+      deletedByFirstName: sql`deleter.first_name`,
+      deletedByLastName: sql`deleter.last_name`,
+      deletedByEmail: sql`deleter.email`,
+      createdAt: documents.createdAt
+    })
     .from(documents)
     .leftJoin(tenants, eq(documents.tenantId, tenants.id))
     .leftJoin(users, eq(documents.userId, users.id))
+    .leftJoin(sql`users as deleter`, eq(documents.deletedBy, sql`deleter.id`))
     .where(eq(documents.status, 'deleted'));
 
     const conditions = [eq(documents.status, 'deleted')];
@@ -3010,13 +3029,14 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
         or(
           ilike(documents.filename, `%${searchTerm}%`),
           ilike(documents.originalName, `%${searchTerm}%`),
-          ilike(users.email, `%${searchTerm}%`)
+          ilike(users.email, `%${searchTerm}%`),
+          ilike(tenants.name, `%${searchTerm}%`)
         )
       );
     }
 
     if (deletedBy) {
-      conditions.push(ilike(sql`deleted_by_user.email`, `%${deletedBy}%`));
+      conditions.push(ilike(sql`deleter.email`, `%${deletedBy}%`));
     }
 
     if (originalOwner) {
@@ -3047,10 +3067,13 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
       .from(documents)
       .leftJoin(tenants, eq(documents.tenantId, tenants.id))
       .leftJoin(users, eq(documents.userId, users.id))
+      .leftJoin(sql`users as deleter`, eq(documents.deletedBy, sql`deleter.id`))
       .where(and(...conditions));
 
     // Apply sorting
     const sortField = sortBy === 'deletedAt' ? documents.deletedAt : 
+                     sortBy === 'tenantName' ? tenants.name :
+                     sortBy === 'userName' ? users.firstName :
                      sortBy === 'name' ? documents.filename :
                      sortBy === 'size' ? documents.fileSize :
                      documents.deletedAt;
@@ -3069,24 +3092,38 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
     const total = totalCountResult[0]?.count || 0;
     const totalPages = Math.ceil(total / parseInt(limit));
 
-    // Flatten the nested structure
-    const flattenedDocs = deletedDocs.map(doc => ({
-      id: doc.documents.id,
-      tenantId: doc.documents.tenantId,
-      tenantName: doc.tenants?.name || 'Unknown Tenant',
-      userId: doc.documents.userId,
-      userEmail: doc.users?.email || 'Unknown User',
-      name: doc.documents.filename,
-      originalName: doc.documents.originalName,
-      mimeType: doc.documents.mimeType,
-      size: doc.documents.fileSize,
-      deletedAt: doc.documents.deletedAt,
-      deletedBy: doc.documents.deletedBy,
-      deletedByEmail: 'N/A', // Can be enhanced later
-      createdAt: doc.documents.createdAt,
-      downloadUrl: `/api/documents/${doc.documents.id}/download`,
-      viewUrl: `/api/documents/${doc.documents.id}/view`
-    }));
+    // Format the response with proper user names
+    const flattenedDocs = deletedDocs.map(doc => {
+      // Build user name from first and last name, fallback to email
+      const userName = doc.userFirstName && doc.userLastName 
+        ? `${doc.userFirstName} ${doc.userLastName}`.trim()
+        : doc.userEmail || 'Unknown User';
+      
+      // Build deleted-by user name
+      const deletedByName = doc.deletedByFirstName && doc.deletedByLastName
+        ? `${doc.deletedByFirstName} ${doc.deletedByLastName}`.trim()
+        : doc.deletedByEmail || 'System Admin';
+
+      return {
+        id: doc.documentId,
+        tenantId: doc.tenantId,
+        tenantName: doc.tenantName || 'Unknown Tenant',
+        userId: doc.userId,
+        userName: userName,
+        userEmail: doc.userEmail || 'Unknown User',
+        name: doc.filename,
+        originalName: doc.originalName,
+        mimeType: doc.mimeType,
+        size: doc.fileSize,
+        deletedAt: doc.deletedAt,
+        deletedBy: doc.deletedBy,
+        deletedByName: deletedByName,
+        deletedByEmail: doc.deletedByEmail || 'N/A',
+        createdAt: doc.createdAt,
+        downloadUrl: `/api/documents/${doc.documentId}/download`,
+        viewUrl: `/api/documents/${doc.documentId}/view`
+      };
+    });
 
     console.log(`✅ Retrieved ${deletedDocs.length} deleted documents (page ${page}/${totalPages}, total: ${total})`);
 
