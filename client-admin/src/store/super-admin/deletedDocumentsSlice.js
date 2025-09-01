@@ -23,7 +23,14 @@ const initialState = {
   totalCount: 0,
   appliedFilters: {},
   exportLoading: false,
-  actionLoading: {}
+  actionLoading: {},
+  // File operations
+  fileOperations: {
+    uploads: {}, // Track upload progress per document ID
+    downloads: {}, // Track download states per document ID
+    loading: false,
+    error: null
+  }
 };
 
 const deletedDocumentsSlice = createSlice({
@@ -226,6 +233,80 @@ const deletedDocumentsSlice = createSlice({
     // Document view error
     setDocumentViewError: (state, action) => {
       state.error = action.payload;
+    },
+
+    // File Upload Actions
+    fileUploadStart: (state, action) => {
+      const documentId = action.payload.documentId;
+      state.fileOperations.uploads[documentId] = {
+        loading: true,
+        progress: 0,
+        error: null
+      };
+    },
+    fileUploadProgress: (state, action) => {
+      const { documentId, progress } = action.payload;
+      if (state.fileOperations.uploads[documentId]) {
+        state.fileOperations.uploads[documentId].progress = progress;
+      }
+    },
+    fileUploadSuccess: (state, action) => {
+      const { documentId, s3Key } = action.payload;
+      state.fileOperations.uploads[documentId] = {
+        loading: false,
+        progress: 100,
+        error: null,
+        s3Key
+      };
+      
+      // Update document in the list with S3 information
+      const docIndex = state.deletedDocuments.findIndex(doc => doc.id === documentId);
+      if (docIndex !== -1) {
+        state.deletedDocuments[docIndex] = {
+          ...state.deletedDocuments[docIndex],
+          s3Key,
+          uploadedAt: new Date().toISOString()
+        };
+      }
+    },
+    fileUploadFailure: (state, action) => {
+      const { documentId, error } = action.payload;
+      state.fileOperations.uploads[documentId] = {
+        loading: false,
+        progress: 0,
+        error
+      };
+    },
+    clearFileUploadState: (state, action) => {
+      const documentId = action.payload;
+      delete state.fileOperations.uploads[documentId];
+    },
+
+    // File Download Actions
+    fileDownloadStart: (state, action) => {
+      const documentId = action.payload;
+      state.fileOperations.downloads[documentId] = {
+        loading: true,
+        error: null
+      };
+    },
+    fileDownloadSuccess: (state, action) => {
+      const documentId = action.payload;
+      state.fileOperations.downloads[documentId] = {
+        loading: false,
+        error: null
+      };
+    },
+    fileDownloadFailure: (state, action) => {
+      const { documentId, error } = action.payload;
+      state.fileOperations.downloads[documentId] = {
+        loading: false,
+        error
+      };
+    },
+    clearFileDownloadState: (state, action) => {
+      const documentId = action.payload;
+      delete state.fileOperations.downloads[documentId];
     }
   }
 });
@@ -261,7 +342,17 @@ export const {
   setPagination,
   clearError,
   clearErrors,
-  setDocumentViewError
+  setDocumentViewError,
+  // File operation actions
+  fileUploadStart,
+  fileUploadProgress,
+  fileUploadSuccess,
+  fileUploadFailure,
+  clearFileUploadState,
+  fileDownloadStart,
+  fileDownloadSuccess,
+  fileDownloadFailure,
+  clearFileDownloadState
 } = deletedDocumentsSlice.actions;
 
 // Action creators for saga

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import { DeletedDocumentsTable } from "../../components/super-admin/DeletedDocumentsTable";
 import { DeletedDocumentsFilters } from "../../components/super-admin/DeletedDocumentsFilters";
 import { DeletedDocumentModal } from "../../components/super-admin/DeletedDocumentModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import FileUploadModal from "../../components/super-admin/FileUploadModal";
 import {
   fetchDeletedDocumentsRequest,
   exportDeletedDocuments,
@@ -35,6 +37,8 @@ const DeletedDocumentsManagement = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [documentToUpload, setDocumentToUpload] = useState(null);
 
   useEffect(() => {
     console.log('🔄 Initial load - dispatching fetchDeletedDocumentsRequest');
@@ -135,52 +139,62 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handleDownloadDocument = async (document) => {
+    if (!document.s3Key) {
+      toast.error("No file associated with this document");
+      return;
+    }
+
     try {
-      // Check if download URL is available
-      if (!document.downloadUrl) {
-        dispatch(setDocumentViewError("Download URL not available. File may be corrupted or inaccessible."));
-        return;
-      }
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_BASE_URL}/deleted-documents/${document.id}/download`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
 
-      // Clear any previous errors
-      dispatch(clearError());
-
-      // Get file extension
-      const fileExtension = document.name.split('.').pop().toLowerCase();
-      
-      // Create appropriate filename: {Document_Name}_{Document_ID}.extension
-      const downloadFileName = `${document.name.split('.').slice(0, -1).join('.')}_${document.id}.${fileExtension}`;
-
-      // Fetch the file as blob to force download
-      const response = await fetch(document.downloadUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const blob = await response.blob();
-      
-      // Create blob URL and download link
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = window.document.createElement("a");
-      link.href = blobUrl;
-      link.download = downloadFileName;
-      link.style.display = "none";
-      
-      // Add to DOM, click, and remove
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
-      
-      // Clean up blob URL
-      window.URL.revokeObjectURL(blobUrl);
 
-      // Show success message (optional - could be a toast notification)
-      console.log(`Download completed: ${downloadFileName}`);
+      const data = await response.json();
+      const { downloadUrl, fileName } = data;
+
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName || `document-${document.id}`;
+      link.target = '_blank';
       
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Download started successfully!');
     } catch (error) {
-      console.error('Error downloading document:', error);
-      dispatch(setDocumentViewError("Failed to download document. Please try again."));
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
     }
+  };
+
+  const handleUploadDocument = (document) => {
+    setDocumentToUpload(document);
+    setIsUploadModalOpen(true);
+  };
+
+  const handleUploadComplete = (document, uploadResult) => {
+    toast.success(`File uploaded successfully for document ${document.originalName || document.filename}`);
+    
+    // Refresh the documents list to show updated S3 information
+    dispatch(fetchDeletedDocumentsRequest({ ...filters, ...pagination }));
+    
+    // Close modal
+    setIsUploadModalOpen(false);
+    setDocumentToUpload(null);
+  };
+
+  const handleCloseUploadModal = () => {
+    setIsUploadModalOpen(false);
+    setDocumentToUpload(null);
   };
 
   const handleRecoverDocument = (document) => {
@@ -345,6 +359,7 @@ const DeletedDocumentsManagement = () => {
           onPageSizeChange={handlePageSizeChange}
           onViewDocument={handleViewDocument}
           onDownloadDocument={handleDownloadDocument}
+          onUploadDocument={handleUploadDocument}
           onRecoverDocument={handleRecoverDocument}
           onDeleteDocument={handlePermanentDelete}
         />
@@ -376,6 +391,16 @@ const DeletedDocumentsManagement = () => {
           message={confirmAction.message}
           confirmText={confirmAction.confirmText}
           danger={confirmAction.danger}
+        />
+      )}
+
+      {/* File Upload Modal */}
+      {isUploadModalOpen && documentToUpload && (
+        <FileUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={handleCloseUploadModal}
+          document={documentToUpload}
+          onUploadComplete={handleUploadComplete}
         />
       )}
 

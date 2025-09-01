@@ -161,6 +161,9 @@ export const DeletedDocumentsTable = ({
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                File Storage
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -218,6 +221,43 @@ export const DeletedDocumentsTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(document.deletedAt)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div className="flex items-center space-x-2">
+                    {document.s3Key ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
+                          <i className="fas fa-cloud text-green-500 mr-1"></i>
+                          <span className="text-green-600 text-xs">Stored</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onDownloadDocument(document)}
+                          className="text-green-600 hover:text-green-800 border-green-200 hover:border-green-300"
+                          title="Download File"
+                        >
+                          <i className="fas fa-download"></i>
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
+                          <i className="fas fa-cloud-slash text-gray-400 mr-1"></i>
+                          <span className="text-gray-500 text-xs">No file</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onUploadDocument && onUploadDocument(document)}
+                          className="text-blue-600 hover:text-blue-800 border-blue-200 hover:border-blue-300"
+                          title="Upload File"
+                        >
+                          <i className="fas fa-upload"></i>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
