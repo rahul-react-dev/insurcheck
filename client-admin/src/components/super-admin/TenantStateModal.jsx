@@ -177,7 +177,7 @@ const TenantStateModal = ({
                 onChange={(e) => handleInputChange('reason', e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Provide a detailed reason for this state change..."
+                placeholder="Provide a detailed reason for this status change..."
               />
               {errors.reason && (
                 <p className="text-red-500 text-sm mt-1">{errors.reason}</p>
@@ -210,7 +210,7 @@ const TenantStateModal = ({
                 />
                 <div className="text-sm">
                   <div className="font-medium text-gray-900">Notify Users</div>
-                  <div className="text-gray-500">Send email notifications to tenant users about the state change</div>
+                  <div className="text-gray-500">Send email notifications to tenant users about the status change</div>
                 </div>
               </label>
 
