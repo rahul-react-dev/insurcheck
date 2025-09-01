@@ -84,10 +84,10 @@ const TenantStateModal = ({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                Change Tenant State
+                Change Tenant Status
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Update the state for {tenant?.tenantName}
+                Update the status for {tenant?.tenantName}
               </p>
             </div>
             <button
@@ -263,12 +263,12 @@ const TenantStateModal = ({
                 {isLoading ? (
                   <>
                     <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Updating State...
+                    Updating Status...
                   </>
                 ) : (
                   <>
                     <i className="fas fa-save mr-2"></i>
-                    Update State
+                    Update Status
                   </>
                 )}
               </Button>

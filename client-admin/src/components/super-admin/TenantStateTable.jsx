@@ -321,7 +321,7 @@ const TenantStateTable = ({
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2"
                 >
                   <i className="fas fa-cog mr-1"></i>
-                  Manage State
+                  Manage Status
                 </Button>
                 
                 {tenant.trialStatus === 'active' && (
@@ -460,7 +460,7 @@ const TenantStateTable = ({
                       className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1"
                     >
                       <i className="fas fa-cog mr-1"></i>
-                      State
+                      Status
                     </Button>
                     
                     {tenant.trialStatus === 'active' && (
