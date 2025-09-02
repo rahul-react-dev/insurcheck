@@ -25,6 +25,7 @@ export class S3Service {
     this.bucketName = config.awsS3BucketName || process.env.AWS_S3_BUCKET_NAME || 'insurcheck-documents';
     console.log(`🪣 S3 Service initialized with bucket: ${this.bucketName}`);
     console.log(`🔧 Config values - bucket: ${config.awsS3BucketName}, env: ${process.env.AWS_S3_BUCKET_NAME}`);
+    console.log(`🔧 Using final bucket name: ${this.bucketName}`);
   }
 
   /**
