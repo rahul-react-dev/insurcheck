@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Load .env from server directory
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+console.log('🔧 Loading environment variables...');
+console.log('AWS_S3_BUCKET_NAME from env:', process.env.AWS_S3_BUCKET_NAME);
 
 export const config = {
   port: process.env.PORT || 5000,
