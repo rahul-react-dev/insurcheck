@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import { DeletedDocumentsTable } from "../../components/super-admin/DeletedDocumentsTable";
@@ -140,7 +140,7 @@ const DeletedDocumentsManagement = () => {
 
   const handleDownloadDocument = async (document) => {
     if (!document.s3Key) {
-      toast.error("No file associated with this document");
+      // toast.error("No file associated with this document");
       return;
     }
 
@@ -169,10 +169,10 @@ const DeletedDocumentsManagement = () => {
       link.click();
       document.body.removeChild(link);
 
-      toast.success('Download started successfully!');
+      // toast.success('Download started successfully!');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download document');
+      // toast.error('Failed to download document');
     }
   };
 
@@ -182,7 +182,7 @@ const DeletedDocumentsManagement = () => {
   };
 
   const handleUploadComplete = (document, uploadResult) => {
-    toast.success(`File uploaded successfully for document ${document.originalName || document.filename}`);
+    // toast.success(`File uploaded successfully for document ${document.originalName || document.filename}`);
     
     // Refresh the documents list to show updated S3 information
     dispatch(fetchDeletedDocumentsRequest({ ...filters, ...pagination }));

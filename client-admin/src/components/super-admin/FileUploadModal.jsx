@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import Button from '../ui/Button';
 import axios from 'axios';
 
@@ -79,12 +79,12 @@ const FileUploadModal = ({
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast.error('Please select a file to upload');
+      // toast.error('Please select a file to upload');
       return;
     }
 
     if (selectedFile.size > 50 * 1024 * 1024) { // 50MB limit
-      toast.error('File size must be less than 50MB');
+      // toast.error('File size must be less than 50MB');
       return;
     }
 
@@ -137,17 +137,17 @@ const FileUploadModal = ({
         }
       );
 
-      toast.success('File uploaded successfully!');
+      // toast.success('File uploaded successfully!');
       onUploadComplete && onUploadComplete(document, { s3Key, file: selectedFile });
       onClose();
     } catch (error) {
       console.error('Upload error:', error);
       if (error.response?.status === 503) {
-        toast.error('Storage service not configured. Please contact administrator.');
+        // toast.error('Storage service not configured. Please contact administrator.');
       } else if (error.response?.status === 404) {
-        toast.error('Document not found or already has a file.');
+        // toast.error('Document not found or already has a file.');
       } else {
-        toast.error('Failed to upload file. Please try again.');
+        // toast.error('Failed to upload file. Please try again.');
       }
     } finally {
       setIsUploading(false);
@@ -157,7 +157,7 @@ const FileUploadModal = ({
 
   const handleClose = () => {
     if (isUploading) {
-      toast.warning('Upload in progress. Please wait...');
+      // toast.warning('Upload in progress. Please wait...');
       return;
     }
     onClose();
