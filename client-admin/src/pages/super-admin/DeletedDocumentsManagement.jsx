@@ -92,7 +92,7 @@ const DeletedDocumentsManagement = () => {
   const handleViewDocument = (document) => {
     try {
       console.log("Viewing S3 document:", document);
-      dispatch(viewDocumentRequest(document.documentId));
+      dispatch(viewDocumentRequest(document.id));
       
       // Clear any previous errors
       dispatch(clearError());
@@ -136,7 +136,7 @@ const DeletedDocumentsManagement = () => {
   const handleDownloadDocument = async (document) => {
     try {
       console.log("Downloading S3 document:", document);
-      dispatch(downloadDocumentRequest(document.documentId));
+      dispatch(downloadDocumentRequest(document.id));
       
       // Clear any previous errors
       dispatch(clearError());
