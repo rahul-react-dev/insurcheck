@@ -5,20 +5,20 @@ import { config } from '../src/config/env.js';
 
 // Initialize S3 client
 const s3Client = new S3Client({
-  region: config.awsRegion || 'us-east-1',
+  region: config.awsRegion || process.env.AWS_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: config.awsAccessKeyId,
-    secretAccessKey: config.awsSecretAccessKey,
+    accessKeyId: config.awsAccessKeyId || process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: config.awsSecretAccessKey || process.env.AWS_SECRET_ACCESS_KEY,
   }
 });
 
+console.log(`🔑 S3 Client initialized with region: ${config.awsRegion || process.env.AWS_REGION || 'us-east-1'}`);
+
 export class S3Service {
   constructor() {
-    this.bucketName = config.awsS3BucketName || process.env.AWS_S3_BUCKET_NAME || 'insurcheck-documents-dev';
-    if (!this.bucketName || this.bucketName === 'insurcheck-documents-dev') {
-      console.warn('⚠️ AWS_S3_BUCKET_NAME not configured, using default bucket');
-    }
+    this.bucketName = config.awsS3BucketName || process.env.AWS_S3_BUCKET_NAME || 'insurcheck-documents';
     console.log(`🪣 S3 Service initialized with bucket: ${this.bucketName}`);
+    console.log(`🔧 Config values - bucket: ${config.awsS3BucketName}, env: ${process.env.AWS_S3_BUCKET_NAME}`);
   }
 
   /**
