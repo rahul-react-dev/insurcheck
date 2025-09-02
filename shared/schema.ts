@@ -103,8 +103,6 @@ export const documents = pgTable("documents", {
   status: documentStatusEnum("status").notNull().default('active'),
   deletedAt: timestamp("deleted_at"),
   deletedBy: varchar("deleted_by").references(() => users.id),
-  s3Key: varchar("s3_key", { length: 500 }), // S3 object key for file storage
-  uploadedAt: timestamp("uploaded_at"), // Timestamp when file was uploaded to S3
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

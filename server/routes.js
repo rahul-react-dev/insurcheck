@@ -38,14 +38,20 @@ const router = express.Router();
 
 // Import the standardized auth middleware
 import { authMiddleware } from './src/middleware/auth.js';
-import { superAdminRoleMiddleware, adminRoleMiddleware } from './src/middleware/roles.js';
 
-// Import S3 service
-import s3Service from './services/s3Service.js';
-
-// Use the standardized middleware for consistency
+// Use the standardized auth middleware for consistency
 const authenticateToken = authMiddleware;
+
+// Import the standardized super admin middleware
+import { superAdminRoleMiddleware } from './src/middleware/roles.js';
+
+// Use the standardized super admin middleware for consistency
 const requireSuperAdmin = superAdminRoleMiddleware;
+
+// Import the standardized admin middleware
+import { adminRoleMiddleware } from './src/middleware/roles.js';
+
+// Use the standardized admin middleware for consistency
 const requireAdmin = adminRoleMiddleware;
 
 // ===================== SYSTEM HEALTH & METRICS ROUTES =====================
@@ -3414,168 +3420,6 @@ router.delete('/deleted-documents/:id', authenticateToken, requireSuperAdmin, as
     console.error('❌ Error permanently deleting document:', error);
     res.status(500).json({
       error: 'Failed to permanently delete document',
-      message: error.message
-    });
-  }
-});
-
-// ===================== S3 DOCUMENT STORAGE ENDPOINTS =====================
-
-// Get presigned upload URL for deleted document file
-router.post('/deleted-documents/:id/upload-url', authenticateToken, requireSuperAdmin, async (req, res) => {
-  try {
-    const documentId = req.params.id;
-    const { fileName, contentType } = req.body;
-
-    console.log(`📤 Generating upload URL for document ${documentId}`);
-
-    // Validate request
-    if (!fileName || !contentType) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        message: 'fileName and contentType are required'
-      });
-    }
-
-    // Check if S3 is configured
-    if (!s3Service.isConfigured()) {
-      return res.status(503).json({
-        error: 'Storage not configured',
-        message: 'S3 credentials not provided'
-      });
-    }
-
-    // Check if document exists and is deleted
-    const document = await db.select()
-      .from(documents)
-      .where(and(eq(documents.id, documentId), eq(documents.status, 'deleted')))
-      .limit(1);
-
-    if (document.length === 0) {
-      return res.status(404).json({
-        error: 'Document not found',
-        message: 'Deleted document not found'
-      });
-    }
-
-    // Generate S3 key and presigned URL
-    const s3Key = s3Service.generateDeletedDocumentKey(documentId, fileName);
-    const uploadUrl = await s3Service.getPresignedUploadUrl(s3Key, contentType);
-
-    res.json({
-      uploadUrl,
-      s3Key,
-      documentId,
-      fileName
-    });
-  } catch (error) {
-    console.error('❌ Error generating upload URL:', error);
-    res.status(500).json({
-      error: 'Failed to generate upload URL',
-      message: error.message
-    });
-  }
-});
-
-// Update document with S3 file information after successful upload
-router.patch('/deleted-documents/:id/file-uploaded', authenticateToken, requireSuperAdmin, async (req, res) => {
-  try {
-    const documentId = req.params.id;
-    const { s3Key, fileSize } = req.body;
-
-    console.log(`📁 Updating document ${documentId} with S3 file info`);
-
-    // Validate request
-    if (!s3Key) {
-      return res.status(400).json({
-        error: 'Missing s3Key',
-        message: 'S3 key is required'
-      });
-    }
-
-    // Verify file exists in S3
-    const fileExists = await s3Service.fileExists(s3Key);
-    if (!fileExists) {
-      return res.status(400).json({
-        error: 'File not found in storage',
-        message: 'File was not successfully uploaded'
-      });
-    }
-
-    // Update document record
-    await db.update(documents)
-      .set({
-        s3Key,
-        uploadedAt: new Date(),
-        ...(fileSize && { fileSize: parseInt(fileSize) })
-      })
-      .where(and(eq(documents.id, documentId), eq(documents.status, 'deleted')));
-
-    res.json({
-      message: 'Document file information updated successfully',
-      documentId,
-      s3Key
-    });
-  } catch (error) {
-    console.error('❌ Error updating document file info:', error);
-    res.status(500).json({
-      error: 'Failed to update document file information',
-      message: error.message
-    });
-  }
-});
-
-// Get download URL for deleted document file
-router.get('/deleted-documents/:id/download', authenticateToken, requireSuperAdmin, async (req, res) => {
-  try {
-    const documentId = req.params.id;
-
-    console.log(`📥 Generating download URL for document ${documentId}`);
-
-    // Get document with S3 key
-    const document = await db.select()
-      .from(documents)
-      .where(and(eq(documents.id, documentId), eq(documents.status, 'deleted')))
-      .limit(1);
-
-    if (document.length === 0) {
-      return res.status(404).json({
-        error: 'Document not found',
-        message: 'Deleted document not found'
-      });
-    }
-
-    const doc = document[0];
-    
-    // Check if document has S3 file
-    if (!doc.s3Key) {
-      return res.status(404).json({
-        error: 'File not found',
-        message: 'No file associated with this document'
-      });
-    }
-
-    // Check if S3 is configured
-    if (!s3Service.isConfigured()) {
-      return res.status(503).json({
-        error: 'Storage not configured',
-        message: 'S3 credentials not provided'
-      });
-    }
-
-    // Generate download URL
-    const downloadUrl = await s3Service.getPresignedDownloadUrl(doc.s3Key);
-
-    res.json({
-      downloadUrl,
-      fileName: doc.originalName || doc.filename,
-      fileSize: doc.fileSize,
-      contentType: doc.mimeType
-    });
-  } catch (error) {
-    console.error('❌ Error generating download URL:', error);
-    res.status(500).json({
-      error: 'Failed to generate download URL',
       message: error.message
     });
   }
