@@ -408,6 +408,9 @@ export const superAdminAPI = {
   permanentlyDeleteDocument: (id) => apiCall(`/api/deleted-documents/${id}`, {
     method: 'DELETE',
   }),
+  // S3 Document Operations
+  viewDocument: (id) => apiCall(`/api/deleted-documents/${id}/view`),
+  downloadDocument: (id) => apiCall(`/api/deleted-documents/${id}/download`),
   
   // Invoice Management
   generateInvoice: (tenantId) => apiCall(`/api/super-admin/invoice-generate/${tenantId}`, {

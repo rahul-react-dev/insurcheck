@@ -270,4 +270,15 @@ export const exportDeletedDocuments = (payload) => ({ type: 'EXPORT_DELETED_DOCU
 export const recoverDocument = (documentId) => ({ type: 'RECOVER_DOCUMENT_REQUEST', payload: { documentId } });
 export const permanentlyDeleteDocument = (documentId) => ({ type: 'PERMANENTLY_DELETE_DOCUMENT_REQUEST', payload: { documentId } });
 
+// Additional action creators for S3 operations
+export const viewDocumentRequest = (documentId) => ({
+  type: 'VIEW_DOCUMENT_REQUEST',
+  payload: { documentId }
+});
+
+export const downloadDocumentRequest = (documentId) => ({
+  type: 'DOWNLOAD_DOCUMENT_REQUEST',
+  payload: { documentId }
+});
+
 export default deletedDocumentsSlice.reducer;

@@ -15,6 +15,8 @@ import {
   setFilters,
   setPagination,
   setDocumentViewError,
+  viewDocumentRequest,
+  downloadDocumentRequest,
 } from "../../store/super-admin/deletedDocumentsSlice";
 
 const DeletedDocumentsManagement = () => {
@@ -89,14 +91,11 @@ const DeletedDocumentsManagement = () => {
 
   const handleViewDocument = (document) => {
     try {
-      // Check if document has a valid view URL
-      if (!document.viewUrl && !document.downloadUrl) {
-        dispatch(setDocumentViewError("Document URL not available. File may be corrupted or inaccessible."));
-        return;
-      }
-
-      const documentUrl = document.viewUrl || document.downloadUrl;
-      const fileExtension = document.name.split('.').pop().toLowerCase();
+      console.log("Viewing S3 document:", document);
+      dispatch(viewDocumentRequest(document.documentId));
+      
+      // Clear any previous errors
+      dispatch(clearError());
       
       // Clear any previous errors
       dispatch(clearError());
@@ -136,12 +135,9 @@ const DeletedDocumentsManagement = () => {
 
   const handleDownloadDocument = async (document) => {
     try {
-      // Check if download URL is available
-      if (!document.downloadUrl) {
-        dispatch(setDocumentViewError("Download URL not available. File may be corrupted or inaccessible."));
-        return;
-      }
-
+      console.log("Downloading S3 document:", document);
+      dispatch(downloadDocumentRequest(document.documentId));
+      
       // Clear any previous errors
       dispatch(clearError());
 

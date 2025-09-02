@@ -173,6 +173,69 @@ function* permanentDeleteDocumentSaga(action) {
   }
 }
 
+// S3 Document View Saga
+function* viewDocumentSaga(action) {
+  try {
+    const documentId = action.payload.documentId;
+    console.log(`👁️ Viewing document with ID: ${documentId}`);
+
+    const response = yield call(superAdminAPI.viewDocument, documentId);
+    console.log('✅ Document view URL received:', response);
+
+    // Open the document in a new tab
+    if (response?.viewUrl) {
+      window.open(response.viewUrl, '_blank');
+      
+      if (typeof window !== 'undefined' && window.showNotification) {
+        window.showNotification('Document opened successfully', 'success');
+      }
+    } else {
+      throw new Error('No view URL received from server');
+    }
+  } catch (error) {
+    console.error(`❌ Error in viewDocumentSaga for document ID ${action.payload.documentId}:`, error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to view document';
+    
+    if (typeof window !== 'undefined' && window.showNotification) {
+      window.showNotification(errorMessage, 'error');
+    }
+  }
+}
+
+// S3 Document Download Saga  
+function* downloadDocumentSaga(action) {
+  try {
+    const documentId = action.payload.documentId;
+    console.log(`📥 Downloading document with ID: ${documentId}`);
+
+    const response = yield call(superAdminAPI.downloadDocument, documentId);
+    console.log('✅ Document download URL received:', response);
+
+    // Trigger download
+    if (response?.downloadUrl) {
+      const link = document.createElement('a');
+      link.href = response.downloadUrl;
+      link.download = response.filename || `document-${documentId}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      if (typeof window !== 'undefined' && window.showNotification) {
+        window.showNotification('Document download started', 'success');
+      }
+    } else {
+      throw new Error('No download URL received from server');
+    }
+  } catch (error) {
+    console.error(`❌ Error in downloadDocumentSaga for document ID ${action.payload.documentId}:`, error);
+    const errorMessage = error?.message || error?.response?.data?.message || 'Failed to download document';
+    
+    if (typeof window !== 'undefined' && window.showNotification) {
+      window.showNotification(errorMessage, 'error');
+    }
+  }
+}
+
 function* bulkRestoreDocumentsSaga(action) {
   try {
     const documentIds = action.payload;
@@ -260,6 +323,14 @@ function* watchPermanentlyDeleteDocument() {
   yield takeEvery('PERMANENTLY_DELETE_DOCUMENT_REQUEST', permanentlyDeleteDocumentSaga);
 }
 
+function* watchViewDocument() {
+  yield takeEvery('VIEW_DOCUMENT_REQUEST', viewDocumentSaga);
+}
+
+function* watchDownloadDocument() {
+  yield takeEvery('DOWNLOAD_DOCUMENT_REQUEST', downloadDocumentSaga);
+}
+
 function* watchBulkRestoreDocuments() {
   yield takeEvery(bulkRestoreDocumentsRequest.type, bulkRestoreDocumentsSaga);
 }
@@ -275,6 +346,8 @@ export default function* deletedDocumentsSaga() {
     fork(watchRestoreDocument),
     fork(watchPermanentlyDeleteDocument),
     fork(watchBulkRestoreDocuments),
-    fork(watchBulkDeleteDocuments)
+    fork(watchBulkDeleteDocuments),
+    fork(watchViewDocument),
+    fork(watchDownloadDocument)
   ]);
 }

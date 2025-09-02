@@ -103,6 +103,11 @@ export const documents = pgTable("documents", {
   status: documentStatusEnum("status").notNull().default('active'),
   deletedAt: timestamp("deleted_at"),
   deletedBy: varchar("deleted_by").references(() => users.id),
+  // S3 related fields
+  s3Key: text("s3_key"), // S3 object key path
+  s3Bucket: text("s3_bucket"), // S3 bucket name  
+  s3Url: text("s3_url"), // S3 object URL
+  downloadCount: integer("download_count").default(0), // Track downloads
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -484,6 +489,9 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
   originalName: true,
   fileSize: true,
   mimeType: true,
+  s3Key: true,
+  s3Bucket: true,
+  s3Url: true,
 });
 
 export const insertPaymentSchema = createInsertSchema(payments).pick({

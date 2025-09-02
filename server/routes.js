@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { db } from "./db.js";
+import { s3Service } from "./services/s3Service.js";
 import {
   users,
   tenants,
@@ -3013,7 +3014,10 @@ router.get('/deleted-documents', authenticateToken, requireSuperAdmin, async (re
       deletedByFirstName: sql`deleter.first_name`,
       deletedByLastName: sql`deleter.last_name`,
       deletedByEmail: sql`deleter.email`,
-      createdAt: documents.createdAt
+      createdAt: documents.createdAt,
+      s3Key: documents.s3Key,
+      s3Bucket: documents.s3Bucket,
+      s3Url: documents.s3Url
     })
     .from(documents)
     .leftJoin(tenants, eq(documents.tenantId, tenants.id))
@@ -3388,7 +3392,117 @@ router.get('/deleted-documents/export', authenticateToken, requireSuperAdmin, as
   }
 });
 
-// Permanently delete a single document
+// View document - Generate presigned URL for viewing
+router.get('/deleted-documents/:id/view', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const documentId = req.params.id;
+    console.log(`👁️ Generating view URL for document with ID: ${documentId}`);
+
+    // Check if document exists and is deleted
+    const existingDocument = await db.select()
+      .from(documents)
+      .where(and(eq(documents.id, documentId), eq(documents.status, 'deleted')))
+      .limit(1);
+
+    if (existingDocument.length === 0) {
+      return res.status(404).json({
+        error: 'Document not found',
+        message: 'Document not found or not in deleted status'
+      });
+    }
+
+    const document = existingDocument[0];
+    
+    // Check if document has S3 info
+    if (!document.s3Key) {
+      return res.status(400).json({
+        error: 'Document not available',
+        message: 'Document is not stored in S3'
+      });
+    }
+
+    // Generate presigned URL for viewing (5 minutes expiry)
+    const viewUrl = await s3Service.getPresignedDownloadUrl(document.s3Key, 300);
+
+    res.json({
+      viewUrl,
+      documentId,
+      filename: document.originalName,
+      mimeType: document.mimeType,
+      fileSize: document.fileSize,
+      expiresIn: 300 // 5 minutes
+    });
+
+    console.log(`✅ Generated view URL for document: ${documentId}`);
+  } catch (error) {
+    console.error('❌ Error generating view URL:', error);
+    res.status(500).json({
+      error: 'Failed to generate view URL',
+      message: error.message
+    });
+  }
+});
+
+// Download document - Generate presigned URL for downloading
+router.get('/deleted-documents/:id/download', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const documentId = req.params.id;
+    console.log(`📥 Generating download URL for document with ID: ${documentId}`);
+
+    // Check if document exists and is deleted
+    const existingDocument = await db.select()
+      .from(documents)
+      .where(and(eq(documents.id, documentId), eq(documents.status, 'deleted')))
+      .limit(1);
+
+    if (existingDocument.length === 0) {
+      return res.status(404).json({
+        error: 'Document not found',
+        message: 'Document not found or not in deleted status'
+      });
+    }
+
+    const document = existingDocument[0];
+    
+    // Check if document has S3 info
+    if (!document.s3Key) {
+      return res.status(400).json({
+        error: 'Document not available',
+        message: 'Document is not stored in S3'
+      });
+    }
+
+    // Generate presigned URL for downloading (5 minutes expiry)
+    const downloadUrl = await s3Service.getPresignedDownloadUrl(document.s3Key, 300);
+
+    // Update download count
+    await db.update(documents)
+      .set({
+        downloadCount: sql`COALESCE(${documents.downloadCount}, 0) + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(documents.id, documentId));
+
+    res.json({
+      downloadUrl,
+      documentId,
+      filename: document.originalName,
+      mimeType: document.mimeType,
+      fileSize: document.fileSize,
+      expiresIn: 300 // 5 minutes
+    });
+
+    console.log(`✅ Generated download URL for document: ${documentId}`);
+  } catch (error) {
+    console.error('❌ Error generating download URL:', error);
+    res.status(500).json({
+      error: 'Failed to generate download URL',
+      message: error.message
+    });
+  }
+});
+
+// Permanently delete a single document (enhanced with S3 deletion)
 router.delete('/deleted-documents/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const documentId = req.params.id;
@@ -3407,7 +3521,20 @@ router.delete('/deleted-documents/:id', authenticateToken, requireSuperAdmin, as
       });
     }
 
-    // Permanently delete the document
+    const document = existingDocument[0];
+
+    // Delete from S3 if S3 key exists
+    if (document.s3Key) {
+      try {
+        await s3Service.deleteDocument(document.s3Key);
+        console.log(`✅ Document deleted from S3: ${document.s3Key}`);
+      } catch (s3Error) {
+        console.warn(`⚠️ Failed to delete from S3: ${s3Error.message}`);
+        // Continue with database deletion even if S3 deletion fails
+      }
+    }
+
+    // Permanently delete the document from database
     await db.delete(documents)
       .where(and(eq(documents.id, documentId), eq(documents.status, 'deleted')));
 
