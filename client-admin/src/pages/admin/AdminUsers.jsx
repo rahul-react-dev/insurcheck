@@ -926,7 +926,7 @@ const AdminUsers = () => {
               
               <p className="text-sm text-blue-700">
                 {subscriptionLimits.canInviteMore ? (
-                  <>You can invite <strong>{subscriptionLimits.remainingUsers}</strong> more users to your organization. The user will receive an email with login credentials and a temporary password.</>
+                  <>You can invite <strong>{subscriptionLimits.remainingUsers}</strong> more users to your organization. The user will receive an email to set password.</>
                 ) : (
                   <span className="text-red-700 font-medium">
                     ⚠️ User limit reached! Please upgrade your subscription to invite more users.
