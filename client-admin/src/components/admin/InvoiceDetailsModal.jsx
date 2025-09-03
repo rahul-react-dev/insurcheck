@@ -18,7 +18,6 @@ const InvoiceDetailsModal = ({
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     const validAmount = isNaN(numericAmount) || numericAmount === null || numericAmount === undefined ? 0 : numericAmount;
     
-    console.log('[InvoiceModal] formatCurrency input:', amount, 'converted:', numericAmount, 'final:', validAmount);
     
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -100,7 +99,7 @@ const InvoiceDetailsModal = ({
                       Invoice #{invoice.invoiceNumber || invoice.id}
                     </h2>
                     <p className="text-gray-600 mt-1">
-                      Issued on {formatDate(invoice.issueDate)}
+                      Issued on {formatDate(invoice.invoiceDate)}
                     </p>
                   </div>
                   <div className="mt-4 sm:mt-0">
@@ -163,16 +162,16 @@ const InvoiceDetailsModal = ({
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm font-medium text-gray-500">Company Name</p>
-                        <p className="text-gray-900">{invoice.billingDetails?.companyName || invoice.organizationName || 'Your Organization'}</p>
+                        <p className="text-gray-900">{invoice.billingDetails?.billing_name || invoice.organizationName || 'Your Organization'}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Admin Name</p>
-                        <p className="text-gray-900">{invoice.billingDetails?.adminName || 'Administrator'}</p>
+                        <p className="text-sm font-medium text-gray-500">Contact Email</p>
+                        <p className="text-gray-900">{invoice.billingDetails?.billing_email || 'admin@company.com'}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Billing Address</p>
                         <p className="text-gray-900">
-                          {invoice.billingDetails?.address || '123 Business St, Suite 100, Business City, BC 12345'}
+                          {invoice.billingDetails?.billing_address || '123 Business St, Suite 100, Business City, BC 12345'}
                         </p>
                       </div>
                     </div>
@@ -190,7 +189,7 @@ const InvoiceDetailsModal = ({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Invoice Date</p>
-                        <p className="text-gray-900">{formatDate(invoice.issueDate)}</p>
+                        <p className="text-gray-900">{formatDate(invoice.invoiceDate)}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Due Date</p>
@@ -252,7 +251,7 @@ const InvoiceDetailsModal = ({
                             Total Amount:
                           </td>
                           <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                            {formatCurrency(invoice.amount)}
+                            {formatCurrency(invoice.totalAmount || invoice.amount)}
                           </td>
                         </tr>
                       </tfoot>
@@ -278,7 +277,7 @@ const InvoiceDetailsModal = ({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-green-700">Amount Paid</p>
-                        <p className="text-green-900 font-semibold">{formatCurrency(invoice.amount)}</p>
+                        <p className="text-green-900 font-semibold">{formatCurrency(invoice.totalAmount || invoice.amount)}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-green-700">Transaction ID</p>
