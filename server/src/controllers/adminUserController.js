@@ -3,7 +3,7 @@ import { users, tenants, subscriptions, subscriptionPlans } from '@shared/schema
 import { eq, like, or, and, desc, asc, count, gte } from 'drizzle-orm';
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
-import { sendEmail } from '../services/emailService.js';
+import { sendUserInvitation } from '../../services/emailService.js';
 import XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -203,27 +203,36 @@ export const inviteUser = async (req, res) => {
       isActive: true
     }).returning();
 
-    // Send invitation email (if email service is configured)
+    // Get tenant information for email
+    const tenantInfo = await db.select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    const tenantName = tenantInfo[0]?.name || 'Your Organization';
+    const adminEmail = req.user?.email || 'Your Admin';
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+    // Send invitation email using SendGrid
     try {
-      await sendEmail({
+      const emailResult = await sendUserInvitation({
         to: email,
-        subject: 'Welcome to InsurCheck - Account Created',
-        html: `
-          <h2>Welcome to InsurCheck!</h2>
-          <p>Hello ${firstName} ${lastName},</p>
-          <p>Your account has been created. Here are your login credentials:</p>
-          <ul>
-            <li><strong>Email:</strong> ${email}</li>
-            <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-          </ul>
-          <p>Please log in and change your password immediately.</p>
-          <p>Best regards,<br>InsurCheck Team</p>
-        `
+        firstName,
+        lastName,
+        tenantName,
+        tempPassword,
+        invitedBy: adminEmail,
+        loginUrl
       });
-      console.log(`📧 Invitation email sent to ${email}`);
+
+      if (emailResult.success) {
+        console.log(`✅ Invitation email sent successfully to ${email}`);
+      } else {
+        console.warn(`⚠️ Email sending failed: ${emailResult.reason || emailResult.error}`);
+      }
     } catch (emailError) {
-      console.error('Email sending failed:', emailError);
-      // Continue even if email fails
+      console.error('❌ Email sending failed:', emailError);
+      // Continue even if email fails - user is still created
     }
 
     console.log(`✅ Admin Invite: User ${email} created successfully`);

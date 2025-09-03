@@ -182,7 +182,7 @@ const AdminUsers = () => {
         // Show success message
         if (window.showNotification) {
           window.showNotification(
-            `User ${inviteForm.firstName} ${inviteForm.lastName} invited successfully!`,
+            `User ${inviteForm.firstName} ${inviteForm.lastName} invited successfully! An invitation email has been sent to ${inviteForm.email}.`,
             'success'
           );
         }
