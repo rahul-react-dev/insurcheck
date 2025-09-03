@@ -14,7 +14,7 @@ const Subscription = () => {
     isLoading, 
     error, 
     upgradePlan 
-  } = useSelector((state) => state.subscription);
+  } = useSelector((state) => state.adminSubscription);
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
