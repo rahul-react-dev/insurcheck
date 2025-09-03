@@ -1,4 +1,4 @@
-import { takeEvery, call, put, select } from 'redux-saga/effects';
+import { takeEvery, call, put } from 'redux-saga/effects';
 import { 
   fetchSubscriptionRequest,
   fetchSubscriptionSuccess, 
@@ -10,19 +10,15 @@ import {
   upgradePlanSuccess,
   upgradePlanFailure
 } from './subscriptionSlice';
-import apiRequest from '../../utils/api';
+import { apiCall } from '../../utils/api';
 // Using global notification instead of importing a component
 
-// Get token from state
-const getToken = (state) => state.admin.token;
+// apiCall automatically handles authentication via localStorage
 
 // Fetch current subscription
 function* fetchSubscriptionSaga() {
   try {
-    const token = yield select(getToken);
-    const response = yield call(apiRequest, '/api/admin/subscription', 'GET', null, {
-      'Authorization': `Bearer ${token}`
-    });
+    const response = yield call(apiCall, '/api/admin/subscription');
 
     if (response.success) {
       yield put(fetchSubscriptionSuccess(response.data));
@@ -39,10 +35,7 @@ function* fetchSubscriptionSaga() {
 // Fetch available plans
 function* fetchAvailablePlansSaga() {
   try {
-    const token = yield select(getToken);
-    const response = yield call(apiRequest, '/api/admin/subscription/plans', 'GET', null, {
-      'Authorization': `Bearer ${token}`
-    });
+    const response = yield call(apiCall, '/api/admin/subscription/plans');
 
     if (response.success) {
       yield put(fetchAvailablePlansSuccess(response.data));
@@ -59,15 +52,12 @@ function* fetchAvailablePlansSaga() {
 // Upgrade/change plan
 function* upgradePlanSaga(action) {
   try {
-    const token = yield select(getToken);
     const { planId } = action.payload;
     
-    const response = yield call(apiRequest, '/api/admin/subscription/upgrade', 'POST', 
-      { planId }, 
-      {
-        'Authorization': `Bearer ${token}`
-      }
-    );
+    const response = yield call(apiCall, '/api/admin/subscription/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ planId })
+    });
 
     if (response.success) {
       yield put(upgradePlanSuccess(response.data));
