@@ -36,21 +36,12 @@ const EnhancedInvoiceStats = ({ stats = {}, isLoading = false }) => {
     return new Intl.NumberFormat('en-US').format(num || 0);
   };
 
+  // Payment history focused stats - only showing subscription payment information
   const statsCards = [
     {
-      title: 'Total Invoices',
-      value: formatNumber(stats.total || 0),
-      amount: formatCurrency(stats.totalAmount || 0),
-      icon: DollarSignIcon,
-      color: 'blue',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200'
-    },
-    {
-      title: 'Paid Invoices',
-      value: formatNumber(stats.paid || 0),
-      amount: formatCurrency(stats.paidAmount || 0),
+      title: 'Total Payments',
+      value: formatNumber(stats.totalPaid || stats.paid || 0),
+      amount: formatCurrency(stats.totalPaidAmount || stats.paidAmount || 0),
       icon: CheckCircleIcon,
       color: 'emerald',
       bgColor: 'bg-emerald-50',
@@ -58,24 +49,34 @@ const EnhancedInvoiceStats = ({ stats = {}, isLoading = false }) => {
       borderColor: 'border-emerald-200'
     },
     {
-      title: 'Unpaid Invoices',
-      value: formatNumber(stats.unpaid || 0),
-      amount: formatCurrency(stats.unpaidAmount || 0),
-      icon: ClockIcon,
-      color: 'amber',
-      bgColor: 'bg-amber-50',
-      iconColor: 'text-amber-600',
-      borderColor: 'border-amber-200'
+      title: 'Payment History',
+      value: `${stats.paymentYears || 0} Years`,
+      amount: `${stats.paymentMonths || 0} Months`,
+      icon: TrendingUpIcon,
+      color: 'blue',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      borderColor: 'border-blue-200'
     },
     {
-      title: 'Overdue Invoices',
-      value: formatNumber(stats.overdue || 0),
-      amount: formatCurrency(stats.overdueAmount || 0),
-      icon: AlertTriangleIcon,
-      color: 'red',
-      bgColor: 'bg-red-50',
-      iconColor: 'text-red-600',
-      borderColor: 'border-red-200'
+      title: 'First Payment',
+      value: stats.firstPaymentDate ? new Date(stats.firstPaymentDate).getFullYear() : 'N/A',
+      amount: stats.firstPaymentDate ? new Date(stats.firstPaymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-',
+      icon: CreditCardIcon,
+      color: 'purple',
+      bgColor: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      borderColor: 'border-purple-200'
+    },
+    {
+      title: 'Latest Payment',
+      value: stats.lastPaymentDate ? new Date(stats.lastPaymentDate).getFullYear() : 'N/A',
+      amount: stats.lastPaymentDate ? new Date(stats.lastPaymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-',
+      icon: DollarSignIcon,
+      color: 'indigo',
+      bgColor: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
+      borderColor: 'border-indigo-200'
     }
   ];
 
@@ -93,8 +94,7 @@ const EnhancedInvoiceStats = ({ stats = {}, isLoading = false }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statsCards.map((card, index) => {
         const Icon = card.icon;
-        const isPositive = card.title.includes('Paid');
-        const isNegative = card.title.includes('Overdue');
+        const isPaymentCard = card.title.includes('Payment');
         
         return (
           <div
@@ -115,27 +115,16 @@ const EnhancedInvoiceStats = ({ stats = {}, isLoading = false }) => {
                   </p>
                 </div>
                 
-                {/* Progress indicator */}
-                {stats.total > 0 && (
+                {/* Payment timeline indicator - only for payment cards */}
+                {isPaymentCard && stats.totalPaid > 0 && (
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>
-                        {card.title.includes('Total') ? '100%' : 
-                         `${Math.round(((card.value.replace(/,/g, '') / stats.total) * 100) || 0)}%`}
-                      </span>
+                      <span>Subscription History</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-1.5">
                       <div
-                        className={`h-1.5 rounded-full transition-all duration-500 ${
-                          isPositive ? 'bg-emerald-500' :
-                          isNegative ? 'bg-red-500' :
-                          card.title.includes('Unpaid') ? 'bg-amber-500' :
-                          'bg-blue-500'
-                        }`}
-                        style={{
-                          width: card.title.includes('Total') ? '100%' : 
-                                 `${Math.min(((card.value.replace(/,/g, '') / stats.total) * 100) || 0, 100)}%`
-                        }}
+                        className="h-1.5 rounded-full transition-all duration-500 bg-emerald-500"
+                        style={{ width: '100%' }}
                       ></div>
                     </div>
                   </div>
