@@ -136,40 +136,34 @@ const EnhancedInvoiceStats = ({ stats = {}, isLoading = false }) => {
               </div>
             </div>
 
-            {/* Trend indicator */}
+            {/* Payment status indicator */}
             <div className="mt-4 flex items-center justify-between text-xs">
               <div className="flex items-center gap-1">
-                {isPositive && (
+                {card.title.includes('Total Payments') && (
                   <>
-                    <TrendingUpIcon className="w-3 h-3 text-emerald-500" />
-                    <span className="text-emerald-600 font-medium">Good</span>
+                    <CheckCircleIcon className="w-3 h-3 text-emerald-500" />
+                    <span className="text-emerald-600 font-medium">Completed</span>
                   </>
                 )}
-                {isNegative && card.value.replace(/,/g, '') > 0 && (
+                {card.title.includes('Payment History') && (
                   <>
-                    <AlertTriangleIcon className="w-3 h-3 text-red-500" />
-                    <span className="text-red-600 font-medium">Attention needed</span>
+                    <TrendingUpIcon className="w-3 h-3 text-blue-500" />
+                    <span className="text-blue-600 font-medium">Active Subscription</span>
                   </>
                 )}
-                {card.title.includes('Unpaid') && card.value.replace(/,/g, '') > 0 && (
+                {card.title.includes('First Payment') && (
                   <>
-                    <ClockIcon className="w-3 h-3 text-amber-500" />
-                    <span className="text-amber-600 font-medium">Pending</span>
+                    <CreditCardIcon className="w-3 h-3 text-purple-500" />
+                    <span className="text-purple-600 font-medium">Start Date</span>
                   </>
                 )}
-                {card.title.includes('Total') && (
+                {card.title.includes('Latest Payment') && (
                   <>
-                    <CreditCardIcon className="w-3 h-3 text-blue-500" />
-                    <span className="text-blue-600 font-medium">Overview</span>
+                    <DollarSignIcon className="w-3 h-3 text-indigo-500" />
+                    <span className="text-indigo-600 font-medium">Recent</span>
                   </>
                 )}
               </div>
-              
-              {card.title.includes('Overdue') && card.value.replace(/,/g, '') > 0 && (
-                <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded-full">
-                  Urgent
-                </span>
-              )}
             </div>
           </div>
         );

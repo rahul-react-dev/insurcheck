@@ -34,7 +34,7 @@ router.get(
   [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-    query('sortBy').optional().isIn(['invoiceNumber', 'issueDate', 'dueDate', 'totalAmount', 'amount', 'status', 'createdAt']).withMessage('Invalid sort field'),
+    query('sortBy').optional().isIn(['invoiceNumber', 'issueDate', 'dueDate', 'paidDate', 'totalAmount', 'amount', 'status', 'createdAt']).withMessage('Invalid sort field'),
     query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
     query('status').optional().isIn(['paid', 'unpaid', 'overdue', 'pending', '']).withMessage('Invalid status filter'),
     query('startDate').optional().custom((value) => {
