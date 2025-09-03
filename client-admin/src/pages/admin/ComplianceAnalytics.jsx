@@ -192,11 +192,10 @@ const ComplianceAnalytics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <div className="space-y-6">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header */}
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="page-title">
@@ -249,6 +248,7 @@ const ComplianceAnalytics = () => {
             </div>
           </div>
         </div>
+      </div>
 
         {/* Filters */}
         {showFilters && (
@@ -578,10 +578,6 @@ const ComplianceAnalytics = () => {
             />
           )}
         </Card>
-
-
-
-      </div>
     </div>
   );
 };

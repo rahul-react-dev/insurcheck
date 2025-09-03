@@ -479,9 +479,9 @@ const NotificationTemplates = () => {
 
   if (showSkeleton) {
     return (
-      <div className="p-1">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-3">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Configure Notification Templates
           </h1>
@@ -491,14 +491,14 @@ const NotificationTemplates = () => {
         </div>
 
         {/* Statistics Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
 
         {/* Filters and Controls - Show actual controls during search */}
-        <Card className="p-1 mb-2">
+        <Card className="p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative">
@@ -548,20 +548,28 @@ const NotificationTemplates = () => {
   }
 
   return (
-    <div className="p-1 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          Configure Notification Templates
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Customize email notifications for compliance results and audit logs to align with organizational branding.
-        </p>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Configure Notification Templates
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Customize email notifications for compliance results and audit logs to align with organizational branding.
+            </p>
+          </div>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Template
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 mb-2">
-        <Card className="p-1">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Templates</p>
@@ -571,9 +579,9 @@ const NotificationTemplates = () => {
             </div>
             <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-1">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Templates</p>
@@ -583,9 +591,9 @@ const NotificationTemplates = () => {
             </div>
             <Activity className="h-8 w-8 text-green-600 dark:text-green-400" />
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-1">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Compliance Templates</p>
@@ -595,9 +603,9 @@ const NotificationTemplates = () => {
             </div>
             <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-1">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Audit Templates</p>
@@ -607,11 +615,11 @@ const NotificationTemplates = () => {
             </div>
             <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Filters and Controls */}
-      <Card className="p-1 mb-2">
+      <Card className="p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative">
@@ -646,11 +654,6 @@ const NotificationTemplates = () => {
               <option value="false">Inactive</option>
             </select>
           </div>
-
-          <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Template
-          </Button>
         </div>
       </Card>
 
