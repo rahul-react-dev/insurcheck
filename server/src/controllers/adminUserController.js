@@ -400,7 +400,7 @@ export const getUserStats = async (req, res) => {
     const activeUsers = await db
       .select({ count: count() })
       .from(users)
-      .where(eq(users.tenantId, tenantId), eq(users.isActive, true));
+      .where(and(eq(users.tenantId, tenantId), eq(users.isActive, true)));
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const recentUsers = await db
