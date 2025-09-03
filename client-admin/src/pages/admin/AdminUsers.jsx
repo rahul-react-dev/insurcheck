@@ -17,7 +17,10 @@ import {
   Users,
   UserCheck,
   UserX,
-  Calendar
+  Calendar,
+  Eye,
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 const AdminUsers = () => {
@@ -418,9 +421,6 @@ const AdminUsers = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User ID
-                    </th>
                     <th
                       onClick={() => handleSort('firstName')}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -469,14 +469,14 @@ const AdminUsers = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Account Status
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                        {user.id.slice(0, 8)}...
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center">
@@ -512,6 +512,31 @@ const AdminUsers = () => {
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            data-testid={`button-view-user-${user.id}`}
+                            className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                            title="View User"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            data-testid={`button-edit-user-${user.id}`}
+                            className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
+                            title="Edit User"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            data-testid={`button-delete-user-${user.id}`}
+                            className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -546,10 +571,6 @@ const AdminUsers = () => {
                   </div>
                   <div className="mt-3 space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">ID:</span>
-                      <span className="text-gray-900 font-mono">{user.id.slice(0, 8)}...</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-gray-500">Phone:</span>
                       <span className="text-gray-900">{user.phoneNumber || 'Not provided'}</span>
                     </div>
@@ -561,6 +582,31 @@ const AdminUsers = () => {
                       <span className="text-gray-500">Registered:</span>
                       <span className="text-gray-900">{formatDate(user.createdAt)}</span>
                     </div>
+                  </div>
+                  
+                  {/* Mobile Action Buttons */}
+                  <div className="mt-4 flex justify-end space-x-2">
+                    <button
+                      data-testid={`button-view-user-mobile-${user.id}`}
+                      className="text-blue-600 hover:text-blue-900 p-2 rounded-md hover:bg-blue-50 transition-colors"
+                      title="View User"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      data-testid={`button-edit-user-mobile-${user.id}`}
+                      className="text-green-600 hover:text-green-900 p-2 rounded-md hover:bg-green-50 transition-colors"
+                      title="Edit User"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      data-testid={`button-delete-user-mobile-${user.id}`}
+                      className="text-red-600 hover:text-red-900 p-2 rounded-md hover:bg-red-50 transition-colors"
+                      title="Delete User"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -698,24 +744,10 @@ const AdminUsers = () => {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Role
-              </label>
-              <select
-                id="role"
-                value={inviteForm.role}
-                onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="user">User</option>
-                <option value="tenant-admin">Tenant Admin</option>
-              </select>
-            </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <p className="text-sm text-blue-700">
-                The user will receive an email with login credentials and a temporary password.
+                The user will receive an email with login credentials and a temporary password. All invited users will have standard user access.
               </p>
             </div>
 
