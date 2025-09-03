@@ -66,7 +66,7 @@ router.get(
   authMiddleware,
   adminRoleMiddleware,
   [
-    param('id').isUUID().withMessage('Invalid invoice ID')
+    param('id').isLength({ min: 1 }).withMessage('Invoice ID is required')
   ],
   handleValidationErrors,
   getAdminInvoiceDetails
@@ -123,7 +123,7 @@ router.get(
   authMiddleware,
   adminRoleMiddleware,
   [
-    param('id').isUUID().withMessage('Invalid invoice ID')
+    param('id').isLength({ min: 1 }).withMessage('Invoice ID is required')
   ],
   handleValidationErrors,
   downloadAdminReceipt

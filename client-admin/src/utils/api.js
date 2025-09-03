@@ -166,6 +166,38 @@ export const adminAuthApi = {
 
   getUserStats: () => apiCall('/api/admin/users/stats'),
   getSubscriptionLimits: () => apiCall('/api/admin/users/subscription-limits'),
+
+  // Admin Invoices Management API
+  getInvoices: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/api/admin/invoices?${queryString}`);
+  },
+
+  getInvoiceStats: () => apiCall('/api/admin/invoices/stats'),
+
+  getInvoiceDetails: (invoiceId) => apiCall(`/api/admin/invoices/${invoiceId}`),
+
+  processPayment: (paymentData) => apiCall('/api/admin/invoices/pay', {
+    method: 'POST',
+    body: JSON.stringify(paymentData),
+  }),
+
+  downloadReceipt: (invoiceId) => {
+    return fetch(`${API_BASE_URL}/api/admin/invoices/${invoiceId}/receipt`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+  },
+
+  exportInvoices: (format = 'csv', filters = {}) => {
+    const queryString = new URLSearchParams({ format, ...filters }).toString();
+    return fetch(`${API_BASE_URL}/api/admin/invoices/export?${queryString}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+  },
   
   // Compliance Rules Management API
   getComplianceRules: (params = {}) => {

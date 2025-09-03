@@ -16,7 +16,9 @@ const InvoiceDetailsModal = ({
   const formatCurrency = (amount) => {
     // Convert to number if it's a string, default to 0 if invalid
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    const validAmount = isNaN(numericAmount) ? 0 : numericAmount;
+    const validAmount = isNaN(numericAmount) || numericAmount === null || numericAmount === undefined ? 0 : numericAmount;
+    
+    console.log('[InvoiceModal] formatCurrency input:', amount, 'converted:', numericAmount, 'final:', validAmount);
     
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
