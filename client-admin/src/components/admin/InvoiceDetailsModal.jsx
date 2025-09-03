@@ -14,10 +14,12 @@ const InvoiceDetailsModal = ({
 
   // Format currency - handle string amounts and invalid numbers
   const formatCurrency = (amount) => {
+    console.log('[DEBUG] formatCurrency called with:', amount, 'type:', typeof amount);
     // Convert to number if it's a string, default to 0 if invalid
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     const validAmount = isNaN(numericAmount) || numericAmount === null || numericAmount === undefined ? 0 : numericAmount;
     
+    console.log('[DEBUG] formatCurrency conversion:', amount, '->', numericAmount, '->', validAmount);
     
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -227,6 +229,13 @@ const InvoiceDetailsModal = ({
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
+                        {(() => {
+                          console.log('[DEBUG] invoice.items:', invoice.items);
+                          console.log('[DEBUG] invoice.items?.length:', invoice.items?.length);
+                          console.log('[DEBUG] Array.isArray(invoice.items):', Array.isArray(invoice.items));
+                          console.log('[DEBUG] invoice.items?.length > 0:', invoice.items?.length > 0);
+                          return null;
+                        })()}
                         {invoice.items?.length > 0 ? (
                           invoice.items.map((item, index) => (
                             <tr key={index}>
@@ -240,8 +249,8 @@ const InvoiceDetailsModal = ({
                           <tr>
                             <td className="px-4 py-4 text-sm text-gray-900">Professional Plan - Monthly</td>
                             <td className="px-4 py-4 text-sm text-gray-600">1</td>
-                            <td className="px-4 py-4 text-sm text-gray-600">{formatCurrency(invoice.amount)}</td>
-                            <td className="px-4 py-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</td>
+                            <td className="px-4 py-4 text-sm text-gray-600">{formatCurrency(parseFloat(invoice.amount || "0"))}</td>
+                            <td className="px-4 py-4 text-sm font-medium text-gray-900">{formatCurrency(parseFloat(invoice.amount || "0"))}</td>
                           </tr>
                         )}
                       </tbody>
