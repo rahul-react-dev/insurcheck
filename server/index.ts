@@ -12,6 +12,7 @@ import notificationTemplatesRoutes from './src/routes/notificationTemplates.js';
 import invoicesRoutes from './src/routes/invoices.js';
 import adminInvoicesRoutes from './src/routes/adminInvoices.js';
 import complianceAnalyticsRoutes from './src/routes/complianceAnalytics.js';
+import adminSubscriptionRoutes from './src/routes/adminSubscription.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -111,6 +112,7 @@ app.use('/api/admin/compliance-rules', complianceRuleRoutes);
 app.use('/api/admin/notification-templates', notificationTemplatesRoutes);
 app.use('/api/admin/invoices', adminInvoicesRoutes);
 app.use('/api/admin/compliance-analytics', complianceAnalyticsRoutes);
+app.use('/api/admin/subscription', adminSubscriptionRoutes);
 
 // API routes
 app.use('/api', routes);

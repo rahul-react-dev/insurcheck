@@ -42,6 +42,12 @@ const AdminTenantLayout = ({ children }) => {
       roles: ["tenant-admin", "admin"],
     },
     {
+      name: "My Subscription",
+      path: "/admin/subscription",
+      icon: "fas fa-credit-card",
+      roles: ["tenant-admin", "admin"],
+    },
+    {
       name: "Compliance Rules",
       path: "/admin/compliance-rules",
       icon: "fas fa-shield-check",
@@ -201,8 +207,10 @@ const AdminTenantLayout = ({ children }) => {
                       ? "Document Management"
                       : location.pathname.includes("users")
                         ? "User Management"
-                        : location.pathname.includes("compliance-rules")
-                          ? "Compliance Rules"
+                        : location.pathname.includes("subscription")
+                          ? "My Subscription"
+                          : location.pathname.includes("compliance-rules")
+                            ? "Compliance Rules"
                           : location.pathname.includes("notification-templates")
                             ? "Notification Templates"
                             : location.pathname.includes("settings")

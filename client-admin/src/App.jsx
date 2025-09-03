@@ -36,6 +36,7 @@ import ComplianceRules from './pages/admin/ComplianceRules';
 import NotificationTemplates from './pages/admin/NotificationTemplates';
 import Invoices from './pages/admin/Invoices';
 import ComplianceAnalytics from './pages/admin/ComplianceAnalytics';
+import Subscription from './pages/admin/Subscription';
 import PasswordSetup from './pages/admin/PasswordSetup';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 
@@ -277,6 +278,14 @@ function App() {
               element={
                 <AdminProtectedRoute>
                   <ComplianceAnalytics />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/subscription"
+              element={
+                <AdminProtectedRoute>
+                  <Subscription />
                 </AdminProtectedRoute>
               }
             />

@@ -21,6 +21,7 @@ import notificationTemplatesReducer from './admin/notificationTemplatesSlice';
 import invoicesReducer from './admin/invoicesSlice';
 import complianceAnalyticsReducer from './admin/complianceAnalyticsSlice';
 import complianceRulesReducer from './admin/complianceRulesSlice';
+import adminSubscriptionReducer from './admin/subscriptionSlice';
 
 import rootSaga from './sagas';
 
@@ -47,6 +48,7 @@ const rootReducer = combineReducers({
   invoices: invoicesReducer,
   complianceAnalytics: complianceAnalyticsReducer,
   complianceRules: complianceRulesReducer,
+  adminSubscription: adminSubscriptionReducer,
 
 });
 

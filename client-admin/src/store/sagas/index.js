@@ -15,6 +15,7 @@ import notificationTemplatesSaga from '../admin/notificationTemplatesSaga';
 import invoicesSaga from '../admin/invoicesSaga';
 import complianceAnalyticsSaga from '../admin/complianceAnalyticsSaga';
 import complianceRulesSaga from '../admin/complianceRulesSaga';
+import adminSubscriptionSaga from '../admin/subscriptionSaga';
 
 
 export default function* rootSaga() {
@@ -37,6 +38,7 @@ export default function* rootSaga() {
     fork(invoicesSaga),
     fork(complianceAnalyticsSaga),
     fork(complianceRulesSaga),
+    fork(adminSubscriptionSaga),
 
   ]);
   console.log('✅ All sagas forked successfully');
