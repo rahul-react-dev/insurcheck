@@ -29,12 +29,12 @@ const AdminTenantLayout = ({ children }) => {
       icon: "fas fa-chart-line",
       roles: ["tenant-admin", "admin"],
     },
-    {
-      name: "Document Management",
-      path: "/admin/documents",
-      icon: "fas fa-file-alt",
-      roles: ["tenant-admin", "admin"],
-    },
+    // {
+    //   name: "Document Management",
+    //   path: "/admin/documents",
+    //   icon: "fas fa-file-alt",
+    //   roles: ["tenant-admin", "admin"],
+    // },
     {
       name: "User Management",
       path: "/admin/users",
@@ -71,24 +71,24 @@ const AdminTenantLayout = ({ children }) => {
       icon: "fas fa-file-invoice-dollar",
       roles: ["tenant-admin", "admin"],
     },
-    {
-      name: "Settings",
-      path: "/admin/settings",
-      icon: "fas fa-cogs",
-      roles: ["tenant-admin", "admin"],
-    },
-    {
-      name: "Reports",
-      path: "/admin/reports",
-      icon: "fas fa-chart-bar",
-      roles: ["tenant-admin", "admin"],
-    },
-    {
-      name: "Activity Logs",
-      path: "/admin/activity-logs",
-      icon: "fas fa-clipboard-list",
-      roles: ["tenant-admin", "admin"],
-    },
+    // {
+    //   name: "Settings",
+    //   path: "/admin/settings",
+    //   icon: "fas fa-cogs",
+    //   roles: ["tenant-admin", "admin"],
+    // },
+    // {
+    //   name: "Reports",
+    //   path: "/admin/reports",
+    //   icon: "fas fa-chart-bar",
+    //   roles: ["tenant-admin", "admin"],
+    // },
+    // {
+    //   name: "Activity Logs",
+    //   path: "/admin/activity-logs",
+    //   icon: "fas fa-clipboard-list",
+    //   roles: ["tenant-admin", "admin"],
+    // },
   ];
 
   const filteredNavigation = navigationItems.filter(
