@@ -12,12 +12,16 @@ const InvoiceDetailsModal = ({
 }) => {
   if (!isOpen) return null;
 
-  // Format currency
+  // Format currency - handle string amounts and invalid numbers
   const formatCurrency = (amount) => {
+    // Convert to number if it's a string, default to 0 if invalid
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const validAmount = isNaN(numericAmount) ? 0 : numericAmount;
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(validAmount);
   };
 
   // Format date
@@ -94,7 +98,7 @@ const InvoiceDetailsModal = ({
                       Invoice #{invoice.invoiceNumber || invoice.id}
                     </h2>
                     <p className="text-gray-600 mt-1">
-                      Issued on {formatDate(invoice.invoiceDate)}
+                      Issued on {formatDate(invoice.issueDate)}
                     </p>
                   </div>
                   <div className="mt-4 sm:mt-0">
@@ -184,7 +188,7 @@ const InvoiceDetailsModal = ({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Invoice Date</p>
-                        <p className="text-gray-900">{formatDate(invoice.invoiceDate)}</p>
+                        <p className="text-gray-900">{formatDate(invoice.issueDate)}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Due Date</p>
@@ -222,8 +226,8 @@ const InvoiceDetailsModal = ({
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {invoice.itemizedCharges?.length > 0 ? (
-                          invoice.itemizedCharges.map((item, index) => (
+                        {invoice.items?.length > 0 ? (
+                          invoice.items.map((item, index) => (
                             <tr key={index}>
                               <td className="px-4 py-4 text-sm text-gray-900">{item.description}</td>
                               <td className="px-4 py-4 text-sm text-gray-600">{item.quantity}</td>
@@ -233,7 +237,7 @@ const InvoiceDetailsModal = ({
                           ))
                         ) : (
                           <tr>
-                            <td className="px-4 py-4 text-sm text-gray-900">InsurCheck Platform Subscription</td>
+                            <td className="px-4 py-4 text-sm text-gray-900">Professional Plan - Monthly</td>
                             <td className="px-4 py-4 text-sm text-gray-600">1</td>
                             <td className="px-4 py-4 text-sm text-gray-600">{formatCurrency(invoice.amount)}</td>
                             <td className="px-4 py-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.amount)}</td>
