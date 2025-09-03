@@ -50,7 +50,7 @@ const AdminTenantLayout = ({ children }) => {
     {
       name: "Compliance Rules",
       path: "/admin/compliance-rules",
-      icon: "fas fa-shield-check",
+      icon: "fas fa-shield-alt",
       roles: ["tenant-admin", "admin"],
     },
     {
