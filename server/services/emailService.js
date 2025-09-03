@@ -38,7 +38,7 @@ const sendTenantAdminInvitation = async ({ to, tenantName, setupLink, invitedBy 
     const msg = {
       to,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'rahul.soni@solulab.co',
+        email: 'rahul.soni@solulab.co',
         name: 'InsurCheck Platform'
       },
       subject: `Welcome to InsurCheck - Complete Your Account Setup`,
@@ -46,8 +46,16 @@ const sendTenantAdminInvitation = async ({ to, tenantName, setupLink, invitedBy 
       text: generateInvitationText({ to, tenantName, setupLink, invitedBy })
     };
 
-    await sgMail.send(msg);
+    console.log(`📧 Sending invitation email to: ${to}`);
+    console.log(`📤 Email details:`, {
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject
+    });
     
+    const result = await sgMail.send(msg);
+    
+    console.log(`✅ SendGrid response:`, result[0]?.statusCode, result[0]?.headers);
     console.log(`✅ Invitation email sent successfully to: ${to}`);
     return { success: true, message: 'Invitation email sent successfully' };
     
@@ -194,7 +202,7 @@ const sendUserInvitation = async ({ to, firstName, lastName, tenantName, tempPas
     const msg = {
       to,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@insurcheck.com',
+        email: 'rahul.soni@solulab.co',
         name: 'InsurCheck Platform'
       },
       subject: `Welcome to InsurCheck - Your Account is Ready`,
@@ -202,8 +210,16 @@ const sendUserInvitation = async ({ to, firstName, lastName, tenantName, tempPas
       text: generateUserInvitationText({ to, firstName, lastName, tenantName, tempPassword, invitedBy, loginUrl })
     };
 
-    await sgMail.send(msg);
+    console.log(`📧 Sending user invitation email to: ${to}`);
+    console.log(`📤 Email details:`, {
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject
+    });
     
+    const result = await sgMail.send(msg);
+    
+    console.log(`✅ SendGrid response:`, result[0]?.statusCode, result[0]?.headers);
     console.log(`✅ User invitation email sent successfully to: ${to}`);
     return { success: true, message: 'User invitation email sent successfully' };
     
