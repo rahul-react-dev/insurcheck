@@ -495,3 +495,156 @@ export const getTenantSubscriptionLimits = async (req, res) => {
     });
   }
 };
+
+// Update user by ID
+export const updateUser = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const { tenantId } = req.user;
+    const { firstName, lastName, phoneNumber, companyName, isActive } = req.body;
+
+    console.log(`🔄 Admin Update: Updating user ${id} for tenant ${tenantId}`);
+
+    // Check if user exists and belongs to the same tenant
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
+      .limit(1);
+
+    if (existingUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found or access denied'
+      });
+    }
+
+    // Update user
+    const updatedUser = await db
+      .update(users)
+      .set({
+        firstName: firstName?.trim(),
+        lastName: lastName?.trim(),
+        phoneNumber: phoneNumber?.trim() || null,
+        companyName: companyName?.trim() || null,
+        isActive: isActive,
+        updatedAt: new Date()
+      })
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
+      .returning({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        companyName: users.companyName,
+        isActive: users.isActive,
+        role: users.role,
+        updatedAt: users.updatedAt
+      });
+
+    if (updatedUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Failed to update user'
+      });
+    }
+
+    console.log(`✅ Admin Update: User ${id} updated successfully`);
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: updatedUser[0]
+    });
+
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating user'
+    });
+  }
+};
+
+// Delete user by ID
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tenantId } = req.user;
+
+    console.log(`🗑️ Admin Delete: Deleting user ${id} for tenant ${tenantId}`);
+
+    // Check if user exists and belongs to the same tenant
+    const existingUser = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        role: users.role
+      })
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
+      .limit(1);
+
+    if (existingUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found or access denied'
+      });
+    }
+
+    const userToDelete = existingUser[0];
+
+    // Prevent deletion of tenant admin users for security
+    if (userToDelete.role === 'tenant-admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot delete tenant admin users'
+      });
+    }
+
+    // Delete user
+    const deletedUser = await db
+      .delete(users)
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
+      .returning({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email
+      });
+
+    if (deletedUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Failed to delete user'
+      });
+    }
+
+    console.log(`✅ Admin Delete: User ${userToDelete.firstName} ${userToDelete.lastName} (${userToDelete.email}) deleted successfully`);
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully',
+      data: deletedUser[0]
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting user'
+    });
+  }
+};

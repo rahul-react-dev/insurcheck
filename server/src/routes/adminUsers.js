@@ -29,6 +29,15 @@ const exportValidation = [
   query('search').optional().isLength({ max: 100 }).withMessage('Search term too long')
 ];
 
+// Validation rules for updating user
+const updateUserValidation = [
+  body('firstName').trim().isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
+  body('lastName').trim().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
+  body('phoneNumber').optional().trim().isLength({ max: 20 }).withMessage('Phone number too long'),
+  body('companyName').optional().trim().isLength({ max: 100 }).withMessage('Company name too long'),
+  body('isActive').isBoolean().withMessage('isActive must be a boolean')
+];
+
 // All routes require authentication and admin role
 router.use(authMiddleware);
 router.use(adminRoleMiddleware);
@@ -36,6 +45,8 @@ router.use(adminRoleMiddleware);
 // Routes
 router.get('/', getUsersValidation, adminUserController.getAdminUsers);
 router.post('/invite', inviteUserValidation, adminUserController.inviteUser);
+router.put('/:id', updateUserValidation, adminUserController.updateUser);
+router.delete('/:id', adminUserController.deleteUser);
 router.get('/export', exportValidation, adminUserController.exportUsers);
 router.get('/stats', adminUserController.getUserStats);
 router.get('/subscription-limits', adminUserController.getTenantSubscriptionLimits);

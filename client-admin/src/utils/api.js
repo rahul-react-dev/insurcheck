@@ -155,6 +155,15 @@ export const adminAuthApi = {
     });
   },
   
+  updateUser: (id, userData) => apiCall(`/api/admin/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  }),
+  
+  deleteUser: (id) => apiCall(`/api/admin/users/${id}`, {
+    method: 'DELETE',
+  }),
+
   getUserStats: () => apiCall('/api/admin/users/stats'),
   getSubscriptionLimits: () => apiCall('/api/admin/users/subscription-limits'),
   

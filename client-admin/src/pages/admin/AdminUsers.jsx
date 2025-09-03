@@ -53,6 +53,10 @@ const AdminUsers = () => {
 
   // Modal states
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [inviteForm, setInviteForm] = useState({
     firstName: '',
     lastName: '',
@@ -61,7 +65,16 @@ const AdminUsers = () => {
     companyName: '',
     role: 'user'
   });
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    companyName: '',
+    isActive: true
+  });
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Fetch users data
   const fetchUsers = async () => {
@@ -192,6 +205,95 @@ const AdminUsers = () => {
       }
     } finally {
       setInviteLoading(false);
+    }
+  };
+
+  // Handle view user
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setShowViewModal(true);
+  };
+
+  // Handle edit user
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setEditForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      phoneNumber: user.phoneNumber || '',
+      companyName: user.companyName || '',
+      isActive: user.isActive
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle update user
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setUpdateLoading(true);
+    
+    try {
+      const response = await adminAuthApi.updateUser(selectedUser.id, editForm);
+      
+      if (response?.success) {
+        if (window.showNotification) {
+          window.showNotification(
+            `User ${editForm.firstName} ${editForm.lastName} updated successfully!`,
+            'success'
+          );
+        }
+        
+        setShowEditModal(false);
+        fetchUsers();
+        fetchUserStats();
+      } else {
+        throw new Error(response?.message || 'Failed to update user');
+      }
+    } catch (err) {
+      console.error('[AdminUsers] Error updating user:', err);
+      if (window.showNotification) {
+        window.showNotification(err.message || 'Failed to update user', 'error');
+      }
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  // Handle delete user
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    setDeleteLoading(true);
+    
+    try {
+      const response = await adminAuthApi.deleteUser(selectedUser.id);
+      
+      if (response?.success) {
+        if (window.showNotification) {
+          window.showNotification(
+            `User ${selectedUser.firstName} ${selectedUser.lastName} deleted successfully!`,
+            'success'
+          );
+        }
+        
+        setShowDeleteModal(false);
+        fetchUsers();
+        fetchUserStats();
+        fetchSubscriptionLimits();
+      } else {
+        throw new Error(response?.message || 'Failed to delete user');
+      }
+    } catch (err) {
+      console.error('[AdminUsers] Error deleting user:', err);
+      if (window.showNotification) {
+        window.showNotification(err.message || 'Failed to delete user', 'error');
+      }
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -539,6 +641,7 @@ const AdminUsers = () => {
                             data-testid={`button-view-user-${user.id}`}
                             className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
                             title="View User"
+                            onClick={() => handleViewUser(user)}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -546,6 +649,7 @@ const AdminUsers = () => {
                             data-testid={`button-edit-user-${user.id}`}
                             className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
                             title="Edit User"
+                            onClick={() => handleEditUser(user)}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -553,6 +657,7 @@ const AdminUsers = () => {
                             data-testid={`button-delete-user-${user.id}`}
                             className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
                             title="Delete User"
+                            onClick={() => handleDeleteUser(user)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -611,6 +716,7 @@ const AdminUsers = () => {
                       data-testid={`button-view-user-mobile-${user.id}`}
                       className="text-blue-600 hover:text-blue-900 p-2 rounded-md hover:bg-blue-50 transition-colors"
                       title="View User"
+                      onClick={() => handleViewUser(user)}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -618,6 +724,7 @@ const AdminUsers = () => {
                       data-testid={`button-edit-user-mobile-${user.id}`}
                       className="text-green-600 hover:text-green-900 p-2 rounded-md hover:bg-green-50 transition-colors"
                       title="Edit User"
+                      onClick={() => handleEditUser(user)}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -625,6 +732,7 @@ const AdminUsers = () => {
                       data-testid={`button-delete-user-mobile-${user.id}`}
                       className="text-red-600 hover:text-red-900 p-2 rounded-md hover:bg-red-50 transition-colors"
                       title="Delete User"
+                      onClick={() => handleDeleteUser(user)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -851,6 +959,279 @@ const AdminUsers = () => {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* View User Modal */}
+      {showViewModal && selectedUser && (
+        <Modal
+          isOpen={showViewModal}
+          onClose={() => setShowViewModal(false)}
+          title="User Details"
+          size="lg"
+        >
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <div className="h-16 w-16 rounded-full bg-blue-600 flex items-center justify-center">
+                <span className="text-lg font-medium text-white">
+                  {(selectedUser.firstName?.[0] || '').toUpperCase()}{(selectedUser.lastName?.[0] || '').toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {formatFullName(selectedUser.firstName, selectedUser.lastName)}
+                </h3>
+                <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  selectedUser.isActive
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {selectedUser.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-900">
+                  {selectedUser.firstName || 'Not provided'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-900">
+                  {selectedUser.lastName || 'Not provided'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-900">
+                  {selectedUser.email}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-900">
+                  {selectedUser.phoneNumber || 'Not provided'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-900">
+                  {selectedUser.companyName || 'Not provided'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Registration Date</label>
+                <div className="p-3 bg-gray-50 rounded-md text-sm text-gray-900">
+                  {formatDate(selectedUser.createdAt)}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowViewModal(false)}
+                data-testid="button-close-view-modal"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Edit User"
+          size="lg"
+        >
+          <form onSubmit={handleUpdateUser} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="editFirstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <Input
+                  id="editFirstName"
+                  type="text"
+                  value={editForm.firstName}
+                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                  placeholder="Enter first name"
+                  required
+                  data-testid="input-edit-first-name"
+                />
+              </div>
+              <div>
+                <label htmlFor="editLastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <Input
+                  id="editLastName"
+                  type="text"
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                  placeholder="Enter last name"
+                  required
+                  data-testid="input-edit-last-name"
+                />
+              </div>
+              <div>
+                <label htmlFor="editEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  value={selectedUser.email}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
+                  data-testid="input-edit-email-disabled"
+                />
+                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+              </div>
+              <div>
+                <label htmlFor="editPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <Input
+                  id="editPhoneNumber"
+                  type="tel"
+                  value={editForm.phoneNumber}
+                  onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                  placeholder="Enter phone number"
+                  data-testid="input-edit-phone-number"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="editCompanyName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Company Name
+                </label>
+                <Input
+                  id="editCompanyName"
+                  type="text"
+                  value={editForm.companyName}
+                  onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
+                  placeholder="Enter company name"
+                  data-testid="input-edit-company-name"
+                />
+              </div>
+            </div>
+
+            {/* Status Toggle */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">User Status</label>
+                  <p className="text-xs text-gray-500">Toggle user account status</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className={`text-sm ${editForm.isActive ? 'text-gray-400' : 'text-red-600 font-medium'}`}>
+                    Inactive
+                  </span>
+                  <button
+                    type="button"
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      editForm.isActive ? 'bg-green-600' : 'bg-gray-200'
+                    }`}
+                    onClick={() => setEditForm({ ...editForm, isActive: !editForm.isActive })}
+                    data-testid="toggle-user-status"
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        editForm.isActive ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm ${editForm.isActive ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                    Active
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditModal(false)}
+                disabled={updateLoading}
+                data-testid="button-cancel-edit"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                loading={updateLoading}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                data-testid="button-update-user"
+              >
+                Update User
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Delete User Modal */}
+      {showDeleteModal && selectedUser && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Delete User"
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Confirm User Deletion
+                </h3>
+                <p className="text-sm text-gray-600">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-sm text-red-800">
+                Are you sure you want to delete{' '}
+                <strong>{formatFullName(selectedUser.firstName, selectedUser.lastName)}</strong>{' '}
+                ({selectedUser.email})? This will permanently remove their account and all associated data.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteLoading}
+                data-testid="button-cancel-delete"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                loading={deleteLoading}
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                data-testid="button-confirm-delete"
+              >
+                Delete User
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>
