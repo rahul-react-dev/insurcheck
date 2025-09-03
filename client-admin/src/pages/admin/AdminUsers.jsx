@@ -43,6 +43,13 @@ const AdminUsers = () => {
     inactive: 0,
     recentlyAdded: 0
   });
+  const [subscriptionLimits, setSubscriptionLimits] = useState({
+    currentUserCount: 0,
+    maxUsers: 0,
+    remainingUsers: 0,
+    planName: '',
+    canInviteMore: true
+  });
 
   // Modal states
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -104,10 +111,23 @@ const AdminUsers = () => {
     }
   };
 
+  // Fetch subscription limits
+  const fetchSubscriptionLimits = async () => {
+    try {
+      const response = await adminAuthApi.getSubscriptionLimits();
+      if (response?.success) {
+        setSubscriptionLimits(response.data);
+      }
+    } catch (err) {
+      console.error('[AdminUsers] Error fetching subscription limits:', err);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     fetchUsers();
     fetchUserStats();
+    fetchSubscriptionLimits();
   }, [currentPage, pageSize, searchTerm, sortBy, sortOrder]);
 
   // Handle search
@@ -161,6 +181,7 @@ const AdminUsers = () => {
         // Refresh users list
         fetchUsers();
         fetchUserStats();
+        fetchSubscriptionLimits();
       } else {
         throw new Error(response?.message || 'Failed to invite user');
       }
@@ -745,9 +766,64 @@ const AdminUsers = () => {
             </div>
 
 
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            {/* Subscription Limits Info */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-md p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium text-gray-800">Current Subscription Usage</h4>
+                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                  {subscriptionLimits.planName}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-900">
+                      {subscriptionLimits.currentUserCount}
+                    </div>
+                    <div className="text-xs text-gray-500">Current Users</div>
+                  </div>
+                  <div className="text-gray-400">/</div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-900">
+                      {subscriptionLimits.maxUsers}
+                    </div>
+                    <div className="text-xs text-gray-500">Max Users</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-lg font-bold ${
+                      subscriptionLimits.remainingUsers > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {subscriptionLimits.remainingUsers}
+                    </div>
+                    <div className="text-xs text-gray-500">Remaining</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    subscriptionLimits.currentUserCount >= subscriptionLimits.maxUsers 
+                      ? 'bg-red-500' 
+                      : subscriptionLimits.remainingUsers <= 5 
+                        ? 'bg-yellow-500' 
+                        : 'bg-blue-500'
+                  }`}
+                  style={{
+                    width: `${Math.min((subscriptionLimits.currentUserCount / subscriptionLimits.maxUsers) * 100, 100)}%`
+                  }}
+                ></div>
+              </div>
+              
               <p className="text-sm text-blue-700">
-                The user will receive an email with login credentials and a temporary password. All invited users will have standard user access.
+                {subscriptionLimits.canInviteMore ? (
+                  <>You can invite <strong>{subscriptionLimits.remainingUsers}</strong> more users to your organization. The user will receive an email with login credentials and a temporary password.</>
+                ) : (
+                  <span className="text-red-700 font-medium">
+                    ⚠️ User limit reached! Please upgrade your subscription to invite more users.
+                  </span>
+                )}
               </p>
             </div>
 
@@ -763,9 +839,15 @@ const AdminUsers = () => {
               <Button
                 type="submit"
                 loading={inviteLoading}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={!subscriptionLimits.canInviteMore || inviteLoading}
+                className={`${
+                  subscriptionLimits.canInviteMore 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                } text-white`}
+                data-testid="button-send-invitation"
               >
-                Send Invitation
+                {subscriptionLimits.canInviteMore ? 'Send Invitation' : 'User Limit Reached'}
               </Button>
             </div>
           </form>

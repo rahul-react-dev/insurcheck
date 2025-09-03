@@ -156,6 +156,7 @@ export const adminAuthApi = {
   },
   
   getUserStats: () => apiCall('/api/admin/users/stats'),
+  getSubscriptionLimits: () => apiCall('/api/admin/users/subscription-limits'),
   
   // Compliance Rules Management API
   getComplianceRules: (params = {}) => {

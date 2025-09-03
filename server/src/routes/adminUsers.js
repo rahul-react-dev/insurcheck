@@ -38,5 +38,6 @@ router.get('/', getUsersValidation, adminUserController.getAdminUsers);
 router.post('/invite', inviteUserValidation, adminUserController.inviteUser);
 router.get('/export', exportValidation, adminUserController.exportUsers);
 router.get('/stats', adminUserController.getUserStats);
+router.get('/subscription-limits', adminUserController.getTenantSubscriptionLimits);
 
 export default router;

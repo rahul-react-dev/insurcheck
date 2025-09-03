@@ -1,5 +1,5 @@
 import { db } from '../../db.ts';
-import { users, tenants } from '@shared/schema';
+import { users, tenants, subscriptions, subscriptionPlans } from '@shared/schema';
 import { eq, like, or, and, desc, asc, count, gte } from 'drizzle-orm';
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
@@ -126,6 +126,51 @@ export const inviteUser = async (req, res) => {
     const { firstName, lastName, email, phoneNumber, companyName, role = 'user' } = req.body;
 
     console.log(`👤 Admin Invite: Creating user ${firstName} ${lastName} (${email}) for tenant ${tenantId}`);
+
+    // Check subscription limits before proceeding
+    const currentUserCount = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.tenantId, tenantId));
+
+    const tenantSubscription = await db
+      .select({
+        planName: subscriptionPlans.name,
+        maxUsers: subscriptionPlans.maxUsers
+      })
+      .from(subscriptions)
+      .leftJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id))
+      .where(
+        and(
+          eq(subscriptions.tenantId, tenantId),
+          eq(subscriptions.status, 'active')
+        )
+      )
+      .limit(1);
+
+    if (tenantSubscription.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No active subscription found. Please contact support to activate your subscription.'
+      });
+    }
+
+    const currentUsers = parseInt(currentUserCount[0].count);
+    const maxUsers = tenantSubscription[0].maxUsers;
+
+    console.log(`📊 Subscription check: ${currentUsers}/${maxUsers} users for tenant ${tenantId}`);
+
+    if (currentUsers >= maxUsers) {
+      return res.status(400).json({
+        success: false,
+        message: `User limit reached. Your ${tenantSubscription[0].planName} plan allows up to ${maxUsers} users. Please upgrade your subscription to add more users.`,
+        data: {
+          currentUsers,
+          maxUsers,
+          planName: tenantSubscription[0].planName
+        }
+      });
+    }
 
     // Check if user already exists
     const existingUser = await db.select()
@@ -378,6 +423,75 @@ export const getUserStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching user statistics'
+    });
+  }
+};
+
+// Get tenant subscription limits and current usage
+export const getTenantSubscriptionLimits = async (req, res) => {
+  try {
+    const { tenantId } = req.user;
+
+    console.log(`📊 Fetching subscription limits for tenant ${tenantId}`);
+
+    // Get current user count
+    const currentUserCount = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.tenantId, tenantId));
+
+    // Get tenant's active subscription with plan details
+    const tenantSubscription = await db
+      .select({
+        planName: subscriptionPlans.name,
+        maxUsers: subscriptionPlans.maxUsers,
+        storageLimit: subscriptionPlans.storageLimit,
+        features: subscriptionPlans.features,
+        subscriptionStatus: subscriptions.status,
+        planId: subscriptions.planId
+      })
+      .from(subscriptions)
+      .leftJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id))
+      .where(
+        and(
+          eq(subscriptions.tenantId, tenantId),
+          eq(subscriptions.status, 'active')
+        )
+      )
+      .limit(1);
+
+    if (tenantSubscription.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active subscription found for this tenant'
+      });
+    }
+
+    const subscription = tenantSubscription[0];
+    const currentUsers = parseInt(currentUserCount[0].count);
+    const maxUsers = subscription.maxUsers;
+    const remainingUsers = maxUsers - currentUsers;
+
+    console.log(`✅ Subscription limits fetched for tenant ${tenantId}: ${currentUsers}/${maxUsers} users`);
+
+    res.json({
+      success: true,
+      data: {
+        currentUserCount: currentUsers,
+        maxUsers: maxUsers,
+        remainingUsers: remainingUsers,
+        planName: subscription.planName,
+        storageLimit: subscription.storageLimit,
+        features: subscription.features,
+        canInviteMore: remainingUsers > 0
+      }
+    });
+
+  } catch (error) {
+    console.error('Get subscription limits error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching subscription limits'
     });
   }
 };
