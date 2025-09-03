@@ -25,6 +25,7 @@ import {
   FileTextIcon,
   SortAscIcon,
   SortDescIcon,
+  CheckCircleIcon,
 } from "lucide-react";
 
 const Invoices = () => {
@@ -33,10 +34,10 @@ const Invoices = () => {
   // Local state for filters and pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState("issueDate");
+  const [sortBy, setSortBy] = useState("paidDate");
   const [sortOrder, setSortOrder] = useState("desc");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  // Removed statusFilter since we only show paid invoices
 
   // Modal states
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -97,7 +98,7 @@ const Invoices = () => {
       sortBy,
       sortOrder,
       search: searchTerm,
-      status: statusFilter,
+      status: 'paid', // Only show paid invoices (subscription payment history)
       startDate: activeFilters.startDate,
       endDate: activeFilters.endDate,
     };
@@ -110,7 +111,6 @@ const Invoices = () => {
     sortBy,
     sortOrder,
     searchTerm,
-    statusFilter,
     activeFilters.startDate,
     activeFilters.endDate,
   ]);
@@ -120,7 +120,6 @@ const Invoices = () => {
     setCurrentPage(1);
   }, [
     searchTerm,
-    statusFilter,
     activeFilters.startDate,
     activeFilters.endDate,
   ]);
@@ -218,7 +217,7 @@ const Invoices = () => {
     const params = {
       format,
       search: searchTerm,
-      status: statusFilter,
+      status: 'paid', // Only paid invoices
       sortBy,
       sortOrder,
     };
@@ -231,10 +230,7 @@ const Invoices = () => {
     setSearchTerm(e.target.value);
   };
 
-  // Handle status filter change
-  const handleStatusFilterChange = (e) => {
-    setStatusFilter(e.target.value);
-  };
+  // Status filter removed - only showing paid invoices (subscription payment history)
 
   // Reset payment modal
   const resetPaymentModal = () => {
@@ -260,7 +256,7 @@ const Invoices = () => {
         sortBy,
         sortOrder,
         search: searchTerm,
-        status: statusFilter,
+        status: 'paid', // Only paid invoices
       };
       dispatch(fetchInvoicesRequest(params));
       dispatch(fetchInvoiceStatsRequest());
@@ -287,10 +283,10 @@ const Invoices = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Invoices & Payments
+              My Invoices
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage your invoices, process payments, and download receipts
+              View your subscription payment history and download invoices
             </p>
           </div>
         </div>
@@ -311,7 +307,7 @@ const Invoices = () => {
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search invoices..."
+                  placeholder="Search payment history..."
                   value={searchTerm}
                   onChange={handleSearchChange}
                   className="pl-10 pr-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
@@ -320,19 +316,10 @@ const Invoices = () => {
 
               {/* Filter Controls */}
               <div className="flex flex-wrap gap-3">
-                {/* Status Filter */}
-                <div className="relative">
-                  <FilterIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select
-                    value={statusFilter}
-                    onChange={handleStatusFilterChange}
-                    className="pl-9 pr-8 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white text-sm font-medium"
-                  >
-                    <option value="">All Status</option>
-                    <option value="paid">Paid</option>
-                    <option value="unpaid">Unpaid</option>
-                    <option value="overdue">Overdue</option>
-                  </select>
+                {/* Payment History Filter Info */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+                  <CheckCircleIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">Paid Invoices Only</span>
                 </div>
 
                 {/* Date Range Filter */}
@@ -365,7 +352,7 @@ const Invoices = () => {
 
                 {/* Clear Filters */}
                 {(searchTerm ||
-                  statusFilter ||
+                  false || // No status filter needed
                   activeFilters.startDate ||
                   activeFilters.endDate) && (
                   <Button
@@ -402,12 +389,12 @@ const Invoices = () => {
                   }}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                 >
-                  <option value="issueDate-desc">Newest First</option>
-                  <option value="issueDate-asc">Oldest First</option>
+                  <option value="paidDate-desc">Latest Payment</option>
+                  <option value="paidDate-asc">Oldest Payment</option>
                   <option value="totalAmount-desc">Highest Amount</option>
                   <option value="totalAmount-asc">Lowest Amount</option>
                   <option value="invoiceNumber-asc">Invoice Number</option>
-                  <option value="dueDate-asc">Due Date</option>
+                  <option value="issueDate-desc">Issue Date</option>
                 </select>
               </div>
 

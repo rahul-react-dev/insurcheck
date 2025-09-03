@@ -165,7 +165,7 @@ const EnhancedInvoiceTable = ({
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4" />
-                    Dates
+                    Payment Date
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -175,7 +175,7 @@ const EnhancedInvoiceTable = ({
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Status
+                  Subscription Plan
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Payment Info
@@ -220,20 +220,22 @@ const EnhancedInvoiceTable = ({
                       </div>
                     </td>
 
-                    {/* Dates */}
+                    {/* Payment Date */}
                     <td className="px-6 py-4">
                       <div className="space-y-1 text-sm">
-                        <div className="text-gray-900">
-                          <span className="text-gray-500">Issue:</span> {formatDate(invoice.invoiceDate)}
-                        </div>
-                        <div className={`${isOverdue(invoice.dueDate, invoice.status) ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                          <span className="text-gray-500">Due:</span> {formatDate(invoice.dueDate)}
-                        </div>
-                        {invoice.paidDate && (
-                          <div className="text-emerald-600">
-                            <span className="text-gray-500">Paid:</span> {formatDate(invoice.paidDate)}
+                        {invoice.paidDate ? (
+                          <div className="text-emerald-600 font-semibold text-base">
+                            {formatDate(invoice.paidDate)}
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">
+                            Not paid
                           </div>
                         )}
+                        <div className="text-xs text-gray-500">
+                          <span>Billing Period:</span><br />
+                          {formatDate(invoice.billingPeriodStart)} - {formatDate(invoice.billingPeriodEnd)}
+                        </div>
                       </div>
                     </td>
 
@@ -251,14 +253,21 @@ const EnhancedInvoiceTable = ({
                       </div>
                     </td>
 
-                    {/* Status */}
+                    {/* Subscription Plan */}
                     <td className="px-6 py-4">
-                      <StatusBadge status={invoice.status} />
-                      {isOverdue(invoice.dueDate, invoice.status) && (
-                        <div className="mt-1 text-xs text-red-600 font-medium">
-                          Overdue
+                      <div className="space-y-1">
+                        <div className="font-semibold text-gray-900">
+                          {invoice.planName || 'Plan Info Unavailable'}
                         </div>
-                      )}
+                        <div className="text-sm text-gray-600">
+                          {invoice.planDescription || ''}
+                        </div>
+                        {invoice.planPrice && (
+                          <div className="text-xs text-blue-600 font-medium">
+                            ${invoice.planPrice}/month
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     {/* Payment Info */}
@@ -293,29 +302,16 @@ const EnhancedInvoiceTable = ({
                           View
                         </Button>
                         
-                        {(invoice.status === 'unpaid' || invoice.status === 'overdue') && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onProcessPayment(invoice)}
-                            className="flex items-center gap-1.5 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all"
-                          >
-                            <CreditCardIcon className="w-4 h-4" />
-                            Pay
-                          </Button>
-                        )}
-                        
-                        {invoice.status === 'paid' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onDownloadReceipt(invoice)}
-                            className="flex items-center gap-1.5 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all"
-                          >
-                            <DownloadIcon className="w-4 h-4" />
-                            Receipt
-                          </Button>
-                        )}
+                        {/* Only show download receipt for payment history */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onDownloadReceipt(invoice)}
+                          className="flex items-center gap-1.5 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all"
+                        >
+                          <DownloadIcon className="w-4 h-4" />
+                          Receipt
+                        </Button>
                       </div>
                     </td>
                   </tr>

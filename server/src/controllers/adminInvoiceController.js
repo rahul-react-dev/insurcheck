@@ -1,5 +1,5 @@
 import { db } from '../../db.js';
-import { invoices, tenants, users, complianceRuleAuditLogs } from '../../../shared/schema.js';
+import { invoices, tenants, users, complianceRuleAuditLogs, subscriptionPlans, subscriptions } from '../../../shared/schema.js';
 import { eq, and, like, desc, asc, count, sql, or } from 'drizzle-orm';
 
 // Get invoices for tenant admin with enhanced filtering and statistics
@@ -21,10 +21,35 @@ export const getAdminInvoices = async (req, res) => {
 
     console.log(`📋 Admin fetching invoices for tenant ${tenantId}`);
 
-    // Build base query for invoices
+    // Build base query for invoices with subscription plan information for "My Invoices" context
     let query = db
-      .select()
-      .from(invoices);
+      .select({
+        id: invoices.id,
+        invoiceNumber: invoices.invoiceNumber,
+        issueDate: invoices.issueDate,
+        dueDate: invoices.dueDate,
+        amount: invoices.amount,
+        taxAmount: invoices.taxAmount,
+        totalAmount: invoices.totalAmount,
+        status: invoices.status,
+        paidDate: invoices.paidDate,
+        paymentMethod: invoices.paymentMethod,
+        transactionId: invoices.transactionId,
+        billingPeriodStart: invoices.billingPeriodStart,
+        billingPeriodEnd: invoices.billingPeriodEnd,
+        items: invoices.items,
+        billingDetails: invoices.billingDetails,
+        createdAt: invoices.createdAt,
+        updatedAt: invoices.updatedAt,
+        tenantId: invoices.tenantId,
+        // Include subscription plan information for context
+        planName: subscriptionPlans.name,
+        planDescription: subscriptionPlans.description,
+        planPrice: subscriptionPlans.price
+      })
+      .from(invoices)
+      .leftJoin(subscriptions, eq(invoices.tenantId, subscriptions.tenantId))
+      .leftJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id));
 
     // Apply filters
     let whereConditions = [eq(invoices.tenantId, tenantId)];
@@ -52,18 +77,19 @@ export const getAdminInvoices = async (req, res) => {
 
     query = query.where(and(...whereConditions));
 
-    // Apply sorting with valid field mapping
+    // Apply sorting with valid field mapping for "My Invoices" (subscription payment history)
     const validSortFields = {
       'invoiceNumber': invoices.invoiceNumber,
       'issueDate': invoices.issueDate,
       'dueDate': invoices.dueDate,
+      'paidDate': invoices.paidDate, // Added paidDate for subscription payment history
       'totalAmount': invoices.totalAmount,
       'amount': invoices.amount,
       'status': invoices.status,
       'createdAt': invoices.createdAt
     };
     
-    const sortColumn = validSortFields[sortBy] || invoices.issueDate;
+    const sortColumn = validSortFields[sortBy] || invoices.paidDate; // Default to paidDate for payment history
     query = sortOrder === 'asc' 
       ? query.orderBy(asc(sortColumn))
       : query.orderBy(desc(sortColumn));
@@ -106,39 +132,45 @@ export const getAdminInvoiceStats = async (req, res) => {
   try {
     const { tenantId } = req.user;
 
-    console.log(`📊 Admin fetching invoice stats for tenant ${tenantId}`);
+    console.log(`📊 Admin fetching "My Invoices" payment history stats for tenant ${tenantId}`);
 
-    // Use Drizzle sql template for complex aggregations with correct enum values
-    console.log(`🔍 Using tenant ID: ${tenantId} for stats query`);
+    // Enhanced stats query for subscription payment history
+    console.log(`🔍 Using tenant ID: ${tenantId} for payment history stats`);
 
     const result = await db.execute(sql`
       SELECT 
-        COUNT(*) as total,
-        COALESCE(SUM(total_amount), 0) as total_amount,
-        COUNT(*) FILTER (WHERE status = 'paid') as paid_count,
-        COALESCE(SUM(total_amount) FILTER (WHERE status = 'paid'), 0) as paid_amount,
-        COUNT(*) FILTER (WHERE status IN ('draft', 'sent')) as unpaid_count,
-        COALESCE(SUM(total_amount) FILTER (WHERE status IN ('draft', 'sent')), 0) as unpaid_amount,
-        COUNT(*) FILTER (WHERE status = 'overdue') as overdue_count,
-        COALESCE(SUM(total_amount) FILTER (WHERE status = 'overdue'), 0) as overdue_amount
+        COUNT(*) FILTER (WHERE status = 'paid') as total_paid,
+        COALESCE(SUM(total_amount) FILTER (WHERE status = 'paid'), 0) as total_paid_amount,
+        MIN(paid_date) FILTER (WHERE status = 'paid') as first_payment_date,
+        MAX(paid_date) FILTER (WHERE status = 'paid') as last_payment_date,
+        COUNT(DISTINCT DATE_TRUNC('year', paid_date)) FILTER (WHERE status = 'paid') as payment_years,
+        COUNT(DISTINCT DATE_TRUNC('month', paid_date)) FILTER (WHERE status = 'paid') as payment_months
       FROM invoices 
       WHERE tenant_id = ${tenantId}
     `);
     const stats = result.rows[0];
 
-    console.log(`✅ Admin invoice stats retrieved for tenant ${tenantId}`);
+    console.log(`✅ Admin "My Invoices" payment history stats retrieved for tenant ${tenantId}`);
 
     res.json({
       success: true,
       data: {
-        total: parseInt(stats.total || 0),
-        totalAmount: parseFloat(stats.total_amount || 0),
-        paid: parseInt(stats.paid_count || 0),
-        paidAmount: parseFloat(stats.paid_amount || 0),
-        unpaid: parseInt(stats.unpaid_count || 0),
-        unpaidAmount: parseFloat(stats.unpaid_amount || 0),
-        overdue: parseInt(stats.overdue_count || 0),
-        overdueAmount: parseFloat(stats.overdue_amount || 0)
+        // Payment history focused stats
+        totalPaid: parseInt(stats.total_paid || 0),
+        totalPaidAmount: parseFloat(stats.total_paid_amount || 0),
+        firstPaymentDate: stats.first_payment_date,
+        lastPaymentDate: stats.last_payment_date,
+        paymentYears: parseInt(stats.payment_years || 0),
+        paymentMonths: parseInt(stats.payment_months || 0),
+        // Legacy fields for compatibility 
+        total: parseInt(stats.total_paid || 0),
+        totalAmount: parseFloat(stats.total_paid_amount || 0),
+        paid: parseInt(stats.total_paid || 0),
+        paidAmount: parseFloat(stats.total_paid_amount || 0),
+        unpaid: 0, // Not relevant for payment history
+        unpaidAmount: 0,
+        overdue: 0,
+        overdueAmount: 0
       }
     });
 
