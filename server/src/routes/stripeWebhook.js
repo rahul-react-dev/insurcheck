@@ -25,12 +25,14 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   const payload = req.body;
 
   console.log('📨 Received Stripe webhook');
+  console.log('🔍 Webhook signature header:', sig ? 'Present' : 'Missing');
+  console.log('📦 Webhook payload size:', payload ? payload.length : 0);
 
   // Verify webhook signature
   const verification = verifyWebhookSignature(payload, sig, STRIPE_WEBHOOK_SECRET);
   
   if (!verification.success) {
-    console.error('❌ Webhook signature verification failed');
+    console.error('❌ Webhook signature verification failed:', verification.error);
     return res.status(400).send('Webhook signature verification failed');
   }
 
