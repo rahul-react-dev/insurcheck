@@ -24,9 +24,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   const sig = req.headers['stripe-signature'];
   const payload = req.body;
 
-  console.log('📨 Received Stripe webhook');
+  console.log('📨 ========== STRIPE WEBHOOK RECEIVED ==========');
   console.log('🔍 Webhook signature header:', sig ? 'Present' : 'Missing');
   console.log('📦 Webhook payload size:', payload ? payload.length : 0);
+  console.log('⏰ Timestamp:', new Date().toISOString());
+  console.log('🌐 Headers:', JSON.stringify(req.headers, null, 2));
 
   // Verify webhook signature
   const verification = verifyWebhookSignature(payload, sig, STRIPE_WEBHOOK_SECRET);

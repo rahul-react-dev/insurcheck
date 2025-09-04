@@ -1,0 +1,17 @@
+curl 'https://api.stripe.com/v1/payment_intents/pi_3S3awN0uo1YY2DqV0tlyww8k/confirm' \
+  -H 'accept: application/json' \
+  -H 'accept-language: en-US,en;q=0.9' \
+  -H 'cache-control: no-cache' \
+  -H 'content-type: application/x-www-form-urlencoded' \
+  -H 'origin: https://js.stripe.com' \
+  -H 'pragma: no-cache' \
+  -H 'priority: u=1, i' \
+  -H 'referer: https://js.stripe.com/' \
+  -H 'sec-ch-ua: "Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: same-site' \
+  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36' \
+  --data-raw 'payment_method_data[type]=card&payment_method_data[card][number]=4242424242424242&payment_method_data[card][cvc]=999&payment_method_data[card][exp_month]=10&payment_method_data[card][exp_year]=26&payment_method_data[billing_details][address][postal_code]=11111&payment_method_data[guid]=035a5031-cce8-4bd2-919f-b0822b90fd09439271&payment_method_data[muid]=0110603f-45a2-4919-9ff5-d87f3ae046dfca54aa&payment_method_data[sid]=7a10ccb0-6961-4ccb-a419-43da13db3d1542d0b3&payment_method_data[payment_user_agent]=stripe.js%2Ffb723d1ed6%3B+stripe-js-v3%2Ffb723d1ed6%3B+card-element&payment_method_data[referrer]=https%3A%2F%2F6e9b2d76-9443-4b59-a8a6-fa1af7c6d252-00-2yj1ojsu1e06t.riker.replit.dev%3A3000&payment_method_data[time_on_page]=17710&payment_method_data[client_attribution_metadata][client_session_id]=239e3e0a-d340-42ad-bae4-f89b91eab38b&payment_method_data[client_attribution_metadata][merchant_integration_source]=elements&payment_method_data[client_attribution_metadata][merchant_integration_subtype]=card-element&payment_method_data[client_attribution_metadata][merchant_integration_version]=2017&expected_payment_method_type=card&radar_options[hcaptcha_token]=20000000-aaaa-bbbb-cccc-000000000002&use_stripe_sdk=true&key=pk_test_51S3Vbc0uo1YY2DqVxytpQYWWBMdAamdIPg0svCB15EIcXKUXg6Wnsqu1iZ8B6oRXH0F2BrLrAVeRNluVnvd3KDaJ005IBwNVOe&_stripe_version=2025-03-31.basil&client_secret=pi_3S3awN0uo1YY2DqV0tlyww8k_secret_dblIIWG8vuTXo56RefGDk09zy'
