@@ -81,50 +81,17 @@ const Subscription = () => {
 
   const handlePaymentSuccess = (paymentIntent) => {
     console.log('✅ Frontend payment success:', paymentIntent);
-    console.log('🔍 Payment Intent Details:', {
-      id: paymentIntent.id,
-      status: paymentIntent.status,
-      amount: paymentIntent.amount,
-      metadata: paymentIntent.metadata
-    });
     
     toast({
       title: 'Payment Successful!',
-      description: `Payment confirmed for ${selectedPlan?.name} plan. Checking for subscription update...`,
+      description: `Payment confirmed for ${selectedPlan?.name} plan. Your subscription will be updated shortly.`,
       variant: 'default'
     });
     
-    // Store payment intent ID for debugging
-    const paymentIntentId = paymentIntent.id;
-    
-    // Implement aggressive refresh strategy to catch webhook updates
-    let refreshCount = 0;
-    const maxRefreshes = 6;
-    
-    const refreshSubscription = () => {
-      refreshCount++;
-      console.log(`🔄 Refresh attempt ${refreshCount}/${maxRefreshes} - checking subscription status`);
+    // Add a delay to allow webhook processing, then refresh
+    setTimeout(() => {
       dispatch(fetchSubscriptionRequest());
-      
-      if (refreshCount >= maxRefreshes) {
-        console.log('⚠️ Max refresh attempts reached - subscription may not have updated');
-        toast({
-          title: 'Payment Processed',
-          description: 'Payment was successful. If your plan hasn\'t updated, please contact support.',
-          variant: 'default'
-        });
-      }
-    };
-    
-    // Immediate refresh
-    refreshSubscription();
-    
-    // Staggered refreshes to catch webhook updates
-    setTimeout(refreshSubscription, 1000);
-    setTimeout(refreshSubscription, 3000);
-    setTimeout(refreshSubscription, 6000);
-    setTimeout(refreshSubscription, 10000);
-    setTimeout(refreshSubscription, 15000);
+    }, 3000); // Wait 3 seconds for webhook to process
     
     dispatch(clearPaymentIntent());
     setSelectedPlan(null);

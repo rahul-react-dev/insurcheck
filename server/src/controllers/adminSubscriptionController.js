@@ -280,21 +280,13 @@ export const createUpgradePaymentIntent = async (req, res) => {
       });
     }
 
-    console.log(`✅ Payment intent created for tenant ${tenantId}: ${paymentIntentResult.data.paymentIntentId}`);
-    console.log(`🔍 Payment intent metadata:`, JSON.stringify({
-      tenantId: tenantId.toString(),
-      newPlanId: planId.toString(),
-      subscriptionId: currentSubscription[0].id.toString(),
-      currentPlanId: currentPlan.id.toString(),
-      upgradeType: newPlan[0].price > currentPlan.price ? 'upgrade' : 'downgrade'
-    }, null, 2));
+    console.log(`✅ Payment intent created for tenant ${tenantId}`);
 
     res.json({
       success: true,
       data: {
         requiresPayment: true,
         clientSecret: paymentIntentResult.data.clientSecret,
-        paymentIntentId: paymentIntentResult.data.paymentIntentId,
         amount: amount,
         currency: 'usd',
         currentPlan: currentPlan,
