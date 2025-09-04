@@ -512,3 +512,104 @@ export const getSubscriptionAnalytics = async (req, res) => {
     });
   }
 };
+
+// Verify payment and update subscription immediately
+export const verifyPaymentAndUpdateSubscription = async (req, res) => {
+  try {
+    const { tenantId } = req.user;
+    const { paymentIntentId, planId } = req.body;
+
+    if (!paymentIntentId || !planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment intent ID and plan ID are required'
+      });
+    }
+
+    console.log(`🔍 Verifying payment intent ${paymentIntentId} for tenant ${tenantId}`);
+
+    // Import stripe here to avoid circular dependencies
+    const { retrievePaymentIntent } = await import('../../services/stripeService.js');
+
+    // Retrieve payment intent from Stripe
+    const paymentResult = await retrievePaymentIntent(paymentIntentId);
+
+    if (!paymentResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to retrieve payment information'
+      });
+    }
+
+    const paymentIntent = paymentResult.data;
+
+    // Check if payment was successful
+    if (paymentIntent.status === 'succeeded') {
+      console.log(`✅ Payment confirmed for tenant ${tenantId}, updating subscription to plan ${planId}`);
+
+      // Get current subscription
+      const currentSubscription = await db
+        .select({
+          id: subscriptions.id,
+          tenantId: subscriptions.tenantId,
+          planId: subscriptions.planId,
+          status: subscriptions.status
+        })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.tenantId, tenantId),
+            eq(subscriptions.status, 'active')
+          )
+        )
+        .limit(1);
+
+      if (currentSubscription.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No active subscription found'
+        });
+      }
+
+      // Update subscription to new plan
+      const updatedSubscription = await db
+        .update(subscriptions)
+        .set({
+          planId: parseInt(planId),
+          status: 'active',
+          updatedAt: new Date()
+        })
+        .where(eq(subscriptions.id, currentSubscription[0].id))
+        .returning();
+
+      console.log(`🎉 Subscription successfully updated for tenant ${tenantId} to plan ${planId}`);
+
+      res.json({
+        success: true,
+        message: 'Subscription updated successfully',
+        data: {
+          subscription: updatedSubscription[0],
+          paymentStatus: paymentIntent.status
+        }
+      });
+
+    } else {
+      console.log(`❌ Payment not completed for tenant ${tenantId}. Status: ${paymentIntent.status}`);
+
+      res.json({
+        success: false,
+        message: `Payment not completed. Status: ${paymentIntent.status}`,
+        data: {
+          paymentStatus: paymentIntent.status
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error verifying payment'
+    });
+  }
+};

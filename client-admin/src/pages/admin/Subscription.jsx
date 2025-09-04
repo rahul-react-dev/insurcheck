@@ -79,19 +79,65 @@ const Subscription = () => {
     }
   }, [paymentIntent.error, dispatch, toast]);
 
-  const handlePaymentSuccess = (paymentIntent) => {
+  const handlePaymentSuccess = async (paymentIntent) => {
     console.log('✅ Frontend payment success:', paymentIntent);
     
     toast({
       title: 'Payment Successful!',
-      description: `Payment confirmed for ${selectedPlan?.name} plan. Your subscription will be updated shortly.`,
+      description: `Payment confirmed for ${selectedPlan?.name} plan. Updating your subscription...`,
       variant: 'default'
     });
     
-    // Add a delay to allow webhook processing, then refresh
-    setTimeout(() => {
-      dispatch(fetchSubscriptionRequest());
-    }, 3000); // Wait 3 seconds for webhook to process
+    // Immediately verify payment and update subscription
+    try {
+      const verifyResponse = await fetch('/api/admin/subscription/verify-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          paymentIntentId: paymentIntent.id,
+          planId: selectedPlan?.id
+        })
+      });
+      
+      const verifyResult = await verifyResponse.json();
+      
+      if (verifyResult.success) {
+        toast({
+          title: 'Subscription Updated!',
+          description: `Successfully upgraded to ${selectedPlan?.name} plan`,
+          variant: 'default'
+        });
+        
+        // Refresh subscription data immediately
+        dispatch(fetchSubscriptionRequest());
+      } else {
+        toast({
+          title: 'Update Pending',
+          description: 'Payment successful. Subscription update in progress...',
+          variant: 'default'
+        });
+        
+        // Fallback: refresh after delay
+        setTimeout(() => {
+          dispatch(fetchSubscriptionRequest());
+        }, 5000);
+      }
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      toast({
+        title: 'Update Pending',
+        description: 'Payment successful. Subscription update in progress...',
+        variant: 'default'
+      });
+      
+      // Fallback: refresh after delay
+      setTimeout(() => {
+        dispatch(fetchSubscriptionRequest());
+      }, 5000);
+    }
     
     dispatch(clearPaymentIntent());
     setSelectedPlan(null);
