@@ -13,6 +13,7 @@ import invoicesRoutes from './src/routes/invoices.js';
 import adminInvoicesRoutes from './src/routes/adminInvoices.js';
 import complianceAnalyticsRoutes from './src/routes/complianceAnalytics.js';
 import adminSubscriptionRoutes from './src/routes/adminSubscription.js';
+import stripeWebhookRoutes from './src/routes/stripeWebhook.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -105,6 +106,9 @@ app.get('/api/health', (req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Stripe webhook (before JSON middleware)
+app.use('/api/stripe', stripeWebhookRoutes);
 
 // Admin routes
 app.use('/api/admin/users', adminUserRoutes);

@@ -3,8 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { 
   fetchSubscriptionRequest, 
   fetchAvailablePlansRequest,
-  upgradePlanRequest
+  upgradePlanRequest,
+  createPaymentIntentRequest,
+  clearPaymentIntent
 } from '../../store/admin/subscriptionSlice';
+import StripePaymentModal from '../../components/admin/StripePaymentModal';
+import { useToast } from '../../hooks/use-toast';
 
 const Subscription = () => {
   const dispatch = useDispatch();
@@ -13,10 +17,13 @@ const Subscription = () => {
     availablePlans, 
     isLoading, 
     error, 
-    upgradePlan 
+    upgradePlan,
+    paymentIntent 
   } = useSelector((state) => state.adminSubscription);
+  const { toast } = useToast();
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   useEffect(() => {
@@ -31,10 +38,73 @@ const Subscription = () => {
 
   const confirmUpgrade = () => {
     if (selectedPlan) {
-      dispatch(upgradePlanRequest({ planId: selectedPlan.id }));
+      // Create payment intent to check if payment is required
+      dispatch(createPaymentIntentRequest({ planId: selectedPlan.id }));
       setShowUpgradeModal(false);
+    }
+  };
+
+  // Handle payment intent success
+  useEffect(() => {
+    if (paymentIntent.data && !paymentIntent.isLoading && !paymentIntent.error) {
+      if (paymentIntent.data.requiresPayment) {
+        // Show Stripe payment modal
+        setShowPaymentModal(true);
+      } else {
+        // Direct upgrade without payment (downgrade or same price)
+        toast({
+          title: 'Subscription Updated!',
+          description: 'Your subscription has been updated successfully.',
+          variant: 'default'
+        });
+        
+        // Refresh subscription data
+        dispatch(fetchSubscriptionRequest());
+        dispatch(clearPaymentIntent());
+        setSelectedPlan(null);
+      }
+    }
+  }, [paymentIntent.data, paymentIntent.isLoading, paymentIntent.error, dispatch, toast]);
+
+  // Handle payment intent error
+  useEffect(() => {
+    if (paymentIntent.error) {
+      toast({
+        title: 'Payment Setup Failed',
+        description: paymentIntent.error,
+        variant: 'destructive'
+      });
+      dispatch(clearPaymentIntent());
       setSelectedPlan(null);
     }
+  }, [paymentIntent.error, dispatch, toast]);
+
+  const handlePaymentSuccess = (paymentIntent) => {
+    toast({
+      title: 'Payment Successful!',
+      description: `Successfully upgraded to ${selectedPlan?.name} plan`,
+      variant: 'default'
+    });
+    
+    // Refresh subscription data
+    dispatch(fetchSubscriptionRequest());
+    dispatch(clearPaymentIntent());
+    setSelectedPlan(null);
+    setShowPaymentModal(false);
+  };
+
+  const handlePaymentError = (error) => {
+    toast({
+      title: 'Payment Failed',
+      description: error,
+      variant: 'destructive'
+    });
+  };
+
+  const handlePaymentModalClose = () => {
+    setShowPaymentModal(false);
+    dispatch(clearPaymentIntent());
+    setSelectedPlan(null);
   };
 
   const formatDate = (dateString) => {
@@ -387,6 +457,15 @@ const Subscription = () => {
           </div>
         </div>
       )}
+
+      {/* Stripe Payment Modal */}
+      <StripePaymentModal
+        isOpen={showPaymentModal}
+        onClose={handlePaymentModalClose}
+        paymentData={paymentIntent.data}
+        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentError={handlePaymentError}
+      />
     </div>
   );
 };

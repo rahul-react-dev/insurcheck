@@ -1,6 +1,11 @@
 import { db } from '../../db.ts';
 import { subscriptions, subscriptionPlans, users } from '@shared/schema';
 import { eq, and, count } from 'drizzle-orm';
+import { 
+  createPaymentIntent, 
+  createOrGetCustomer, 
+  calculateProratedAmount 
+} from '../../services/stripeService.js';
 
 // Get current subscription for the tenant admin
 export const getCurrentSubscription = async (req, res) => {
@@ -120,7 +125,185 @@ export const getAvailablePlans = async (req, res) => {
   }
 };
 
-// Upgrade/change subscription plan
+// Create payment intent for subscription upgrade
+export const createUpgradePaymentIntent = async (req, res) => {
+  try {
+    const { tenantId, email, firstName, lastName } = req.user;
+    const { planId } = req.body;
+
+    if (!planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Plan ID is required'
+      });
+    }
+
+    console.log(`💳 Creating payment intent for tenant ${tenantId} upgrade to plan ${planId}`);
+
+    // Verify the new plan exists and is active
+    const newPlan = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(and(eq(subscriptionPlans.id, planId), eq(subscriptionPlans.isActive, true)))
+      .limit(1);
+
+    if (newPlan.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or inactive plan selected'
+      });
+    }
+
+    // Get current subscription with plan details
+    const currentSubscription = await db
+      .select({
+        id: subscriptions.id,
+        tenantId: subscriptions.tenantId,
+        planId: subscriptions.planId,
+        status: subscriptions.status,
+        startedAt: subscriptions.startedAt,
+        endsAt: subscriptions.endsAt,
+        plan: {
+          id: subscriptionPlans.id,
+          name: subscriptionPlans.name,
+          price: subscriptionPlans.price,
+          billingCycle: subscriptionPlans.billingCycle
+        }
+      })
+      .from(subscriptions)
+      .leftJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id))
+      .where(
+        and(
+          eq(subscriptions.tenantId, tenantId),
+          eq(subscriptions.status, 'active')
+        )
+      )
+      .limit(1);
+
+    if (currentSubscription.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active subscription found'
+      });
+    }
+
+    // Check if user count is within new plan limits
+    const userCount = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.tenantId, tenantId));
+
+    if (userCount[0].count > newPlan[0].maxUsers) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot downgrade to this plan. Current user count (${userCount[0].count}) exceeds the plan limit (${newPlan[0].maxUsers}). Please remove users before downgrading.`,
+        data: {
+          currentUsers: userCount[0].count,
+          planLimit: newPlan[0].maxUsers
+        }
+      });
+    }
+
+    // Check if it's the same plan
+    if (currentSubscription[0].planId === planId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You are already on this plan'
+      });
+    }
+
+    // Calculate prorated amount
+    const currentPlan = currentSubscription[0].plan;
+    const amount = calculateProratedAmount({
+      currentPlanPrice: currentPlan.price,
+      newPlanPrice: newPlan[0].price,
+      currentPeriodStart: new Date(currentSubscription[0].startedAt),
+      currentPeriodEnd: new Date(currentSubscription[0].endsAt)
+    });
+
+    // If amount is 0 (downgrade), handle without payment
+    if (amount === 0) {
+      // Direct upgrade for downgrades or same price
+      const updatedSubscription = await db
+        .update(subscriptions)
+        .set({
+          planId: planId,
+          updatedAt: new Date()
+        })
+        .where(eq(subscriptions.id, currentSubscription[0].id))
+        .returning();
+
+      return res.json({
+        success: true,
+        message: 'Subscription updated successfully',
+        data: {
+          requiresPayment: false,
+          subscription: updatedSubscription[0]
+        }
+      });
+    }
+
+    // Create or get Stripe customer
+    const customerResult = await createOrGetCustomer({
+      email: email,
+      name: `${firstName} ${lastName}`,
+      tenantId: tenantId
+    });
+
+    if (!customerResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create customer',
+        error: customerResult.error
+      });
+    }
+
+    // Create payment intent
+    const paymentIntentResult = await createPaymentIntent({
+      amount: amount,
+      currency: 'usd',
+      customerId: customerResult.data.id,
+      metadata: {
+        tenantId: tenantId.toString(),
+        newPlanId: planId.toString(),
+        subscriptionId: currentSubscription[0].id.toString(),
+        currentPlanId: currentPlan.id.toString(),
+        upgradeType: newPlan[0].price > currentPlan.price ? 'upgrade' : 'downgrade'
+      }
+    });
+
+    if (!paymentIntentResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment intent',
+        error: paymentIntentResult.error
+      });
+    }
+
+    console.log(`✅ Payment intent created for tenant ${tenantId}`);
+
+    res.json({
+      success: true,
+      data: {
+        requiresPayment: true,
+        clientSecret: paymentIntentResult.data.clientSecret,
+        amount: amount,
+        currency: 'usd',
+        currentPlan: currentPlan,
+        newPlan: newPlan[0]
+      }
+    });
+
+  } catch (error) {
+    console.error('Create payment intent error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating payment intent'
+    });
+  }
+};
+
+// Legacy upgrade endpoint (now deprecated, use payment intent flow)
 export const upgradePlan = async (req, res) => {
   try {
     const { tenantId } = req.user;
@@ -133,7 +316,7 @@ export const upgradePlan = async (req, res) => {
       });
     }
 
-    console.log(`🔄 Upgrading subscription for tenant ${tenantId} to plan ${planId}`);
+    console.log(`🔄 Direct upgrade for tenant ${tenantId} to plan ${planId}`);
 
     // Verify the new plan exists and is active
     const newPlan = await db

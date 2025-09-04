@@ -9,6 +9,11 @@ const initialState = {
     isLoading: false,
     error: null,
     success: false
+  },
+  paymentIntent: {
+    isLoading: false,
+    error: null,
+    data: null
   }
 };
 
@@ -71,6 +76,32 @@ const subscriptionSlice = createSlice({
       state.upgradePlan.error = null;
     },
 
+    // Create payment intent
+    createPaymentIntentRequest: (state, action) => {
+      state.paymentIntent.isLoading = true;
+      state.paymentIntent.error = null;
+      state.paymentIntent.data = null;
+    },
+    createPaymentIntentSuccess: (state, action) => {
+      state.paymentIntent.isLoading = false;
+      state.paymentIntent.data = action.payload;
+      state.paymentIntent.error = null;
+    },
+    createPaymentIntentFailure: (state, action) => {
+      state.paymentIntent.isLoading = false;
+      state.paymentIntent.error = action.payload;
+      state.paymentIntent.data = null;
+    },
+
+    // Clear payment intent
+    clearPaymentIntent: (state) => {
+      state.paymentIntent = {
+        isLoading: false,
+        error: null,
+        data: null
+      };
+    },
+
     // Clear upgrade status
     clearUpgradeStatus: (state) => {
       state.upgradePlan.success = false;
@@ -89,6 +120,10 @@ export const {
   upgradePlanRequest,
   upgradePlanSuccess,
   upgradePlanFailure,
+  createPaymentIntentRequest,
+  createPaymentIntentSuccess,
+  createPaymentIntentFailure,
+  clearPaymentIntent,
   clearError,
   clearUpgradeStatus
 } = subscriptionSlice.actions;

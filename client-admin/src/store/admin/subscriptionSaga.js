@@ -8,7 +8,10 @@ import {
   fetchAvailablePlansFailure,
   upgradePlanRequest,
   upgradePlanSuccess,
-  upgradePlanFailure
+  upgradePlanFailure,
+  createPaymentIntentRequest,
+  createPaymentIntentSuccess,
+  createPaymentIntentFailure
 } from './subscriptionSlice';
 import { apiCall } from '../../utils/api';
 // Using global notification instead of importing a component
@@ -84,9 +87,37 @@ function* upgradePlanSaga(action) {
   }
 }
 
+// Create payment intent for subscription upgrade
+function* createPaymentIntentSaga(action) {
+  try {
+    const { planId } = action.payload;
+    
+    const response = yield call(apiCall, '/api/admin/subscription/create-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({ planId })
+    });
+
+    if (response.success) {
+      yield put(createPaymentIntentSuccess(response.data));
+    } else {
+      throw new Error(response.message || 'Failed to create payment intent');
+    }
+  } catch (error) {
+    console.error('Payment intent creation error:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to create payment intent';
+    yield put(createPaymentIntentFailure(errorMessage));
+    
+    // Show error notification
+    if (window.showNotification) {
+      window.showNotification(errorMessage, 'error', 5000);
+    }
+  }
+}
+
 // Root saga
 export default function* subscriptionSaga() {
   yield takeEvery(fetchSubscriptionRequest.type, fetchSubscriptionSaga);
   yield takeEvery(fetchAvailablePlansRequest.type, fetchAvailablePlansSaga);
   yield takeEvery(upgradePlanRequest.type, upgradePlanSaga);
+  yield takeEvery(createPaymentIntentRequest.type, createPaymentIntentSaga);
 }
