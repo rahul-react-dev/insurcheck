@@ -113,9 +113,6 @@ const getPaymentIntent = async (paymentIntentId) => {
   }
 };
 
-// Alias for compatibility
-const retrievePaymentIntent = getPaymentIntent;
-
 /**
  * Create or retrieve Stripe customer
  * @param {Object} params - Customer parameters
@@ -272,7 +269,6 @@ export {
   initializeStripeService,
   createPaymentIntent,
   getPaymentIntent,
-  retrievePaymentIntent,
   createOrGetCustomer,
   verifyWebhookSignature,
   calculateProratedAmount
