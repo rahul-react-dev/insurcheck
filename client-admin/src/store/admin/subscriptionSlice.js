@@ -106,6 +106,35 @@ const subscriptionSlice = createSlice({
     clearUpgradeStatus: (state) => {
       state.upgradePlan.success = false;
       state.upgradePlan.error = null;
+    },
+
+    // Verify payment and update subscription (fallback for webhook issues)
+    verifyPaymentAndUpdateRequest: (state, action) => {
+      state.upgradePlan.isLoading = true;
+      state.upgradePlan.error = null;
+      state.upgradePlan.success = false;
+    },
+    verifyPaymentAndUpdateSuccess: (state, action) => {
+      state.upgradePlan.isLoading = false;
+      state.upgradePlan.success = true;
+      state.upgradePlan.error = null;
+      // Update current subscription with new data
+      if (action.payload.subscription) {
+        state.currentSubscription = {
+          ...state.currentSubscription,
+          planId: action.payload.subscription.planId,
+          plan: {
+            ...state.currentSubscription.plan,
+            id: action.payload.subscription.planId,
+            name: action.payload.subscription.planName
+          }
+        };
+      }
+    },
+    verifyPaymentAndUpdateFailure: (state, action) => {
+      state.upgradePlan.isLoading = false;
+      state.upgradePlan.error = action.payload;
+      state.upgradePlan.success = false;
     }
   },
 });
@@ -125,7 +154,10 @@ export const {
   createPaymentIntentFailure,
   clearPaymentIntent,
   clearError,
-  clearUpgradeStatus
+  clearUpgradeStatus,
+  verifyPaymentAndUpdateRequest,
+  verifyPaymentAndUpdateSuccess,
+  verifyPaymentAndUpdateFailure
 } = subscriptionSlice.actions;
 
 export default subscriptionSlice.reducer;
