@@ -27,6 +27,9 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   console.log('📨 Received Stripe webhook');
   console.log('🔍 Webhook signature header:', sig ? 'Present' : 'Missing');
   console.log('📦 Webhook payload size:', payload ? payload.length : 0);
+  console.log('🕒 Webhook timestamp:', new Date().toISOString());
+  console.log('📝 Full request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📄 Raw payload preview:', payload ? payload.toString().substring(0, 200) + '...' : 'Empty');
 
   // Verify webhook signature
   const verification = verifyWebhookSignature(payload, sig, STRIPE_WEBHOOK_SECRET);
@@ -75,6 +78,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 async function handlePaymentSuccess(paymentIntent) {
   try {
     console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
+    console.log(`💰 Payment amount: $${(paymentIntent.amount / 100).toFixed(2)}`);
+    console.log(`💳 Payment status: ${paymentIntent.status}`);
     console.log(`📋 Payment Intent Metadata:`, JSON.stringify(paymentIntent.metadata, null, 2));
     
     const metadata = paymentIntent.metadata;
