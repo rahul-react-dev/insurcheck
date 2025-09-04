@@ -5,8 +5,7 @@ import {
   fetchAvailablePlansRequest,
   upgradePlanRequest,
   createPaymentIntentRequest,
-  clearPaymentIntent,
-  verifyPaymentAndUpdateRequest
+  clearPaymentIntent
 } from '../../store/admin/subscriptionSlice';
 import StripePaymentModal from '../../components/admin/StripePaymentModal';
 import { useToast } from '../../hooks/use-toast';
@@ -82,18 +81,17 @@ const Subscription = () => {
 
   const handlePaymentSuccess = (paymentIntent) => {
     console.log('✅ Frontend payment success:', paymentIntent);
-    console.log('🔍 Initiating payment verification process...');
     
     toast({
       title: 'Payment Successful!',
-      description: 'Verifying payment and updating subscription...',
+      description: `Payment confirmed for ${selectedPlan?.name} plan. Your subscription will be updated shortly.`,
       variant: 'default'
     });
     
-    // Use the new verification endpoint instead of waiting for webhooks
-    dispatch(verifyPaymentAndUpdateRequest({ 
-      paymentIntentId: paymentIntent.id 
-    }));
+    // Add a delay to allow webhook processing, then refresh
+    setTimeout(() => {
+      dispatch(fetchSubscriptionRequest());
+    }, 3000); // Wait 3 seconds for webhook to process
     
     dispatch(clearPaymentIntent());
     setSelectedPlan(null);

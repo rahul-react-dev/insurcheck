@@ -84,15 +84,11 @@ const PaymentForm = ({
         });
       } else {
         console.log('Payment succeeded:', result.paymentIntent);
-        console.log('🔍 Starting payment verification process...');
-        
-        // Pass payment intent for verification
         toast({
           title: 'Payment Successful!',
-          description: 'Verifying payment and updating subscription...',
+          description: `Successfully upgraded to ${newPlan.name} plan`,
           variant: 'default'
         });
-        
         onSuccess(result.paymentIntent);
       }
     } catch (error) {

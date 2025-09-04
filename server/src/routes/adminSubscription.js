@@ -4,8 +4,7 @@ import {
   getAvailablePlans, 
   upgradePlan,
   createUpgradePaymentIntent,
-  getSubscriptionAnalytics,
-  verifyPaymentAndUpdateSubscription
+  getSubscriptionAnalytics
 } from '../controllers/adminSubscriptionController.js';
 import { body, validationResult } from 'express-validator';
 import { authMiddleware } from '../middleware/auth.js';
@@ -20,10 +19,6 @@ const validateUpgradePlan = [
 
 const validatePaymentIntent = [
   body('planId').isInt().withMessage('Plan ID must be a valid integer'),
-];
-
-const validatePaymentVerification = [
-  body('paymentIntentId').isString().notEmpty().withMessage('Payment Intent ID is required'),
 ];
 
 // Error handling middleware
@@ -49,6 +44,5 @@ router.get('/plans', getAvailablePlans);
 router.get('/analytics', getSubscriptionAnalytics);
 router.post('/create-payment-intent', validatePaymentIntent, handleValidationErrors, createUpgradePaymentIntent);
 router.post('/upgrade', validateUpgradePlan, handleValidationErrors, upgradePlan);
-router.post('/verify-payment', validatePaymentVerification, handleValidationErrors, verifyPaymentAndUpdateSubscription);
 
 export default router;

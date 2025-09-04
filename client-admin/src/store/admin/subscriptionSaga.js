@@ -11,10 +11,7 @@ import {
   upgradePlanFailure,
   createPaymentIntentRequest,
   createPaymentIntentSuccess,
-  createPaymentIntentFailure,
-  verifyPaymentAndUpdateRequest,
-  verifyPaymentAndUpdateSuccess,
-  verifyPaymentAndUpdateFailure
+  createPaymentIntentFailure
 } from './subscriptionSlice';
 import { apiCall } from '../../utils/api';
 // Using global notification instead of importing a component
@@ -117,43 +114,10 @@ function* createPaymentIntentSaga(action) {
   }
 }
 
-// Verify payment and update subscription (fallback for webhook issues)
-function* verifyPaymentAndUpdateSaga(action) {
-  try {
-    const { paymentIntentId } = action.payload;
-    
-    const response = yield call(apiCall, '/api/admin/subscription/verify-payment', {
-      method: 'POST',
-      body: JSON.stringify({ paymentIntentId })
-    });
-
-    if (response.success) {
-      yield put(verifyPaymentAndUpdateSuccess(response.data));
-      
-      // Show success notification
-      if (window.showNotification) {
-        window.showNotification('Subscription updated successfully!', 'success', 5000);
-      }
-    } else {
-      throw new Error(response.message || 'Failed to verify payment and update subscription');
-    }
-  } catch (error) {
-    console.error('Payment verification error:', error);
-    const errorMessage = error.response?.data?.message || error.message || 'Failed to verify payment';
-    yield put(verifyPaymentAndUpdateFailure(errorMessage));
-    
-    // Show error notification
-    if (window.showNotification) {
-      window.showNotification(errorMessage, 'error', 5000);
-    }
-  }
-}
-
 // Root saga
 export default function* subscriptionSaga() {
   yield takeEvery(fetchSubscriptionRequest.type, fetchSubscriptionSaga);
   yield takeEvery(fetchAvailablePlansRequest.type, fetchAvailablePlansSaga);
   yield takeEvery(upgradePlanRequest.type, upgradePlanSaga);
   yield takeEvery(createPaymentIntentRequest.type, createPaymentIntentSaga);
-  yield takeEvery(verifyPaymentAndUpdateRequest.type, verifyPaymentAndUpdateSaga);
 }

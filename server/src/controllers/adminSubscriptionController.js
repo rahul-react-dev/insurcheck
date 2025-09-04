@@ -4,8 +4,7 @@ import { eq, and, count } from 'drizzle-orm';
 import { 
   createPaymentIntent, 
   createOrGetCustomer, 
-  calculateProratedAmount,
-  verifyPaymentSuccess 
+  calculateProratedAmount 
 } from '../../services/stripeService.js';
 
 // Get current subscription for the tenant admin
@@ -510,126 +509,6 @@ export const getSubscriptionAnalytics = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching subscription analytics'
-    });
-  }
-};
-
-/**
- * Verify payment success and update subscription
- * This is a fallback endpoint for when webhooks don't work reliably in development
- */
-export const verifyPaymentAndUpdateSubscription = async (req, res) => {
-  try {
-    const { tenantId } = req.user;
-    const { paymentIntentId } = req.body;
-
-    if (!paymentIntentId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment Intent ID is required'
-      });
-    }
-
-    console.log(`🔍 Verifying payment and updating subscription for tenant ${tenantId}`);
-    console.log(`💳 Payment Intent ID: ${paymentIntentId}`);
-
-    // Verify payment status with Stripe
-    const paymentResult = await verifyPaymentSuccess(paymentIntentId);
-
-    if (!paymentResult.success) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to verify payment with Stripe',
-        error: paymentResult.error
-      });
-    }
-
-    if (!paymentResult.isSucceeded) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment has not succeeded yet',
-        paymentStatus: paymentResult.paymentStatus
-      });
-    }
-
-    // Extract plan information from metadata
-    const metadata = paymentResult.metadata || {};
-    const newPlanId = parseInt(metadata.newPlanId);
-    const subscriptionId = parseInt(metadata.subscriptionId);
-
-    if (!newPlanId || !subscriptionId) {
-      console.error('❌ Missing plan or subscription ID in payment metadata');
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid payment metadata - missing plan or subscription information'
-      });
-    }
-
-    // Get the new plan details
-    const newPlan = await db
-      .select()
-      .from(subscriptionPlans)
-      .where(eq(subscriptionPlans.id, newPlanId))
-      .limit(1);
-
-    if (newPlan.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'New subscription plan not found'
-      });
-    }
-
-    // Update subscription in database
-    const now = new Date().toISOString();
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1); // Add 1 month for monthly billing
-
-    const updatedSubscription = await db
-      .update(subscriptions)
-      .set({
-        planId: newPlanId,
-        status: 'active',
-        endsAt: endDate.toISOString(),
-        updatedAt: now
-      })
-      .where(
-        and(
-          eq(subscriptions.id, subscriptionId),
-          eq(subscriptions.tenantId, tenantId)
-        )
-      )
-      .returning();
-
-    if (updatedSubscription.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Subscription not found or update failed'
-      });
-    }
-
-    console.log(`✅ Subscription updated successfully for tenant ${tenantId}`);
-    console.log(`📊 New plan: ${newPlan[0].name} (ID: ${newPlanId})`);
-
-    res.json({
-      success: true,
-      message: 'Payment verified and subscription updated successfully',
-      data: {
-        paymentStatus: paymentResult.paymentStatus,
-        subscription: {
-          id: updatedSubscription[0].id,
-          planId: newPlanId,
-          planName: newPlan[0].name,
-          status: 'active',
-          endsAt: updatedSubscription[0].endsAt
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Error verifying payment and updating subscription:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during payment verification and subscription update'
     });
   }
 };

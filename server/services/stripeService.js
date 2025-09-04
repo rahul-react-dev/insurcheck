@@ -114,42 +114,6 @@ const getPaymentIntent = async (paymentIntentId) => {
 };
 
 /**
- * Verify payment success and return detailed status
- * This is used as a fallback when webhooks aren't working reliably
- * @param {string} paymentIntentId - Payment intent ID to verify
- */
-const verifyPaymentSuccess = async (paymentIntentId) => {
-  try {
-    if (!stripe) {
-      throw new Error('Stripe service not initialized');
-    }
-
-    console.log(`🔍 Verifying payment success: ${paymentIntentId}`);
-    
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    
-    console.log(`📊 Payment status: ${paymentIntent.status}`);
-    
-    return {
-      success: true,
-      paymentStatus: paymentIntent.status,
-      isSucceeded: paymentIntent.status === 'succeeded',
-      isFailed: paymentIntent.status === 'payment_failed',
-      metadata: paymentIntent.metadata || {},
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency
-    };
-    
-  } catch (error) {
-    console.error('❌ Error verifying payment:', error.message);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-};
-
-/**
  * Create or retrieve Stripe customer
  * @param {Object} params - Customer parameters
  * @param {string} params.email - Customer email
@@ -305,7 +269,6 @@ export {
   initializeStripeService,
   createPaymentIntent,
   getPaymentIntent,
-  verifyPaymentSuccess,
   createOrGetCustomer,
   verifyWebhookSignature,
   calculateProratedAmount
