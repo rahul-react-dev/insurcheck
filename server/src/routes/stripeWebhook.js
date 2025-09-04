@@ -71,29 +71,48 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 async function handlePaymentSuccess(paymentIntent) {
   try {
     console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
+    console.log(`📋 Payment Intent Metadata:`, JSON.stringify(paymentIntent.metadata, null, 2));
     
     const metadata = paymentIntent.metadata;
     
     if (metadata.source === 'insurcheck_subscription_upgrade') {
       const { tenantId, newPlanId, subscriptionId } = metadata;
       
+      console.log(`🔄 Processing subscription upgrade:`, {
+        tenantId,
+        newPlanId, 
+        subscriptionId,
+        paymentIntentId: paymentIntent.id
+      });
+      
       if (tenantId && newPlanId && subscriptionId) {
         // Update subscription in database
-        await db
+        const updateResult = await db
           .update(subscriptions)
           .set({
             planId: parseInt(newPlanId),
             status: 'active',
             updatedAt: new Date()
           })
-          .where(eq(subscriptions.id, parseInt(subscriptionId)));
+          .where(eq(subscriptions.id, parseInt(subscriptionId)))
+          .returning();
           
-        console.log(`✅ Subscription ${subscriptionId} upgraded to plan ${newPlanId} for tenant ${tenantId}`);
+        console.log(`✅ Subscription updated successfully:`, updateResult);
+        console.log(`🎉 Subscription ${subscriptionId} upgraded to plan ${newPlanId} for tenant ${tenantId}`);
+      } else {
+        console.error(`❌ Missing required metadata fields:`, {
+          tenantId: !!tenantId,
+          newPlanId: !!newPlanId,
+          subscriptionId: !!subscriptionId
+        });
       }
+    } else {
+      console.log(`ℹ️ Payment intent not for subscription upgrade. Source: ${metadata.source}`);
     }
     
   } catch (error) {
     console.error('❌ Error handling payment success:', error);
+    console.error('Error details:', error.stack);
     throw error;
   }
 }

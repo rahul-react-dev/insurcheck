@@ -80,14 +80,19 @@ const Subscription = () => {
   }, [paymentIntent.error, dispatch, toast]);
 
   const handlePaymentSuccess = (paymentIntent) => {
+    console.log('✅ Frontend payment success:', paymentIntent);
+    
     toast({
       title: 'Payment Successful!',
-      description: `Successfully upgraded to ${selectedPlan?.name} plan`,
+      description: `Payment confirmed for ${selectedPlan?.name} plan. Your subscription will be updated shortly.`,
       variant: 'default'
     });
     
-    // Refresh subscription data
-    dispatch(fetchSubscriptionRequest());
+    // Add a delay to allow webhook processing, then refresh
+    setTimeout(() => {
+      dispatch(fetchSubscriptionRequest());
+    }, 3000); // Wait 3 seconds for webhook to process
+    
     dispatch(clearPaymentIntent());
     setSelectedPlan(null);
     setShowPaymentModal(false);
