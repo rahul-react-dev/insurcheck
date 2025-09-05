@@ -1,584 +1,497 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { 
-  CalendarIcon, 
-  Download, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle,
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchUsageDataRequest,
+  fetchUsageBillingRequest,
+  exportUsageDataRequest,
+  calculateUsageBillingRequest,
+} from "../../store/admin/usageSlice";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import {
   BarChart3,
+  Activity,
   FileText,
-  Users,
-  Shield,
-  Database,
+  Smartphone,
   Search,
-  Filter
+  Filter,
+  Download,
+  Calendar,
+  TrendingUp,
+  DollarSign,
+  Clock,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { apiRequest } from '../../lib/queryClient';
 
 // Event type options
 const eventTypes = [
   { value: 'all', label: 'All Events', icon: BarChart3 },
-  { value: 'document_upload', label: 'Document Uploads', icon: FileText },
-  { value: 'document_download', label: 'Document Downloads', icon: Download },
-  { value: 'api_call', label: 'API Calls', icon: Database },
-  { value: 'user_creation', label: 'User Creations', icon: Users },
-  { value: 'compliance_check', label: 'Compliance Checks', icon: Shield }
+  { value: 'api_call', label: 'API Calls', icon: Activity },
+  { value: 'document_processing', label: 'Document Processing', icon: FileText },
+  { value: 'mobile_request', label: 'Mobile Requests', icon: Smartphone },
+];
+
+// Time period options
+const timePeriods = [
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+  { value: 'quarter', label: 'This Quarter' },
+  { value: 'custom', label: 'Custom Range' },
 ];
 
 const UsageAnalytics = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
-  // Filter states
-  const [selectedEventType, setSelectedEventType] = useState('all');
-  const [dateRange, setDateRange] = useState({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
-  });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState('createdAt');
+  // Local state for filters and pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEventType, setSelectedEventType] = useState('all');
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
 
-  // Fetch usage analytics
-  const { data: analyticsData, isLoading: analyticsLoading, error: analyticsError } = useQuery({
-    queryKey: [
-      'usage-analytics',
-      selectedEventType,
-      dateRange,
-      searchQuery,
-      page,
+  // Modal and UI states
+  const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+
+  // Custom date range state
+  const [activeFilters, setActiveFilters] = useState({
+    startDate: '',
+    endDate: '',
+  });
+
+  // Redux selectors with safe defaults
+  const {
+    usageData = [],
+    usageDataLoading = false,
+    usageDataError = null,
+    usageMeta = { total: 0, totalPages: 1, page: 1, limit: 20 },
+    billingData = {
+      currentPeriod: {
+        totalApiCalls: 0,
+        totalDocuments: 0,
+        totalCost: 0,
+        periodStart: null,
+        periodEnd: null,
+      },
+      breakdown: [],
+      limits: {
+        apiCallsLimit: 1000,
+        documentsLimit: 100,
+        currentApiCalls: 0,
+        currentDocuments: 0,
+      },
+    },
+    billingLoading = false,
+    billingError = null,
+    exportLoading = false,
+    exportError = null,
+  } = useSelector((state) => state.usage || {});
+
+  // Fetch data when filters change
+  useEffect(() => {
+    const params = {
+      page: currentPage,
+      limit: pageSize,
       sortBy,
-      sortOrder
-    ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        sortBy,
-        sortOrder
-      });
+      sortOrder,
+      search: searchTerm,
+      eventType: selectedEventType !== 'all' ? selectedEventType : undefined,
+      period: selectedPeriod !== 'custom' ? selectedPeriod : undefined,
+      startDate: activeFilters.startDate,
+      endDate: activeFilters.endDate,
+    };
+    
+    dispatch(fetchUsageDataRequest(params));
+    dispatch(fetchUsageBillingRequest({
+      period: selectedPeriod,
+      startDate: activeFilters.startDate,
+      endDate: activeFilters.endDate,
+    }));
+  }, [
+    dispatch,
+    currentPage,
+    pageSize,
+    sortBy,
+    sortOrder,
+    searchTerm,
+    selectedEventType,
+    selectedPeriod,
+    activeFilters.startDate,
+    activeFilters.endDate,
+  ]);
 
-      if (selectedEventType !== 'all') {
-        params.append('eventType', selectedEventType);
-      }
-      
-      if (searchQuery) {
-        params.append('search', searchQuery);
-      }
-      
-      if (dateRange.from) {
-        params.append('startDate', dateRange.from.toISOString());
-      }
-      
-      if (dateRange.to) {
-        params.append('endDate', dateRange.to.toISOString());
-      }
+  // Reset to first page when search/filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchTerm,
+    selectedEventType,
+    selectedPeriod,
+    activeFilters.startDate,
+    activeFilters.endDate,
+  ]);
 
-      const response = await apiRequest('GET', `/usage/analytics?${params}`);
-      return response.json();
-    }
-  });
-
-  // Fetch usage limits
-  const { data: limitsData, isLoading: limitsLoading } = useQuery({
-    queryKey: ['usage-limits'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/usage/limits');
-      return response.json();
-    }
-  });
-
-  // Fetch billing summary
-  const { data: billingData, isLoading: billingLoading } = useQuery({
-    queryKey: ['billing-summary', dateRange],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      
-      if (dateRange.from) {
-        params.append('billingPeriodStart', dateRange.from.toISOString());
-      }
-      
-      if (dateRange.to) {
-        params.append('billingPeriodEnd', dateRange.to.toISOString());
-      }
-
-      const response = await apiRequest('GET', `/billing/summary?${params}`);
-      return response.json();
-    }
-  });
-
-  // Export data mutation
-  const exportMutation = useMutation({
-    mutationFn: async ({ format, includeDetails }) => {
-      const params = new URLSearchParams({
-        format,
-        includeDetails: includeDetails.toString()
-      });
-
-      if (selectedEventType !== 'all') {
-        params.append('eventType', selectedEventType);
-      }
-      
-      if (dateRange.from) {
-        params.append('startDate', dateRange.from.toISOString());
-      }
-      
-      if (dateRange.to) {
-        params.append('endDate', dateRange.to.toISOString());
-      }
-
-      const response = await fetch(`/api/usage/export?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-
-      // Download the file
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `usage-data-${new Date().toISOString().split('T')[0]}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Export Successful",
-        description: "Usage data has been downloaded successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Export Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Handle export
-  const handleExport = (format, includeDetails = true) => {
-    exportMutation.mutate({ format, includeDetails });
+  // Handle refresh
+  const handleRefresh = () => {
+    const params = {
+      page: currentPage,
+      limit: pageSize,
+      sortBy,
+      sortOrder,
+      search: searchTerm,
+      eventType: selectedEventType !== 'all' ? selectedEventType : undefined,
+      period: selectedPeriod !== 'custom' ? selectedPeriod : undefined,
+      startDate: activeFilters.startDate,
+      endDate: activeFilters.endDate,
+    };
+    
+    dispatch(fetchUsageDataRequest(params));
+    dispatch(fetchUsageBillingRequest({
+      period: selectedPeriod,
+      startDate: activeFilters.startDate,
+      endDate: activeFilters.endDate,
+    }));
   };
 
-  // Filter usage events by search query
-  const filteredEvents = analyticsData?.data?.events?.filter(event =>
-    event.eventType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (event.resourceId && event.resourceId.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
+  // Handle export
+  const handleExport = (format) => {
+    const params = {
+      format,
+      eventType: selectedEventType !== 'all' ? selectedEventType : undefined,
+      period: selectedPeriod !== 'custom' ? selectedPeriod : undefined,
+      startDate: activeFilters.startDate,
+      endDate: activeFilters.endDate,
+    };
+    
+    dispatch(exportUsageDataRequest(params));
+    setShowExportDropdown(false);
+  };
+
+  // Handle pagination
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Calculate usage progress
+  const getUsageProgress = (current, limit) => {
+    if (!limit) return 0;
+    return Math.min((current / limit) * 100, 100);
+  };
+
+  // Get status color based on usage percentage
+  const getStatusColor = (percentage) => {
+    if (percentage >= 90) return 'text-red-600';
+    if (percentage >= 70) return 'text-yellow-600';
+    return 'text-green-600';
+  };
 
   return (
-    <div className="container mx-auto p-6 space-y-6" data-testid="usage-analytics-page">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="page-title">
-            Usage Analytics
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Monitor usage patterns and track billing metrics
+          <h1 className="text-3xl font-bold text-gray-900">Usage Analytics</h1>
+          <p className="text-gray-600 mt-1">
+            Monitor and analyze your API usage, document processing, and billing information
           </p>
         </div>
-        
-        <div className="flex gap-2">
+        <div className="flex space-x-3">
           <Button
             variant="outline"
-            onClick={() => handleExport('csv')}
-            disabled={exportMutation.isPending}
-            data-testid="button-export-csv"
+            onClick={handleRefresh}
+            disabled={usageDataLoading || billingLoading}
+            className="flex items-center space-x-2"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            <RefreshCw className={`h-4 w-4 ${(usageDataLoading || billingLoading) ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleExport('json')}
-            disabled={exportMutation.isPending}
-            data-testid="button-export-json"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export JSON
-          </Button>
+          
+          <div className="relative">
+            <Button
+              variant="outline"
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+            
+            {showExportDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <div className="py-1">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    disabled={exportLoading}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('json')}
+                    disabled={exportLoading}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Export as JSON
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Usage Limits Overview */}
-      {limitsData?.data && (
-        <Card data-testid="card-usage-limits">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Usage Limits
-            </CardTitle>
-            <CardDescription>
-              Current usage against your plan limits for {limitsData.data.plan}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {limitsData.data.limitChecks.map((check, index) => (
-                <div key={index} className="space-y-2" data-testid={`limit-check-${check.eventType}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium capitalize">
-                      {check.eventType.replace('_', ' ')}
-                    </span>
-                    <Badge 
-                      variant={check.isOverLimit ? 'destructive' : check.isNearLimit ? 'secondary' : 'default'}
-                      data-testid={`badge-limit-status-${check.eventType}`}
-                    >
-                      {check.percentUsed}%
-                    </Badge>
-                  </div>
-                  <Progress 
-                    value={check.percentUsed} 
-                    className={cn(
-                      "h-2",
-                      check.isOverLimit && "bg-red-100",
-                      check.isNearLimit && "bg-yellow-100"
-                    )}
-                    data-testid={`progress-usage-${check.eventType}`}
-                  />
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {check.currentUsage} / {check.limit || '∞'} used
-                    {check.remaining !== null && (
-                      <span className="ml-2">({check.remaining} remaining)</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Billing Summary */}
-      {billingData?.data && (
-        <Card data-testid="card-billing-summary">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Billing Summary
-            </CardTitle>
-            <CardDescription>
-              Usage-based charges for current billing period
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center" data-testid="billing-subscription-fee">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  ${billingData.data.subscriptionFee}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Subscription Fee
-                </div>
-              </div>
-              <div className="text-center" data-testid="billing-usage-charges">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  ${billingData.data.totalUsageCharges}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Usage Charges
-                </div>
-              </div>
-              <div className="text-center" data-testid="billing-total-amount">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${billingData.data.totalAmount}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Amount
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Filters */}
-      <Card data-testid="card-filters">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Event Type Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Event Type</label>
-              <Select value={selectedEventType} onValueChange={setSelectedEventType}>
-                <SelectTrigger data-testid="select-event-type">
-                  <SelectValue placeholder="Select event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {eventTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center gap-2">
-                        <type.icon className="h-4 w-4" />
-                        {type.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date Range Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Date Range</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dateRange.from && "text-muted-foreground"
-                    )}
-                    data-testid="button-date-range"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "LLL dd, y")} -{" "}
-                          {format(dateRange.to, "LLL dd, y")}
-                        </>
-                      ) : (
-                        format(dateRange.from, "LLL dd, y")
-                      )
-                    ) : (
-                      <span>Pick a date range</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange.from}
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={2}
-                    data-testid="calendar-date-range"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Search Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search events..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search"
-                />
-              </div>
-            </div>
-
-            {/* Sort Options */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Sort By</label>
-              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-                const [field, order] = value.split('-');
-                setSortBy(field);
-                setSortOrder(order);
-              }}>
-                <SelectTrigger data-testid="select-sort">
-                  <SelectValue placeholder="Sort options" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt-desc">Newest First</SelectItem>
-                  <SelectItem value="createdAt-asc">Oldest First</SelectItem>
-                  <SelectItem value="eventType-asc">Event Type A-Z</SelectItem>
-                  <SelectItem value="eventType-desc">Event Type Z-A</SelectItem>
-                  <SelectItem value="quantity-desc">Highest Quantity</SelectItem>
-                  <SelectItem value="quantity-asc">Lowest Quantity</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Error Messages */}
+      {(usageDataError || billingError || exportError) && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="text-red-800">
+            {usageDataError || billingError || exportError}
           </div>
-        </CardContent>
+        </div>
+      )}
+
+      {/* Billing Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">API Calls</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-2xl font-bold text-gray-900">
+                  {billingData?.limits?.currentApiCalls || 0}
+                </p>
+                <span className="text-sm text-gray-500">
+                  / {billingData?.limits?.apiCallsLimit || 1000}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div
+                  className={`h-2 rounded-full ${getStatusColor(getUsageProgress(billingData?.limits?.currentApiCalls || 0, billingData?.limits?.apiCallsLimit || 1000)) === 'text-red-600' ? 'bg-red-600' : getStatusColor(getUsageProgress(billingData?.limits?.currentApiCalls || 0, billingData?.limits?.apiCallsLimit || 1000)) === 'text-yellow-600' ? 'bg-yellow-600' : 'bg-green-600'}`}
+                  style={{ width: `${getUsageProgress(billingData?.limits?.currentApiCalls || 0, billingData?.limits?.apiCallsLimit || 1000)}%` }}
+                ></div>
+              </div>
+            </div>
+            <Activity className="h-8 w-8 text-blue-600" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Documents</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-2xl font-bold text-gray-900">
+                  {billingData?.limits?.currentDocuments || 0}
+                </p>
+                <span className="text-sm text-gray-500">
+                  / {billingData?.limits?.documentsLimit || 100}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div
+                  className={`h-2 rounded-full ${getStatusColor(getUsageProgress(billingData?.limits?.currentDocuments || 0, billingData?.limits?.documentsLimit || 100)) === 'text-red-600' ? 'bg-red-600' : getStatusColor(getUsageProgress(billingData?.limits?.currentDocuments || 0, billingData?.limits?.documentsLimit || 100)) === 'text-yellow-600' ? 'bg-yellow-600' : 'bg-green-600'}`}
+                  style={{ width: `${getUsageProgress(billingData?.limits?.currentDocuments || 0, billingData?.limits?.documentsLimit || 100)}%` }}
+                ></div>
+              </div>
+            </div>
+            <FileText className="h-8 w-8 text-green-600" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Cost</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${billingData?.currentPeriod?.totalCost?.toFixed(2) || '0.00'}
+              </p>
+              <p className="text-sm text-gray-500">This period</p>
+            </div>
+            <DollarSign className="h-8 w-8 text-indigo-600" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Period</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {billingData?.currentPeriod?.periodStart ? new Date(billingData.currentPeriod.periodStart).toLocaleDateString() : 'N/A'}
+              </p>
+              <p className="text-sm text-gray-500">
+                to {billingData?.currentPeriod?.periodEnd ? new Date(billingData.currentPeriod.periodEnd).toLocaleDateString() : 'N/A'}
+              </p>
+            </div>
+            <Calendar className="h-8 w-8 text-purple-600" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Filters and Controls */}
+      <Card className="p-6">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search usage events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Event Type Filter */}
+            <select
+              value={selectedEventType}
+              onChange={(e) => setSelectedEventType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {eventTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Time Period Filter */}
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {timePeriods.map((period) => (
+                <option key={period.value} value={period.value}>
+                  {period.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Custom Date Range (show when custom period is selected) */}
+          {selectedPeriod === 'custom' && (
+            <div className="flex gap-3">
+              <input
+                type="date"
+                value={activeFilters.startDate}
+                onChange={(e) => setActiveFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <input
+                type="date"
+                value={activeFilters.endDate}
+                onChange={(e) => setActiveFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          )}
+        </div>
       </Card>
 
-      {/* Analytics Content */}
-      <Tabs defaultValue="events" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="events" data-testid="tab-events">Events</TabsTrigger>
-          <TabsTrigger value="summary" data-testid="tab-summary">Summary</TabsTrigger>
-          <TabsTrigger value="charts" data-testid="tab-charts">Charts</TabsTrigger>
-        </TabsList>
+      {/* Usage Data Table */}
+      <Card className="overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Usage Events</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Detailed log of all usage events and activities
+          </p>
+        </div>
 
-        {/* Events Tab */}
-        <TabsContent value="events" className="space-y-4">
-          {analyticsLoading ? (
-            <div className="flex justify-center items-center py-8" data-testid="loading-events">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : analyticsError ? (
-            <Alert variant="destructive" data-testid="alert-error">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to load usage analytics: {analyticsError.message}
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Card data-testid="card-events-list">
-              <CardHeader>
-                <CardTitle>Usage Events</CardTitle>
-                <CardDescription>
-                  {analyticsData?.data?.pagination?.total || 0} total events found
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredEvents.length > 0 ? (
-                    filteredEvents.map((event) => (
-                      <div 
-                        key={event.id} 
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                        data-testid={`event-item-${event.id}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          {eventTypes.find(type => type.value === event.eventType)?.icon && (
-                            React.createElement(eventTypes.find(type => type.value === event.eventType).icon, {
-                              className: "h-5 w-5 text-gray-500"
-                            })
-                          )}
-                          <div>
-                            <div className="font-medium capitalize" data-testid={`event-type-${event.id}`}>
-                              {event.eventType.replace('_', ' ')}
-                            </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400" data-testid={`event-resource-${event.id}`}>
-                              {event.resourceId}
-                            </div>
-                          </div>
+        {usageDataLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : usageData.length === 0 ? (
+          <div className="text-center py-12">
+            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No usage data found</h3>
+            <p className="text-gray-600">No usage events match your current filters.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-3 px-6 font-medium text-gray-900">Event</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-900">Type</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-900">Details</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-900">Cost</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-900">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {usageData.map((event) => {
+                  const EventIcon = eventTypes.find(type => type.value === event.eventType)?.icon || Activity;
+                  return (
+                    <tr key={event.id} className="hover:bg-gray-50">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center space-x-3">
+                          <EventIcon className="h-5 w-5 text-gray-600" />
+                          <span className="font-medium text-gray-900">{event.eventName}</span>
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium" data-testid={`event-quantity-${event.id}`}>
-                            {event.quantity} {event.quantity === 1 ? 'unit' : 'units'}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400" data-testid={`event-time-${event.id}`}>
-                            {new Date(event.createdAt).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500" data-testid="no-events">
-                      No usage events found for the selected filters.
-                    </div>
-                  )}
-                </div>
-
-                {/* Pagination */}
-                {analyticsData?.data?.pagination && analyticsData.data.pagination.totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-6" data-testid="pagination">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      data-testid="button-prev-page"
-                    >
-                      Previous
-                    </Button>
-                    <span className="px-4 py-2 text-sm" data-testid="page-info">
-                      Page {page} of {analyticsData.data.pagination.totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(Math.min(analyticsData.data.pagination.totalPages, page + 1))}
-                      disabled={page === analyticsData.data.pagination.totalPages}
-                      data-testid="button-next-page"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Summary Tab */}
-        <TabsContent value="summary" className="space-y-4">
-          {analyticsData?.data?.summary && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {analyticsData.data.summary.map((summaryItem, index) => (
-                <Card key={index} data-testid={`summary-card-${summaryItem.eventType}`}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg capitalize">
-                      {summaryItem.eventType.replace('_', ' ')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Total Events:</span>
-                        <span className="font-medium" data-testid={`total-events-${summaryItem.eventType}`}>
-                          {summaryItem.totalEvents}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {event.eventType.replace('_', ' ')}
                         </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Total Quantity:</span>
-                        <span className="font-medium" data-testid={`total-quantity-${summaryItem.eventType}`}>
-                          {summaryItem.totalQuantity}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                      </td>
+                      <td className="py-4 px-6 text-gray-600">
+                        {event.details && typeof event.details === 'object' 
+                          ? Object.entries(event.details).map(([key, value]) => `${key}: ${value}`).join(', ')
+                          : event.details || 'N/A'
+                        }
+                      </td>
+                      <td className="py-4 px-6 text-gray-900 font-medium">
+                        ${event.cost?.toFixed(4) || '0.0000'}
+                      </td>
+                      <td className="py-4 px-6 text-gray-600">
+                        {new Date(event.timestamp).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {/* Charts Tab - Placeholder for future implementation */}
-        <TabsContent value="charts" className="space-y-4">
-          <Card data-testid="card-charts-placeholder">
-            <CardHeader>
-              <CardTitle>Usage Charts</CardTitle>
-              <CardDescription>
-                Visual analytics and trends (coming soon)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                Chart visualizations will be implemented in the next phase.
+        {/* Pagination */}
+        {usageData.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, usageMeta.total)} of {usageMeta.total} events
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= usageMeta.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
