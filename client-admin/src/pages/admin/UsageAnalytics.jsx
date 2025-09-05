@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  fetchUsageDataRequest,
-  fetchUsageBillingRequest,
+  fetchUsageAnalyticsRequest,
+  fetchBillingSummaryRequest,
   exportUsageDataRequest,
   calculateUsageBillingRequest,
 } from "../../store/admin/usageSlice";
@@ -67,31 +67,42 @@ const UsageAnalytics = () => {
 
   // Redux selectors with safe defaults
   const {
-    usageData = [],
-    usageDataLoading = false,
-    usageDataError = null,
-    usageMeta = { total: 0, totalPages: 1, page: 1, limit: 20 },
-    billingData = {
-      currentPeriod: {
-        totalApiCalls: 0,
-        totalDocuments: 0,
-        totalCost: 0,
-        periodStart: null,
-        periodEnd: null,
-      },
-      breakdown: [],
-      limits: {
-        apiCallsLimit: 1000,
-        documentsLimit: 100,
-        currentApiCalls: 0,
-        currentDocuments: 0,
-      },
+    usageAnalytics = { data: [], isLoading: false, error: null },
+    billingSummary = { 
+      data: {
+        currentPeriod: {
+          totalApiCalls: 0,
+          totalDocuments: 0,
+          totalCost: 0,
+          periodStart: null,
+          periodEnd: null,
+        },
+        breakdown: [],
+        limits: {
+          apiCallsLimit: 1000,
+          documentsLimit: 100,
+          currentApiCalls: 0,
+          currentDocuments: 0,
+        },
+      }, 
+      isLoading: false, 
+      error: null 
     },
-    billingLoading = false,
-    billingError = null,
-    exportLoading = false,
-    exportError = null,
+    usageExport = { isLoading: false, error: null },
   } = useSelector((state) => state.usage || {});
+
+  // Extract data for easier use
+  const usageData = usageAnalytics.data?.events || [];
+  const usageMeta = usageAnalytics.data?.meta || { total: 0, totalPages: 1, page: 1, limit: 20 };
+  const usageDataLoading = usageAnalytics.isLoading;
+  const usageDataError = usageAnalytics.error;
+  
+  const billingData = billingSummary.data;
+  const billingLoading = billingSummary.isLoading;
+  const billingError = billingSummary.error;
+  
+  const exportLoading = usageExport.isLoading;
+  const exportError = usageExport.error;
 
   // Fetch data when filters change
   useEffect(() => {
@@ -107,8 +118,8 @@ const UsageAnalytics = () => {
       endDate: activeFilters.endDate,
     };
     
-    dispatch(fetchUsageDataRequest(params));
-    dispatch(fetchUsageBillingRequest({
+    dispatch(fetchUsageAnalyticsRequest(params));
+    dispatch(fetchBillingSummaryRequest({
       period: selectedPeriod,
       startDate: activeFilters.startDate,
       endDate: activeFilters.endDate,
@@ -151,8 +162,8 @@ const UsageAnalytics = () => {
       endDate: activeFilters.endDate,
     };
     
-    dispatch(fetchUsageDataRequest(params));
-    dispatch(fetchUsageBillingRequest({
+    dispatch(fetchUsageAnalyticsRequest(params));
+    dispatch(fetchBillingSummaryRequest({
       period: selectedPeriod,
       startDate: activeFilters.startDate,
       endDate: activeFilters.endDate,
