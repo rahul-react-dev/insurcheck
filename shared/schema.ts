@@ -31,6 +31,12 @@ export const ruleTypeEnum = pgEnum('rule_type', ['required', 'format', 'range', 
 // Invoice generation status enum
 export const invoiceGenerationStatusEnum = pgEnum('generation_status', ['scheduled', 'processing', 'completed', 'failed', 'retrying']);
 
+// Usage event type enum
+export const usageEventTypeEnum = pgEnum('usage_event_type', ['document_upload', 'document_download', 'api_call', 'user_creation', 'storage_usage', 'compliance_check']);
+
+// Usage billing status enum
+export const usageBillingStatusEnum = pgEnum('usage_billing_status', ['pending', 'calculated', 'billed', 'failed']);
+
 // Tenants table - shared across the application  
 export const tenants = pgTable("tenants", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -190,6 +196,54 @@ export const tenantConfig = pgTable("tenant_config", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Usage events tracking table for metered billing
+export const usageEvents = pgTable("usage_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  userId: varchar("user_id").references(() => users.id),
+  eventType: usageEventTypeEnum("event_type").notNull(),
+  resourceId: varchar("resource_id"), // ID of related resource (document, user, etc.)
+  quantity: integer("quantity").notNull().default(1), // Number of units consumed
+  metadata: jsonb("metadata"), // Additional event data
+  billingPeriodStart: timestamp("billing_period_start").notNull(),
+  billingPeriodEnd: timestamp("billing_period_end").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Usage summaries table for aggregated billing data
+export const usageSummaries = pgTable("usage_summaries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  eventType: usageEventTypeEnum("event_type").notNull(),
+  billingPeriodStart: timestamp("billing_period_start").notNull(),
+  billingPeriodEnd: timestamp("billing_period_end").notNull(),
+  totalQuantity: integer("total_quantity").notNull().default(0),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 4 }).notNull().default('0.0000'), // Price per unit
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull().default('0.00'), // Total charge
+  status: usageBillingStatusEnum("status").notNull().default('pending'),
+  billedAt: timestamp("billed_at"),
+  invoiceId: varchar("invoice_id").references(() => invoices.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueBillingPeriod: unique().on(table.tenantId, table.eventType, table.billingPeriodStart),
+}));
+
+// Usage limits table for plan-based restrictions
+export const usageLimits = pgTable("usage_limits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  planId: integer("plan_id").references(() => subscriptionPlans.id).notNull(),
+  eventType: usageEventTypeEnum("event_type").notNull(),
+  limitQuantity: integer("limit_quantity"), // NULL means unlimited
+  unitPrice: decimal("unit_price", { precision: 10, scale: 4 }).notNull().default('0.0000'),
+  overagePrice: decimal("overage_price", { precision: 10, scale: 4 }), // Price for usage over limit
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniquePlanEventType: unique().on(table.planId, table.eventType),
+}));
+
 // System Metrics table
 export const systemMetrics = pgTable("system_metrics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -246,6 +300,8 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   invoices: many(invoices),
   activityLogs: many(activityLogs),
   tenantConfigs: many(tenantConfig),
+  usageEvents: many(usageEvents),
+  usageSummaries: many(usageSummaries),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -255,6 +311,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   documents: many(documents),
   activityLogs: many(activityLogs),
+  usageEvents: many(usageEvents),
 }));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one, many }) => ({
@@ -272,6 +329,7 @@ export const subscriptionsRelations = relations(subscriptions, ({ one, many }) =
 
 export const subscriptionPlansRelations = relations(subscriptionPlans, ({ many }) => ({
   subscriptions: many(subscriptions),
+  usageLimits: many(usageLimits),
 }));
 
 export const documentsRelations = relations(documents, ({ one }) => ({
@@ -453,6 +511,38 @@ export const complianceRuleAuditLogsRelations = relations(complianceRuleAuditLog
   }),
 }));
 
+// Usage Events Relations
+export const usageEventsRelations = relations(usageEvents, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [usageEvents.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [usageEvents.userId],
+    references: [users.id],
+  }),
+}));
+
+// Usage Summaries Relations
+export const usageSummariesRelations = relations(usageSummaries, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [usageSummaries.tenantId],
+    references: [tenants.id],
+  }),
+  invoice: one(invoices, {
+    fields: [usageSummaries.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
+// Usage Limits Relations
+export const usageLimitsRelations = relations(usageLimits, ({ one }) => ({
+  plan: one(subscriptionPlans, {
+    fields: [usageLimits.planId],
+    references: [subscriptionPlans.id],
+  }),
+}));
+
 // Zod schemas for validation
 export const insertTenantSchema = createInsertSchema(tenants).pick({
   name: true,
@@ -595,6 +685,39 @@ export const insertTenantConfigSchema = createInsertSchema(tenantConfig).pick({
   category: true,
 });
 
+export const insertUsageEventSchema = createInsertSchema(usageEvents).pick({
+  tenantId: true,
+  userId: true,
+  eventType: true,
+  resourceId: true,
+  quantity: true,
+  metadata: true,
+  billingPeriodStart: true,
+  billingPeriodEnd: true,
+});
+
+export const insertUsageSummarySchema = createInsertSchema(usageSummaries).pick({
+  tenantId: true,
+  eventType: true,
+  billingPeriodStart: true,
+  billingPeriodEnd: true,
+  totalQuantity: true,
+  unitPrice: true,
+  totalAmount: true,
+  status: true,
+  billedAt: true,
+  invoiceId: true,
+});
+
+export const insertUsageLimitSchema = createInsertSchema(usageLimits).pick({
+  planId: true,
+  eventType: true,
+  limitQuantity: true,
+  unitPrice: true,
+  overagePrice: true,
+  isActive: true,
+});
+
 // TypeScript types
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -608,6 +731,9 @@ export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type InsertTenantConfig = z.infer<typeof insertTenantConfigSchema>;
 export type InsertInvoiceGenerationConfig = z.infer<typeof insertInvoiceGenerationConfigSchema>;
 export type InsertInvoiceGenerationLog = z.infer<typeof insertInvoiceGenerationLogSchema>;
+export type InsertUsageEvent = z.infer<typeof insertUsageEventSchema>;
+export type InsertUsageSummary = z.infer<typeof insertUsageSummarySchema>;
+export type InsertUsageLimit = z.infer<typeof insertUsageLimitSchema>;
 
 export type Tenant = typeof tenants.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -622,3 +748,6 @@ export type InvoiceGenerationLog = typeof invoiceGenerationLogs.$inferSelect;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type TenantConfig = typeof tenantConfig.$inferSelect;
 export type SystemMetric = typeof systemMetrics.$inferSelect;
+export type UsageEvent = typeof usageEvents.$inferSelect;
+export type UsageSummary = typeof usageSummaries.$inferSelect;
+export type UsageLimit = typeof usageLimits.$inferSelect;

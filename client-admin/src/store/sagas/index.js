@@ -16,6 +16,7 @@ import invoicesSaga from '../admin/invoicesSaga';
 import complianceAnalyticsSaga from '../admin/complianceAnalyticsSaga';
 import complianceRulesSaga from '../admin/complianceRulesSaga';
 import adminSubscriptionSaga from '../admin/subscriptionSaga';
+import usageSaga from '../admin/usageSaga';
 
 
 export default function* rootSaga() {
@@ -39,6 +40,7 @@ export default function* rootSaga() {
     fork(complianceAnalyticsSaga),
     fork(complianceRulesSaga),
     fork(adminSubscriptionSaga),
+    fork(usageSaga),
 
   ]);
   console.log('✅ All sagas forked successfully');

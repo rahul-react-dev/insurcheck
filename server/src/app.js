@@ -42,8 +42,13 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Usage tracking middleware
+import { trackApiCall } from './middleware/usageTracking.js';
+app.use('/api', trackApiCall());
+
 // Import routes
 import tenantRoutes from './routes/tenants.js';
+import usageRoutes from './routes/usage.js';
 
 // Import super admin routes
 import superAdminRoutes from '../routes.js';
@@ -51,6 +56,7 @@ import superAdminRoutes from '../routes.js';
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/usage', usageRoutes);
 app.use('/api', healthRoutes);
 app.use('/api', superAdminRoutes);
 

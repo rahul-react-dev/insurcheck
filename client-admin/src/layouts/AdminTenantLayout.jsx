@@ -48,6 +48,12 @@ const AdminTenantLayout = ({ children }) => {
       roles: ["tenant-admin", "admin"],
     },
     {
+      name: "Usage Analytics",
+      path: "/admin/usage-analytics",
+      icon: "fas fa-chart-bar",
+      roles: ["tenant-admin", "admin"],
+    },
+    {
       name: "Compliance Rules",
       path: "/admin/compliance-rules",
       icon: "fas fa-shield-alt",

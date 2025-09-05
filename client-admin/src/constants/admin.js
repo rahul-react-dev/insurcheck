@@ -34,6 +34,7 @@ export const ADMIN_ROUTES = {
   SETTINGS: '/admin/settings',
   REPORTS: '/admin/reports',
   ACTIVITY_LOGS: '/admin/activity-logs',
+  USAGE_ANALYTICS: '/admin/usage-analytics',
 };
 
 export const LOCKOUT_CONFIG = {
