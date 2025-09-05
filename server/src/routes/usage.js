@@ -3,7 +3,7 @@ import { body, query, validationResult } from 'express-validator';
 import { trackUsage, getUsageForBillingPeriod, getUsageAnalytics, checkUsageLimits } from '../controllers/usageController.js';
 import { calculateUsageBilling, getBillingSummary } from '../controllers/billingController.js';
 import { exportUsageData, exportUsageAnalytics } from '../controllers/usageExportController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -22,7 +22,7 @@ const handleValidationErrors = (req, res, next) => {
 
 // POST /api/usage/track - Track usage event
 router.post('/track',
-  authenticateToken,
+  authMiddleware,
   [
     body('eventType')
       .notEmpty()
@@ -48,7 +48,7 @@ router.post('/track',
 
 // GET /api/usage/billing-period - Get usage for billing period
 router.get('/billing-period',
-  authenticateToken,
+  authMiddleware,
   [
     query('startDate')
       .optional()
@@ -77,7 +77,7 @@ router.get('/billing-period',
 
 // GET /api/usage/analytics - Get usage analytics with filtering
 router.get('/analytics',
-  authenticateToken,
+  authMiddleware,
   [
     query('page')
       .optional()
@@ -118,13 +118,13 @@ router.get('/analytics',
 
 // GET /api/usage/limits - Check usage limits
 router.get('/limits',
-  authenticateToken,
+  authMiddleware,
   checkUsageLimits
 );
 
 // POST /api/billing/calculate-usage - Calculate usage-based billing
-router.post('/billing/calculate-usage',
-  authenticateToken,
+router.post('/calculate-usage',
+  authMiddleware,
   [
     body('billingPeriodStart')
       .notEmpty()
@@ -144,8 +144,8 @@ router.post('/billing/calculate-usage',
 );
 
 // GET /api/billing/summary - Get billing summary
-router.get('/billing/summary',
-  authenticateToken,
+router.get('/summary',
+  authMiddleware,
   [
     query('billingPeriodStart')
       .optional()
@@ -162,7 +162,7 @@ router.get('/billing/summary',
 
 // GET /api/usage/export - Export usage data
 router.get('/export',
-  authenticateToken,
+  authMiddleware,
   [
     query('format')
       .optional()
@@ -191,7 +191,7 @@ router.get('/export',
 
 // GET /api/usage/export/analytics - Export usage analytics
 router.get('/export/analytics',
-  authenticateToken,
+  authMiddleware,
   [
     query('format')
       .optional()

@@ -14,6 +14,7 @@ import adminInvoicesRoutes from './src/routes/adminInvoices.js';
 import complianceAnalyticsRoutes from './src/routes/complianceAnalytics.js';
 import adminSubscriptionRoutes from './src/routes/adminSubscription.js';
 import stripeWebhookRoutes from './src/routes/stripeWebhook.js';
+import usageRoutes from './src/routes/usage.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -117,6 +118,10 @@ app.use('/api/admin/notification-templates', notificationTemplatesRoutes);
 app.use('/api/admin/invoices', adminInvoicesRoutes);
 app.use('/api/admin/compliance-analytics', complianceAnalyticsRoutes);
 app.use('/api/admin/subscription', adminSubscriptionRoutes);
+
+// Usage and billing routes (mount before general API routes to avoid conflicts)
+app.use('/api/usage', usageRoutes);
+app.use('/api/billing', usageRoutes);
 
 // API routes
 app.use('/api', routes);
