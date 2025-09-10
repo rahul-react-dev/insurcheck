@@ -366,7 +366,7 @@ const sendEmailVerification = async ({ to, firstName, lastName, verificationLink
     const msg = {
       to,
       from: {
-        email: 'noreply@insurcheck.com',
+        email: 'rahul.soni@solulab.co',
         name: 'InsurCheck Platform'
       },
       subject: `Verify Your Email Address - InsurCheck`,
@@ -378,13 +378,17 @@ const sendEmailVerification = async ({ to, firstName, lastName, verificationLink
     console.log(`📤 Email details:`, {
       to: msg.to,
       from: msg.from,
-      subject: msg.subject
+      subject: msg.subject,
+      verificationLinkLength: verificationLink.length
     });
+    console.log(`🔑 SendGrid API Key status: ${process.env.SENDGRID_API_KEY ? 'Present' : 'Missing'}`);
     
     const result = await sgMail.send(msg);
     
-    console.log(`✅ SendGrid response:`, result[0]?.statusCode, result[0]?.headers);
+    console.log(`✅ SendGrid response status:`, result[0]?.statusCode);
+    console.log(`✅ SendGrid response headers:`, result[0]?.headers);
     console.log(`✅ Email verification sent successfully to: ${to}`);
+    console.log(`📊 Full SendGrid result:`, result);
     return { success: true, message: 'Email verification sent successfully' };
     
   } catch (error) {

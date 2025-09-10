@@ -644,14 +644,25 @@ export const signup = async (req, res) => {
       emailVerificationLastSent: new Date()
     }).returning();
 
-    console.log(`User created successfully - ID: ${newUser[0].id}, Email: ${email}`);
+    console.log(`✅ User created successfully - ID: ${newUser[0].id}, Email: ${email}`);
+    console.log(`🔑 Verification token generated: ${verificationToken.substring(0, 8)}...`);
+    console.log(`⏰ Token expires at: ${verificationExpiry.toISOString()}`);
 
     // Generate verification link
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    console.log(`🔗 Verification link generated: ${verificationLink}`);
 
     // Send verification email
     try {
+      console.log(`📧 Starting email verification process for: ${email}`);
+      console.log(`📤 Email parameters:`, {
+        to: email,
+        firstName: firstName,
+        lastName: lastName,
+        verificationLinkLength: verificationLink.length
+      });
+
       const emailResult = await sendEmailVerification({
         to: email,
         firstName: firstName,
@@ -660,13 +671,18 @@ export const signup = async (req, res) => {
       });
 
       if (!emailResult.success) {
-        console.error('Failed to send verification email:', emailResult);
+        console.error('❌ Failed to send verification email:', emailResult);
+        console.error('❌ Email service error details:', emailResult.error);
+        console.error('❌ Full error response:', emailResult.details);
         // Still return success to user but log the error
       } else {
-        console.log(`Verification email sent successfully to: ${email}`);
+        console.log(`✅ Verification email sent successfully to: ${email}`);
+        console.log(`📊 Email service response:`, emailResult);
       }
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
+      console.error('❌ Exception during email sending:', emailError);
+      console.error('❌ Error message:', emailError.message);
+      console.error('❌ Error stack:', emailError.stack);
       // Still return success to user but log the error
     }
 

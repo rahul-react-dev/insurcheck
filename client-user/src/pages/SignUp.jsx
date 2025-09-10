@@ -234,26 +234,15 @@ const SignUp = () => {
             <p className="text-gray-600 mb-6">
               We've sent a verification link to your email address. Please check your inbox and click the verification link to activate your account and start your 7-day free trial.
             </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => setShowSuccessModal(false)}
-                variant="primary"
-                size="lg"
-                className="w-full"
-                data-testid="modal-close-button"
-              >
-                Got it, I'll check my email
-              </Button>
-              <Button
-                onClick={() => navigate('/login')}
-                variant="secondary"
-                size="lg"
-                className="w-full"
-                data-testid="modal-login-button"
-              >
-                Go to Login Page
-              </Button>
-            </div>
+            <Button
+              onClick={() => navigate('/login')}
+              variant="primary"
+              size="lg"
+              className="w-full"
+              data-testid="modal-login-button"
+            >
+              Continue to Login
+            </Button>
           </motion.div>
         </motion.div>
       )}
