@@ -114,6 +114,78 @@ export const authApi = {
   }
 };
 
+// Generic API request function (similar to client-admin's apiCall)
+export const apiRequest = async (endpoint, options = {}) => {
+  try {
+    console.log('[API] Making request to:', endpoint);
+    console.log('[API] Options:', options);
+    
+    // Remove the /api prefix if it's already included in the endpoint
+    const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.replace('/api', '') : endpoint;
+    
+    const config = {
+      method: options.method || 'GET',
+      url: cleanEndpoint,
+      ...options,
+    };
+
+    // Handle request body
+    if (options.body) {
+      config.data = JSON.parse(options.body);
+      delete config.body;
+    }
+
+    const response = await api(config);
+    console.log('[API] Response:', response.data);
+    return response.data;
+    
+  } catch (error) {
+    console.error('[API] Request failed:', error);
+    console.error('[API] Endpoint:', endpoint);
+    
+    // Extract error message from response
+    let errorMessage = 'Network error';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    // Create a consistent error object
+    const apiError = new Error(errorMessage);
+    apiError.response = error.response;
+    apiError.status = error.response?.status;
+    apiError.data = error.response?.data;
+    
+    throw apiError;
+  }
+};
+
+// Add email verification functions to authApi
+authApi.verifyEmail = async (tokenData) => {
+  try {
+    console.log('[API] Verify email request:', tokenData);
+    const response = await api.post('/auth/verify-email', tokenData);
+    console.log('[API] Verify email response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('[API] Verify email error:', error);
+    throw error;
+  }
+};
+
+authApi.resendVerification = async (emailData) => {
+  try {
+    console.log('[API] Resend verification request:', emailData);
+    const response = await api.post('/auth/resend-verification', emailData);
+    console.log('[API] Resend verification response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('[API] Resend verification error:', error);
+    throw error;
+  }
+};
+
 // Legacy export for backward compatibility
 export const loginApi = authApi.login;
 export const logoutApi = authApi.logout;
