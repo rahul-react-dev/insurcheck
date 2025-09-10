@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Shield, Loader2 } from 'lucide-react';
 
-const PageLoader = ({ message = "Loading..." }) => {
+const PageLoader = ({ message = "Loading page..." }) => {
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50 flex items-center justify-center z-50">
       <div className="flex flex-col items-center space-y-6">

@@ -10,7 +10,6 @@ import { loginRequest, clearError } from '../store/authSlice';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
-import { ButtonLoader } from '../components/ui/PageLoader';
 import { useToast } from '../hooks/use-toast';
 import { cn } from '../utils/cn';
 
@@ -424,8 +423,8 @@ const Login = () => {
             >
               {isLoading || isSubmitting ? (
                 <>
-                  <ButtonLoader size="sm" />
-                  <span className="ml-2">Signing In...</span>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span>Signing In...</span>
                 </>
               ) : isLocked ? (
                 <span>Account Locked</span>
