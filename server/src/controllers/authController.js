@@ -648,9 +648,30 @@ export const signup = async (req, res) => {
     console.log(`🔑 Verification token generated: ${verificationToken.substring(0, 8)}...`);
     console.log(`⏰ Token expires at: ${verificationExpiry.toISOString()}`);
 
-    // Generate verification link
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    // Generate verification link - dynamically detect client-user frontend URL
+    let frontendUrl;
+    const origin = req.get('origin') || req.get('referer');
+    
+    if (origin) {
+      // Extract the base URL and replace port 3001 for client-user frontend
+      const url = new URL(origin);
+      if (url.hostname.includes('replit.dev') || url.hostname.includes('repl.co')) {
+        // For Replit, construct the client-user URL (port 3001)
+        frontendUrl = `${url.protocol}//${url.hostname}:3001`;
+      } else if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        // For local development
+        frontendUrl = 'http://localhost:3001';
+      } else {
+        // Fallback
+        frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      }
+    } else {
+      frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    }
+    
     const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    console.log(`🔗 Detected origin: ${origin}`);
+    console.log(`🔗 Constructed frontend URL: ${frontendUrl}`);
     console.log(`🔗 Verification link generated: ${verificationLink}`);
 
     // Send verification email
