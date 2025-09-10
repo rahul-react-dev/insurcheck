@@ -71,6 +71,36 @@ api.interceptors.response.use(
   }
 );
 
+// Generic API request function
+export const apiRequest = async (url, options = {}) => {
+  try {
+    const config = {
+      method: options.method || 'GET',
+      url: url,
+      ...options,
+    };
+
+    // If there's a body, parse it as JSON
+    if (options.body) {
+      config.data = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+    }
+
+    console.log('[API] Request:', config.method, config.url, config.data);
+    const response = await api(config);
+    console.log('[API] Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('[API] Error:', error);
+    
+    // Return error in a consistent format
+    if (error.response?.data) {
+      throw error.response.data;
+    } else {
+      throw { success: false, message: error.message || 'Network error occurred' };
+    }
+  }
+};
+
 // Auth API functions
 export const authApi = {
   login: async (credentials) => {
