@@ -1,0 +1,43 @@
+Sign-Up Form
+Title: Complete Sign-Up Form
+Story Description: As a new user, I want to complete a sign-up form with my details so that I can create a profile and access the system.
+Acceptance Criteria:
+Given I am on the sign-up form, I can enter Full Name, Email Address, Password, Confirm Password, Phone Number (optional), Company Name, and Accept Terms and Conditions.
+Real-time validation displays errors for invalid inputs.
+Upon valid submission, a loading indicator appears, and a verification email is sent.
+If submission fails, an error message is displayed.
+Validations with Success/Error Messages:
+Full Name:
+Success: Alphabetic characters and spaces, up to 100 characters.
+Error: "Full Name must be alphabetic and up to 100 characters."
+Email Address:
+Success: Valid email format and unique.
+Error: "Invalid email format" or "Email already registered."
+Password:
+Success: Min 10 characters, includes uppercase, lowercase, number, special character.
+Error: "Password must be at least 10 characters with uppercase, lowercase, number, and special character."
+Confirm Password:
+Success: Matches Password.
+Error: "Passwords do not match."
+Phone Number (Optional):
+Success: Numeric, up to 15 characters, optional country code.
+Error: "Invalid phone number format."
+Company Name:
+Success: Up to 100 characters.
+Error: "Company Name must be 100 characters or less."
+Accept Terms and Conditions:
+Success: Checkbox is checked.
+Error: "You must accept the Terms and Conditions."
+Submission:
+Success: "Sign-up successful. Please check your email for verification."
+Error: "Failed to submit form. Please try again."
+Expected Outcome:
+The user submits valid details, receives a verification email, and sees a success message.
+Invalid inputs are flagged with clear error messages in real-time.
+Definition of Done:
+Sign-up form is implemented with all specified fields and validations.
+Real-time validation and error messages are functional.
+Loading indicator is displayed during submission.
+Verification email is sent upon successful submission.
+Unit tests cover all field validations.
+UI/UX is tested for responsiveness and error display.

@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 3001,
     host: '0.0.0.0',
-    allowedHosts: ['4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev']
+    allowedHosts: ['efc5f8a8-7a9b-4dac-b22d-5709bedba5bb-00-p710mz2xhu7m.janeway.replit.dev']
   },
   build: {
     outDir: 'dist'
