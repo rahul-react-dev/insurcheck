@@ -9,6 +9,8 @@ import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
+import Dashboard from './pages/Dashboard';
+import ForgotPassword from './pages/ForgotPassword';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import './index.css';
@@ -23,6 +25,8 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
       </Routes>

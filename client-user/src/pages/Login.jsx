@@ -361,6 +361,7 @@ const Login = () => {
               </div>
               <button
                 type="button"
+                onClick={() => window.location.href = '/forgot-password'}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 focus:outline-none focus:underline"
                 data-testid="link-forgot-password"
               >
