@@ -93,6 +93,12 @@ export const users = pgTable('users', {
   accountLockedUntil: timestamp('account_locked_until'),
   passwordResetToken: varchar('password_reset_token', { length: 255 }),
   passwordResetExpires: timestamp('password_reset_expires'),
+  // Email verification fields
+  emailVerified: boolean('email_verified').default(false),
+  emailVerificationToken: varchar('email_verification_token', { length: 255 }),
+  emailVerificationExpires: timestamp('email_verification_expires'),
+  emailVerificationResendCount: integer('email_verification_resend_count').default(0),
+  emailVerificationLastSent: timestamp('email_verification_last_sent'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow()
 });
@@ -555,6 +561,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   role: true,
   tenantId: true,
+});
+
+// Email verification schema for signup
+export const insertUserSignupSchema = createInsertSchema(users).pick({
+  firstName: true,
+  lastName: true,
+  email: true,
+  phoneNumber: true,
+  companyName: true,
+  password: true,
 });
 
 export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).pick({
