@@ -1,10 +1,32 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://4714f73d-e452-465c-a879-41dfeee32c0d-00-3hj62dyd2avsv.janeway.replit.dev/api';
+// API configuration for user frontend
+// Use relative URLs since server serves the frontend on same port
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If running in development (localhost or Replit), use relative URLs
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
+        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
+      console.log('[API] Using relative URL');
+      return ''; // Empty string means relative to current origin
+    }
+    
+    // Production - same origin
+    return window.location.origin;
+  }
+  
+  // Fallback for server-side rendering
+  return '';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+console.log('[API] Configured API_BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000, // 10 second timeout
+  baseURL: `${API_BASE_URL}/api`,
+  timeout: 30000, // 30 second timeout
   headers: {
     'Content-Type': 'application/json',
   },
@@ -45,18 +67,51 @@ api.interceptors.response.use(
   }
 );
 
-export const loginApi = async (credentials) => {
-  try {
-    const response = await api.post('/auth/login', credentials);
-    return response;
-  } catch (error) {
-    // Ensure we don't cause page reloads on login errors
-    throw error;
+// Auth API functions
+export const authApi = {
+  login: async (credentials) => {
+    try {
+      console.log('[API] Login request:', credentials);
+      const response = await api.post('/auth/login', credentials);
+      console.log('[API] Login response:', response.data);
+      return response;
+    } catch (error) {
+      console.error('[API] Login error:', error);
+      throw error;
+    }
+  },
+
+  signup: async (userData) => {
+    try {
+      console.log('[API] Signup request:', userData);
+      const response = await api.post('/auth/signup', userData);
+      console.log('[API] Signup response:', response.data);
+      return response;
+    } catch (error) {
+      console.error('[API] Signup error:', error);
+      throw error;
+    }
+  },
+
+  checkEmail: async (email) => {
+    try {
+      console.log('[API] Check email request:', email);
+      const response = await api.post('/auth/check-email', { email });
+      console.log('[API] Check email response:', response.data);
+      return response;
+    } catch (error) {
+      console.error('[API] Check email error:', error);
+      throw error;
+    }
+  },
+
+  logout: () => {
+    return api.post('/auth/logout');
   }
 };
 
-export const logoutApi = () => {
-  return api.post('/auth/logout');
-};
+// Legacy export for backward compatibility
+export const loginApi = authApi.login;
+export const logoutApi = authApi.logout;
 
 export default api;
