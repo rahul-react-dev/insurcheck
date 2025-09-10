@@ -1,19 +1,23 @@
 import axios from 'axios';
 
 // API configuration for user frontend
-// Use relative URLs since server serves the frontend on same port
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // If running in development (localhost or Replit), use relative URLs
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
-        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
-      console.log('[API] Using relative URL');
-      return ''; // Empty string means relative to current origin
+    // If running in development (localhost or Replit), point to server port
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      console.log('[API] Using localhost server URL');
+      return 'http://localhost:5000'; // Server runs on port 5000
+    } else if (hostname.includes('replit.dev') || hostname.includes('repl.co')) {
+      console.log('[API] Using Replit server URL');
+      // For Replit, construct URL to point to port 5000
+      const protocol = window.location.protocol;
+      const baseUrl = hostname.replace(/:\d+$/, ''); // Remove any existing port
+      return `${protocol}//${baseUrl}:5000`;
     }
     
-    // Production - same origin
+    // Production - same origin (when frontend and backend are served from same port)
     return window.location.origin;
   }
   
