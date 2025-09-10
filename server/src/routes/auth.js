@@ -60,6 +60,16 @@ router.post('/signup', [
   body('companyName').trim().isLength({ min: 1, max: 100 }).withMessage('Company Name must be 100 characters or less')
 ], authController.signup);
 
+// Email verification endpoints
+router.post('/verify-email', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
+  body('token').isLength({ min: 1 }).withMessage('Verification token is required')
+], authController.verifyEmail);
+
+router.post('/resend-verification', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
+], authController.resendVerificationEmail);
+
 router.post('/register', registerValidation, authController.register);
 router.post('/logout', authController.logout);
 router.get('/me', authMiddleware, authController.getCurrentUser);

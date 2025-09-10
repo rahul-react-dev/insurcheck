@@ -5,6 +5,8 @@ import { config } from '../config/env.js';
 import { db } from '../../db.ts';
 import { users, tenants } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import crypto from 'crypto';
+import { sendEmailVerification } from '../../services/emailService.js';
 
 export const login = async (req, res) => {
   try {
@@ -596,9 +598,18 @@ export const signup = async (req, res) => {
       .limit(1);
 
     if (existingUser.length > 0) {
+      // Check if user exists but is not verified
+      if (!existingUser[0].emailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email exists but is not verified. Please check your email or request a new verification link.',
+          needsVerification: true
+        });
+      }
+      
       return res.status(400).json({
         success: false,
-        message: 'Email already registered'
+        message: 'Email already registered and verified'
       });
     }
 
@@ -611,7 +622,11 @@ export const signup = async (req, res) => {
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || firstName;
 
-    // Create user without tenant (for individual users)
+    // Generate email verification token and expiry (24 hours)
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+    // Create user with email verification pending
     const newUser = await db.insert(users).values({
       firstName: firstName,
       lastName: lastName,
@@ -621,25 +636,39 @@ export const signup = async (req, res) => {
       companyName: companyName,
       role: 'user',
       tenantId: null, // Individual user without tenant
-      isActive: true
+      isActive: false, // Account inactive until email verified
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpiry,
+      emailVerificationResendCount: 0,
+      emailVerificationLastSent: new Date()
     }).returning();
 
     console.log(`User created successfully - ID: ${newUser[0].id}, Email: ${email}`);
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: newUser[0].id, 
-        email: newUser[0].email,
-        role: newUser[0].role,
-        tenantId: newUser[0].tenantId 
-      },
-      config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
-    );
+    // Generate verification link
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
-    // In a real implementation, send verification email here
-    console.log(`Verification email would be sent to: ${email}`);
+    // Send verification email
+    try {
+      const emailResult = await sendEmailVerification({
+        to: email,
+        firstName: firstName,
+        lastName: lastName,
+        verificationLink: verificationLink
+      });
+
+      if (!emailResult.success) {
+        console.error('Failed to send verification email:', emailResult);
+        // Still return success to user but log the error
+      } else {
+        console.log(`Verification email sent successfully to: ${email}`);
+      }
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      // Still return success to user but log the error
+    }
 
     res.status(201).json({
       success: true,
@@ -651,11 +680,12 @@ export const signup = async (req, res) => {
           lastName: newUser[0].lastName,
           email: newUser[0].email,
           role: newUser[0].role,
-          tenantId: newUser[0].tenantId,
-          isActive: newUser[0].isActive
+          emailVerified: false,
+          isActive: false
         },
-        token,
-        trialPeriod: trialPeriod || 7
+        // No token provided until email is verified
+        trialPeriod: trialPeriod || 7,
+        verificationSent: true
       }
     });
 
@@ -698,6 +728,236 @@ export const getCurrentUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching user'
+    });
+  }
+};
+
+// Email verification endpoint
+export const verifyEmail = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { token, email } = req.body;
+
+    console.log(`Email verification attempt - Email: ${email}, Token: ${token.substring(0, 8)}...`);
+
+    // Find user by email and token
+    const userResult = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification link'
+      });
+    }
+
+    const user = userResult[0];
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already verified. You can now log in.',
+        alreadyVerified: true
+      });
+    }
+
+    // Check if token matches
+    if (user.emailVerificationToken !== token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification link'
+      });
+    }
+
+    // Check if token has expired (24 hours)
+    const now = new Date();
+    if (!user.emailVerificationExpires || user.emailVerificationExpires < now) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification link has expired. Please request a new one.',
+        expired: true
+      });
+    }
+
+    // Verify the email and activate the account
+    await db.update(users)
+      .set({
+        emailVerified: true,
+        isActive: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        emailVerificationResendCount: 0,
+        emailVerificationLastSent: null
+      })
+      .where(eq(users.id, user.id));
+
+    console.log(`Email verified successfully for user: ${email}`);
+
+    // Generate JWT token for the verified user
+    const jwtToken = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId 
+      },
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully! Welcome to InsurCheck.',
+      data: {
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          emailVerified: true,
+          isActive: true
+        },
+        token: jwtToken,
+        trialPeriod: 7
+      }
+    });
+
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during email verification'
+    });
+  }
+};
+
+// Resend verification email endpoint
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+
+    console.log(`Resend verification email request - Email: ${email}`);
+
+    // Find user by email
+    const userResult = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      // For security, don't reveal if email exists or not
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists and is not verified, a new verification email has been sent.'
+      });
+    }
+
+    const user = userResult[0];
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already verified. You can log in.',
+        alreadyVerified: true
+      });
+    }
+
+    // Check resend limit (3 attempts per hour)
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const resendCount = user.emailVerificationResendCount || 0;
+    const lastSent = user.emailVerificationLastSent;
+
+    // Reset count if more than an hour has passed
+    if (!lastSent || lastSent < oneHourAgo) {
+      // More than an hour has passed, reset the count
+    } else if (resendCount >= 3) {
+      return res.status(429).json({
+        success: false,
+        message: 'Resend limit reached. Try again later.',
+        retryAfter: Math.ceil((lastSent.getTime() + 60 * 60 * 1000 - now.getTime()) / 1000 / 60) // minutes remaining
+      });
+    }
+
+    // Generate new verification token and expiry
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+    // Update user with new token and increment resend count
+    const newResendCount = (!lastSent || lastSent < oneHourAgo) ? 1 : resendCount + 1;
+    
+    await db.update(users)
+      .set({
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpiry,
+        emailVerificationResendCount: newResendCount,
+        emailVerificationLastSent: now
+      })
+      .where(eq(users.id, user.id));
+
+    // Generate verification link
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+
+    // Send verification email
+    try {
+      const emailResult = await sendEmailVerification({
+        to: email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        verificationLink: verificationLink
+      });
+
+      if (!emailResult.success) {
+        console.error('Failed to resend verification email:', emailResult);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to send verification email. Please try again later.'
+        });
+      }
+
+      console.log(`Verification email resent successfully to: ${email}`);
+    } catch (emailError) {
+      console.error('Error resending verification email:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification email. Please try again later.'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account with that email exists and is not verified, a new verification email has been sent.',
+      attemptsRemaining: Math.max(0, 3 - newResendCount)
+    });
+
+  } catch (error) {
+    console.error('Resend verification email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during resend verification'
     });
   }
 };
