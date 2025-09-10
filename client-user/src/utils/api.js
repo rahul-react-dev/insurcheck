@@ -8,13 +8,13 @@ const getApiBaseUrl = () => {
     // If running in development (localhost or Replit), point to server port
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       console.log('[API] Using localhost server URL');
-      return 'http://localhost:5000'; // Server runs on port 5000
+      return 'http://localhost:3000'; // Server runs on port 3000
     } else if (hostname.includes('replit.dev') || hostname.includes('repl.co')) {
       console.log('[API] Using Replit server URL');
-      // For Replit, construct URL to point to port 5000
+      // For Replit, construct URL to point to port 3000
       const protocol = window.location.protocol;
       const baseUrl = hostname.replace(/:\d+$/, ''); // Remove any existing port
-      return `${protocol}//${baseUrl}:5000`;
+      return `${protocol}//${baseUrl}:3000`;
     }
     
     // Production - same origin (when frontend and backend are served from same port)
@@ -70,36 +70,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Generic API request function
-export const apiRequest = async (url, options = {}) => {
-  try {
-    const config = {
-      method: options.method || 'GET',
-      url: url,
-      ...options,
-    };
-
-    // If there's a body, parse it as JSON
-    if (options.body) {
-      config.data = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
-    }
-
-    console.log('[API] Request:', config.method, config.url, config.data);
-    const response = await api(config);
-    console.log('[API] Response:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('[API] Error:', error);
-    
-    // Return error in a consistent format
-    if (error.response?.data) {
-      throw error.response.data;
-    } else {
-      throw { success: false, message: error.message || 'Network error occurred' };
-    }
-  }
-};
 
 // Auth API functions
 export const authApi = {

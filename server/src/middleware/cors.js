@@ -10,15 +10,9 @@ export const corsOptions = {
       return callback(null, true);
     }
     
-    // Allow Replit dev origins (including different ports like 3001 → 3000)
-    if (origin && (origin.includes('.replit.dev') || origin.includes('.repl.co'))) {
+    // Allow Replit dev origins (including different ports)
+    if (origin && origin.includes('.replit.dev')) {
       console.log('[CORS] Replit domain detected - allowing:', origin);
-      return callback(null, true);
-    }
-    
-    // Allow specific known patterns for Replit
-    if (origin && origin.match(/https:\/\/.*\.janeway\.replit\.dev/)) {
-      console.log('[CORS] Replit janeway domain detected - allowing:', origin);
       return callback(null, true);
     }
     
