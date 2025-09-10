@@ -523,9 +523,140 @@ If you need help, please contact our support team.
   `;
 };
 
+/**
+ * Send password reset email
+ * @param {string} to - Recipient email address
+ * @param {string} resetLink - Password reset link
+ * @param {string} firstName - User's first name
+ */
+const sendPasswordResetEmail = async (to, resetLink, firstName) => {
+  try {
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log('📧 Email service disabled - would send password reset to:', to);
+      console.log('🔗 Reset link:', resetLink);
+      return { success: false, reason: 'Email service not configured' };
+    }
+
+    const msg = {
+      to,
+      from: {
+        email: 'rahul.soni@solulab.co',
+        name: 'InsurCheck Security'
+      },
+      subject: 'InsurCheck - Password Reset Request',
+      html: generatePasswordResetHTML({ to, resetLink, firstName }),
+      text: generatePasswordResetText({ to, resetLink, firstName })
+    };
+
+    console.log(`📧 Sending password reset email to: ${to}`);
+    
+    const result = await sgMail.send(msg);
+    
+    console.log(`✅ Password reset email sent successfully to: ${to}`);
+    return { success: true, message: 'Password reset email sent successfully' };
+    
+  } catch (error) {
+    console.error('❌ SendGrid password reset email error:', error.response?.body || error.message);
+    return { 
+      success: false, 
+      error: error.message,
+      details: error.response?.body 
+    };
+  }
+};
+
+/**
+ * Generate HTML email template for password reset
+ */
+const generatePasswordResetHTML = ({ to, resetLink, firstName }) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Password Reset - InsurCheck</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+            .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%); color: white; padding: 40px 30px; text-align: center; }
+            .content { padding: 40px 30px; }
+            .button { display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 25px 0; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+            .security-note { background-color: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #f59e0b; }
+            .footer { background-color: #f8fafc; padding: 25px 30px; text-align: center; font-size: 14px; color: #64748b; border-top: 1px solid #e2e8f0; }
+            .link-box { background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin: 20px 0; word-break: break-all; font-family: monospace; font-size: 12px; color: #475569; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1 style="color: white; font-size: 32px; font-weight: bold; margin: 0;">InsurCheck</h1>
+                <p style="color: #e0f2fe; margin: 5px 0 0 0;">Security Notification</p>
+                <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <h2 style="margin: 0; font-size: 24px;">Password Reset Request</h2>
+                </div>
+            </div>
+            
+            <div class="content">
+                <h2 style="color: #1f2937; margin-top: 0;">Hello ${firstName || 'User'},</h2>
+                
+                <p style="color: #374151; line-height: 1.6; font-size: 16px;">
+                    We received a request to reset your password for your InsurCheck account. 
+                    If you made this request, click the button below to create a new password:
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetLink}" class="button" style="color: white; text-decoration: none;">
+                        Reset Your Password
+                    </a>
+                </div>
+                
+                <div class="security-note">
+                    <h3 style="color: #92400e; margin-top: 0;">🔒 Security Information</h3>
+                    <p style="color: #92400e; margin: 0;">
+                        This link expires in 24 hours. If you didn't request this, ignore this email.
+                    </p>
+                </div>
+                
+                <p style="color: #6b7280; font-size: 14px;">
+                    Can't click the button? Copy this link: <br>
+                    <div class="link-box">${resetLink}</div>
+                </p>
+            </div>
+            
+            <div class="footer">
+                <p style="margin: 0;">Best regards,<br><strong style="color: #2563eb;">InsurCheck Security Team</strong></p>
+                <p style="margin: 10px 0 0 0; font-size: 12px;">This is an automated message. Do not reply.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Generate plain text email template for password reset
+ */
+const generatePasswordResetText = ({ to, resetLink, firstName }) => {
+  return `
+Password Reset Request - InsurCheck
+
+Hello ${firstName || 'User'},
+
+We received a request to reset your password. Click this link to reset it:
+${resetLink}
+
+This link expires in 24 hours. If you didn't request this, ignore this email.
+
+Best regards,
+InsurCheck Security Team
+  `.trim();
+};
+
 export {
   initializeEmailService,
   sendTenantAdminInvitation,
   sendUserInvitation,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail
 };
