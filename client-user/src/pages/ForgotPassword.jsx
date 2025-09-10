@@ -88,22 +88,29 @@ const ForgotPassword = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call for forgot password
-      // In real implementation, this would call your forgot password endpoint
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
-      
-      // For now, we'll just show success message
-      // const response = await apiRequest('/api/auth/forgot-password', {
-      //   method: 'POST',
-      //   body: JSON.stringify(data)
-      // });
-
-      setIsSubmitted(true);
-      toast({
-        type: 'success',
-        title: 'Reset Link Sent',
-        description: 'Check your email for password reset instructions.'
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setIsSubmitted(true);
+        toast({
+          type: 'success',
+          title: 'Reset Link Sent',
+          description: result.message || 'Password reset instructions have been sent to your email.'
+        });
+        
+        // Clear the form
+        reset();
+      } else {
+        throw new Error(result.message || 'Failed to send reset instructions');
+      }
 
     } catch (error) {
       console.error('Forgot password error:', error);
