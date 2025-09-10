@@ -21,6 +21,15 @@ export default defineConfig({
       'efc5f8a8-7a9b-4dac-b22d-5709bedba5bb-00-p710mz2xhu7m.janeway.replit.dev'
     ],
     host: "0.0.0.0",
+    cors: {
+      origin: [
+        'https://efc5f8a8-7a9b-4dac-b22d-5709bedba5bb-00-p710mz2xhu7m.janeway.replit.dev:3000',
+        'https://efc5f8a8-7a9b-4dac-b22d-5709bedba5bb-00-p710mz2xhu7m.janeway.replit.dev:3001'
+      ],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+    },
     fs: {
       // Allow serving files from one level up to access root node_modules
       allow: ['..'],
