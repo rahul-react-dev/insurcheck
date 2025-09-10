@@ -8,13 +8,13 @@ const getApiBaseUrl = () => {
     // If running in development (localhost or Replit), point to server port
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       console.log('[API] Using localhost server URL');
-      return 'http://localhost:3000'; // Server runs on port 3000
+      return 'http://localhost:5000'; // Server runs on port 5000
     } else if (hostname.includes('replit.dev') || hostname.includes('repl.co')) {
       console.log('[API] Using Replit server URL');
-      // For Replit, construct URL to point to port 3000
+      // For Replit, construct URL to point to port 5000
       const protocol = window.location.protocol;
       const baseUrl = hostname.replace(/:\d+$/, ''); // Remove any existing port
-      return `${protocol}//${baseUrl}:3000`;
+      return `${protocol}//${baseUrl}:5000`;
     }
     
     // Production - same origin (when frontend and backend are served from same port)
