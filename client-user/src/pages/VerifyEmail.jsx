@@ -73,11 +73,6 @@ const VerifyEmail = () => {
           title: 'Email Verified!',
           description: 'Your account has been activated. Please log in to continue.',
         });
-
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
       } else {
         handleVerificationError(response);
       }

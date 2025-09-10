@@ -49,3 +49,38 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 ## State Management
 - **Redux Toolkit**: Simplified Redux development for state management.
 - **Redux-Saga**: For managing side effects (like asynchronous API calls) in Redux applications.
+
+# Recent Changes
+
+## Email Verification System Implementation (Complete)
+- **Database Schema**: Added email verification fields to users table
+  - `emailVerificationToken` (VARCHAR): Unique verification token
+  - `emailVerificationExpires` (TIMESTAMP): 24-hour expiration
+  - `emailVerified` (BOOLEAN): Verification status
+  - `emailVerificationResendCount` (INTEGER): Rate limiting (max 3/hour)
+  - `emailVerificationLastSent` (TIMESTAMP): Resend tracking
+
+- **SendGrid Integration**: 
+  - Configured with verified sender identity 'rahul.soni@solulab.co'
+  - Comprehensive email templates for verification with professional styling
+  - Enhanced error logging and response tracking
+
+- **Client-User Frontend**:
+  - Vite proxy configuration to forward /api requests from port 3001 to 5000
+  - SignUp page with single-button modal redirecting to login after successful registration
+  - VerifyEmail page with token validation, success/error states, and resend functionality
+  - Rate limiting UI (3 resends per hour) with user feedback
+  - Manual redirect only (removed automatic redirects)
+
+- **Backend API Endpoints**:
+  - `/api/auth/signup`: Creates user with verification token, sends email
+  - `/api/auth/verify-email`: Validates token, activates account (no auto-login)
+  - `/api/auth/resend-verification`: Resends verification with rate limiting
+  - Dynamic frontend URL detection for correct verification links
+
+- **Security & Flow**:
+  - Users cannot login until email is verified
+  - Verification activates account but requires manual login
+  - Token expires in 24 hours
+  - Rate limiting prevents spam (3 resends per hour)
+  - Proper error handling and user feedback throughout
