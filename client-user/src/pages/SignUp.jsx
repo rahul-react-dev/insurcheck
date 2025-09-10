@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,8 +8,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Building, Phone, Eye, EyeOff, Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import ErrorMessage from '../components/ui/ErrorMessage';
 import { useToast } from '../hooks/use-toast';
-import { apiRequest } from '../utils/query-client';
+import { 
+  signupRequest, 
+  checkEmailRequest, 
+  clearSignupState, 
+  clearEmailCheck,
+  clearError 
+} from '../store/authSlice';
 import { cn } from '../utils/cn';
 
 // Enhanced validation schema matching user story requirements
@@ -38,13 +47,24 @@ const signUpSchema = z.object({
 });
 
 const SignUp = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailCheckStatus, setEmailCheckStatus] = useState(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Redux state
+  const { 
+    isSigningUp, 
+    signupError, 
+    signupSuccess,
+    isCheckingEmail,
+    emailExists,
+    emailCheckError
+  } = useSelector((state) => state.auth);
+  
+  // Local state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const {
     register,
@@ -75,41 +95,61 @@ const SignUp = () => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (watchedEmail && z.string().email().safeParse(watchedEmail).success) {
-        checkEmailUniqueness(watchedEmail);
+        dispatch(checkEmailRequest(watchedEmail));
       } else {
-        setEmailCheckStatus(null);
+        dispatch(clearEmailCheck());
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [watchedEmail]);
+  }, [watchedEmail, dispatch]);
 
-  const checkEmailUniqueness = async (email) => {
-    try {
-      setEmailCheckStatus('checking');
-      const response = await apiRequest('/auth/check-email', {
-        method: 'POST',
-        data: { email },
+  // Handle email check results
+  useEffect(() => {
+    if (emailExists === true) {
+      setError('email', {
+        type: 'manual',
+        message: 'Email already registered',
       });
-      
-      if (response.exists) {
-        setEmailCheckStatus('exists');
-        setError('email', {
-          type: 'manual',
-          message: 'Email already registered',
-        });
-      } else {
-        setEmailCheckStatus('available');
-        clearErrors('email');
-      }
-    } catch (error) {
-      setEmailCheckStatus(null);
-      console.error('Email check failed:', error);
+    } else if (emailExists === false) {
+      clearErrors('email');
     }
-  };
+  }, [emailExists, setError, clearErrors]);
 
-  const onSubmit = async (data) => {
-    if (emailCheckStatus === 'exists') {
+  // Handle signup success
+  useEffect(() => {
+    if (signupSuccess) {
+      setShowSuccessModal(true);
+      toast({
+        type: 'success',
+        title: 'Sign-up Successful',
+        description: 'Please check your email for verification.',
+      });
+    }
+  }, [signupSuccess, toast]);
+
+  // Handle signup error
+  useEffect(() => {
+    if (signupError) {
+      toast({
+        type: 'error',
+        title: 'Sign-up Failed',
+        description: signupError,
+      });
+    }
+  }, [signupError, toast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearSignupState());
+      dispatch(clearEmailCheck());
+      dispatch(clearError());
+    };
+  }, [dispatch]);
+
+  const onSubmit = (data) => {
+    if (emailExists === true) {
       toast({
         type: 'error',
         title: 'Email Already Registered',
@@ -118,38 +158,15 @@ const SignUp = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const response = await apiRequest('/auth/signup', {
-        method: 'POST',
-        data: {
-          fullName: data.fullName,
-          email: data.email,
-          password: data.password,
-          phoneNumber: data.phoneNumber || null,
-          companyName: data.companyName,
-          trialPeriod: 7,
-        },
-      });
-
-      // Show success modal
-      setShowSuccessModal(true);
-      
-      toast({
-        type: 'success',
-        title: 'Sign-up Successful',
-        description: 'Please check your email for verification.',
-      });
-
-    } catch (error) {
-      toast({
-        type: 'error',
-        title: 'Failed to Submit Form',
-        description: error.message || 'Failed to submit form. Please try again.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Dispatch signup request
+    dispatch(signupRequest({
+      fullName: data.fullName,
+      email: data.email,
+      password: data.password,
+      phoneNumber: data.phoneNumber || null,
+      companyName: data.companyName,
+      trialPeriod: 7,
+    }));
   };
 
   const features = [
@@ -173,6 +190,16 @@ const SignUp = () => {
   };
 
   const passwordStrength = getPasswordStrength(watchedPassword || '');
+  
+  // Get email check status for UI
+  const getEmailCheckStatus = () => {
+    if (isCheckingEmail) return 'checking';
+    if (emailExists === true) return 'exists';
+    if (emailExists === false) return 'available';
+    return null;
+  };
+  
+  const emailCheckStatus = getEmailCheckStatus();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50">
@@ -432,19 +459,28 @@ const SignUp = () => {
                 </p>
               )}
 
+              {/* Error Message */}
+              {signupError && (
+                <ErrorMessage 
+                  error={signupError} 
+                  onDismiss={() => dispatch(clearError())}
+                  className="mb-4"
+                />
+              )}
+
               {/* Submit Button */}
               <Button
                 type="submit"
                 variant="primary"
                 size="lg"
                 className="w-full"
-                loading={isSubmitting}
-                disabled={emailCheckStatus === 'exists' || isSubmitting}
+                loading={isSigningUp}
+                disabled={emailCheckStatus === 'exists' || isSigningUp || isCheckingEmail}
                 data-testid="button-signup"
               >
-                {isSubmitting ? (
+                {isSigningUp ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <LoadingSpinner size="sm" variant="white" className="mr-2" />
                     Creating Account...
                   </>
                 ) : (
