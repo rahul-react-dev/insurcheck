@@ -220,7 +220,7 @@ const ForgotPassword = () => {
                     className={cn(
                       "w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl font-semibold text-sm transition-all duration-200 transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
                       !isFormValid || isCheckingEmail
-                        ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                        ? "bg-gray-400 text-white cursor-not-allowed"
                         : "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                     data-testid="button-send-reset"
