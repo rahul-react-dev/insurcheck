@@ -1,23 +1,20 @@
 import axios from 'axios';
 
 // API configuration for user frontend
+// Use relative URLs since Vite proxy will handle the backend forwarding
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // If running in development (localhost or Replit), point to server port
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      console.log('[API] Using localhost server URL');
-      return 'http://localhost:5000'; // Server runs on port 5000
-    } else if (hostname.includes('replit.dev') || hostname.includes('repl.co')) {
-      console.log('[API] Using Replit server URL');
-      // For Replit, construct URL to point to port 5000
-      const protocol = window.location.protocol;
-      const baseUrl = hostname.replace(/:\d+$/, ''); // Remove any existing port
-      return `${protocol}//${baseUrl}:5000`;
+    // If running in development (localhost or Replit), use relative URLs
+    // The Vite proxy will forward /api requests to localhost:5000
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
+        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
+      console.log('[API] Using relative URL with Vite proxy');
+      return ''; // Empty string means relative to current origin
     }
     
-    // Production - same origin (when frontend and backend are served from same port)
+    // Production - same origin
     return window.location.origin;
   }
   
