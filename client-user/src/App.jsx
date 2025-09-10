@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Suspense } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { store } from './store';
 import { queryClient } from './utils/query-client';
 import { useToast } from './hooks/use-toast';
