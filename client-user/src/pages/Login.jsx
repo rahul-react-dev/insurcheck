@@ -33,6 +33,7 @@ const Login = () => {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutTime, setLockoutTime] = useState(null);
+  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
   
   // Initialize form with react-hook-form and zod validation
   const {
@@ -51,8 +52,13 @@ const Login = () => {
     }
   });
 
-  // Handle account lockout logic
+  // Clear any stale error state on component mount and handle account lockout logic
   useEffect(() => {
+    // Clear any previous error state from Redux persist
+    if (error) {
+      dispatch(clearError());
+    }
+    
     const storedFailedAttempts = localStorage.getItem('loginFailedAttempts');
     const storedLockoutTime = localStorage.getItem('loginLockoutTime');
     
@@ -91,13 +97,13 @@ const Login = () => {
         localStorage.removeItem('loginLockoutTime');
       }
     }
-  }, [toast]);
+  }, [dispatch, toast]);
   
   // Handle failed login attempts - using useRef to avoid dependency loop
   const errorProcessedRef = useRef(null);
   
   useEffect(() => {
-    if (error && error !== errorProcessedRef.current && !error.includes('Account locked')) {
+    if (error && error !== errorProcessedRef.current && !error.includes('Account locked') && hasAttemptedLogin) {
       errorProcessedRef.current = error;
       
       const currentFailedAttempts = parseInt(localStorage.getItem('loginFailedAttempts') || '0');
@@ -139,7 +145,7 @@ const Login = () => {
         });
       }
     }
-  }, [error, toast]);
+  }, [error, hasAttemptedLogin, toast]);
   
   // Clear error when user starts typing
   useEffect(() => {
@@ -161,6 +167,9 @@ const Login = () => {
       });
       return;
     }
+    
+    // Mark that a login attempt has been made
+    setHasAttemptedLogin(true);
     
     // Add role for user login
     const loginData = {
@@ -249,8 +258,8 @@ const Login = () => {
             </motion.div>
           )}
           
-          {/* API Error Message */}
-          {error && !isLocked && (
+          {/* API Error Message - Only show after login attempt */}
+          {error && !isLocked && hasAttemptedLogin && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
