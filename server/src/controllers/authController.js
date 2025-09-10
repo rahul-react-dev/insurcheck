@@ -539,6 +539,135 @@ export const adminForgotPassword = async (req, res) => {
   }
 };
 
+// Check if email exists in database
+export const checkEmail = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+
+    // Check if email exists
+    const existingUser = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    res.json({
+      success: true,
+      exists: existingUser.length > 0
+    });
+
+  } catch (error) {
+    console.error('Check email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error checking email'
+    });
+  }
+};
+
+// User signup for client-user panel
+export const signup = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { fullName, email, password, phoneNumber, companyName, trialPeriod } = req.body;
+
+    console.log(`User signup attempt - Email: ${email}, Name: ${fullName}`);
+
+    // Check if user already exists
+    const existingUser = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Split full name into first and last name
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || firstName;
+
+    // Create user without tenant (for individual users)
+    const newUser = await db.insert(users).values({
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: hashedPassword,
+      phoneNumber: phoneNumber || null,
+      companyName: companyName,
+      role: 'user',
+      tenantId: null, // Individual user without tenant
+      isActive: true
+    }).returning();
+
+    console.log(`User created successfully - ID: ${newUser[0].id}, Email: ${email}`);
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: newUser[0].id, 
+        email: newUser[0].email,
+        role: newUser[0].role,
+        tenantId: newUser[0].tenantId 
+      },
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn }
+    );
+
+    // In a real implementation, send verification email here
+    console.log(`Verification email would be sent to: ${email}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Sign-up successful. Please check your email for verification.',
+      data: {
+        user: {
+          id: newUser[0].id,
+          firstName: newUser[0].firstName,
+          lastName: newUser[0].lastName,
+          email: newUser[0].email,
+          role: newUser[0].role,
+          tenantId: newUser[0].tenantId,
+          isActive: newUser[0].isActive
+        },
+        token,
+        trialPeriod: trialPeriod || 7
+      }
+    });
+
+  } catch (error) {
+    console.error('User signup error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during sign-up'
+    });
+  }
+};
+
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await db.select()

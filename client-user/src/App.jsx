@@ -8,6 +8,8 @@ import { Toaster } from './components/ui/Toast';
 import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import './index.css';
 
 function AppContent() {
@@ -19,6 +21,8 @@ function AppContent() {
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
       </Routes>
       <Toaster toasts={toasts} onDismiss={dismiss} />
     </div>

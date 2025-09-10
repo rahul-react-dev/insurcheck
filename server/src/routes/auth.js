@@ -47,6 +47,19 @@ router.post('/admin-forgot-password', [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.adminForgotPassword);
 
+// Email check endpoint for signup validation
+router.post('/check-email', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
+], authController.checkEmail);
+
+// User signup endpoint (for client-user panel)
+router.post('/signup', [
+  body('email').isEmail().normalizeEmail().withMessage('Invalid email format'),
+  body('password').isLength({ min: 10 }).withMessage('Password must be at least 10 characters'),
+  body('fullName').trim().isLength({ min: 1, max: 100 }).withMessage('Full Name must be alphabetic and up to 100 characters'),
+  body('companyName').trim().isLength({ min: 1, max: 100 }).withMessage('Company Name must be 100 characters or less')
+], authController.signup);
+
 router.post('/register', registerValidation, authController.register);
 router.post('/logout', authController.logout);
 router.get('/me', authMiddleware, authController.getCurrentUser);
