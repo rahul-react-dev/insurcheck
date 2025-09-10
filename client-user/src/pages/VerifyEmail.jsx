@@ -66,23 +66,17 @@ const VerifyEmail = () => {
 
       if (response.success) {
         setVerificationStatus('success');
-        setVerificationMessage('Email verified successfully! Welcome to InsurCheck.');
-        
-        // Store token and user data
-        if (response.data?.token) {
-          localStorage.setItem('token', response.data.token);
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-        }
+        setVerificationMessage('Email verified successfully! You can now log in to your account.');
         
         toast({
           type: 'success',
           title: 'Email Verified!',
-          description: 'Your account has been activated successfully.',
+          description: 'Your account has been activated. Please log in to continue.',
         });
 
-        // Redirect to dashboard after a short delay
+        // Redirect to login page after a short delay
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/login');
         }, 2000);
       } else {
         handleVerificationError(response);
@@ -252,13 +246,13 @@ const VerifyEmail = () => {
           <div className="space-y-4">
             {verificationStatus === 'success' && (
               <Button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/login')}
                 variant="primary"
                 size="lg"
                 className="w-full"
                 data-testid="button-continue"
               >
-                Continue to Dashboard
+                Continue to Login
               </Button>
             )}
 

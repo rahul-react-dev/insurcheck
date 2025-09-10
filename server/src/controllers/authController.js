@@ -839,36 +839,12 @@ export const verifyEmail = async (req, res) => {
       })
       .where(eq(users.id, user.id));
 
-    console.log(`Email verified successfully for user: ${email}`);
-
-    // Generate JWT token for the verified user
-    const jwtToken = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenantId 
-      },
-      config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
-    );
+    console.log(`✅ Email verified successfully for user: ${email}`);
+    console.log(`🎯 User account activated. User must now log in manually.`);
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully! Welcome to InsurCheck.',
-      data: {
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: user.role,
-          emailVerified: true,
-          isActive: true
-        },
-        token: jwtToken,
-        trialPeriod: 7
-      }
+      message: 'Email verified successfully! You can now log in to your account.'
     });
 
   } catch (error) {
