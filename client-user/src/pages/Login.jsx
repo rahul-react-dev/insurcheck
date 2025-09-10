@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -91,10 +91,16 @@ const Login = () => {
     }
   }, [toast]);
   
-  // Handle failed login attempts
+  // Handle failed login attempts - using useRef to avoid dependency loop
+  const errorProcessedRef = useRef(null);
+  
   useEffect(() => {
-    if (error && error !== 'Account locked. Try again in 15 minutes.') {
-      const newFailedAttempts = failedAttempts + 1;
+    if (error && error !== errorProcessedRef.current && !error.includes('Account locked')) {
+      errorProcessedRef.current = error;
+      
+      const currentFailedAttempts = parseInt(localStorage.getItem('loginFailedAttempts') || '0');
+      const newFailedAttempts = currentFailedAttempts + 1;
+      
       setFailedAttempts(newFailedAttempts);
       localStorage.setItem('loginFailedAttempts', newFailedAttempts.toString());
       
@@ -131,7 +137,7 @@ const Login = () => {
         });
       }
     }
-  }, [error, failedAttempts, toast]);
+  }, [error, toast]);
   
   // Clear error when user starts typing
   useEffect(() => {
@@ -163,13 +169,16 @@ const Login = () => {
     dispatch(loginRequest(loginData));
   };
   
-  // Reset failed attempts on successful login
+  // Reset failed attempts on successful login  
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token && !error) {
       setFailedAttempts(0);
+      setIsLocked(false);
+      setLockoutTime(null);
       localStorage.removeItem('loginFailedAttempts');
       localStorage.removeItem('loginLockoutTime');
+      errorProcessedRef.current = null; // Reset error tracking
     }
   }, [error]);
 
