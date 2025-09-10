@@ -249,6 +249,21 @@ const Login = () => {
             </motion.div>
           )}
           
+          {/* API Error Message */}
+          {error && !isLocked && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div>
+                <p className="text-red-800 font-medium text-sm">Login Failed</p>
+                <p className="text-red-600 text-xs mt-1">{error}</p>
+              </div>
+            </motion.div>
+          )}
+          
           {failedAttempts > 0 && failedAttempts < 5 && !isLocked && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
