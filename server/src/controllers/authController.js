@@ -974,3 +974,169 @@ export const resendVerificationEmail = async (req, res) => {
     });
   }
 };
+
+// User forgot password - send reset email
+export const userForgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { email } = req.body;
+    console.log(`User forgot password request - Email: ${email}`);
+
+    // Find user by email
+    const userResult = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      // For security, don't reveal whether email exists
+      return res.status(200).json({
+        success: true,
+        message: 'If that email address is registered, you will receive password reset instructions'
+      });
+    }
+
+    const user = userResult[0];
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account is deactivated. Please contact support.'
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update user with reset token
+    await db.update(users)
+      .set({
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetTokenExpires
+      })
+      .where(eq(users.id, user.id));
+
+    // Send reset email
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+    
+    try {
+      await emailService.sendPasswordResetEmail(email, resetLink, user.firstName || 'User');
+      console.log(`Password reset email sent to: ${email}`);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Clear the token if email fails
+      await db.update(users)
+        .set({
+          passwordResetToken: null,
+          passwordResetExpires: null
+        })
+        .where(eq(users.id, user.id));
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send reset email. Please try again.'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset instructions have been sent to your email'
+    });
+
+  } catch (error) {
+    console.error('User forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+};
+
+// Reset password using token
+export const resetPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { token, password } = req.body;
+    console.log(`Password reset attempt with token: ${token?.substring(0, 8)}...`);
+
+    // Find user by reset token
+    const userResult = await db.select()
+      .from(users)
+      .where(eq(users.passwordResetToken, token))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link'
+      });
+    }
+
+    const user = userResult[0];
+
+    // Check if token is expired
+    const now = new Date();
+    if (!user.passwordResetExpires || now > user.passwordResetExpires) {
+      // Clear expired token
+      await db.update(users)
+        .set({
+          passwordResetToken: null,
+          passwordResetExpires: null
+        })
+        .where(eq(users.id, user.id));
+
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link'
+      });
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update password and clear reset token
+    await db.update(users)
+      .set({
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        failedLoginAttempts: 0, // Reset failed attempts
+        accountLockedUntil: null, // Clear any lockout
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, user.id));
+
+    console.log(`Password reset successful for user: ${user.email}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully. Please log in with your new password.'
+    });
+
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.'
+    });
+  }
+};

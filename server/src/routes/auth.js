@@ -37,6 +37,19 @@ router.post('/admin/forgot-password', [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.adminForgotPassword);
 
+// User password reset routes
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
+], authController.userForgotPassword);
+
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('password')
+    .isLength({ min: 10 }).withMessage('Password must be at least 10 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/)
+    .withMessage('Password must include uppercase, lowercase, number, and special character')
+], authController.resetPassword);
+
 // Keep legacy routes for backward compatibility
 router.post('/admin-login', [
   body('email').isEmail().withMessage('Please enter a valid email'),
