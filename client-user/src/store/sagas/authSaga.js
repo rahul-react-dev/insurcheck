@@ -14,19 +14,40 @@ import { authApi } from '../../utils/api';
 
 function* loginSaga(action) {
   try {
-    const response = yield call(authApi.login, action.payload);
+    const { rememberMe, ...loginData } = action.payload;
+    const response = yield call(authApi.login, loginData);
     
     // Check if response has data
-    if (response?.data) {
-      yield put(loginSuccess(response.data));
+    if (response?.data?.data) {
+      yield put(loginSuccess(response.data.data));
       
-      // Store token in localStorage
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      // Enhanced token storage with Remember Me functionality
+      if (response.data.data.token) {
+        localStorage.setItem('token', response.data.data.token);
+        
+        // Set session expiry based on Remember Me
+        const expiryTime = new Date();
+        if (rememberMe) {
+          expiryTime.setDate(expiryTime.getDate() + 30); // 30 days
+          localStorage.setItem('sessionType', 'remember');
+        } else {
+          expiryTime.setMinutes(expiryTime.getMinutes() + 30); // 30 minutes
+          localStorage.setItem('sessionType', 'session');
+        }
+        localStorage.setItem('sessionExpiry', expiryTime.toISOString());
+        localStorage.setItem('lastActivity', new Date().toISOString());
+        
+        // Clear failed attempts on successful login
+        localStorage.removeItem('loginFailedAttempts');
+        localStorage.removeItem('loginLockoutTime');
+        
+        console.log(`✅ Login successful - Remember Me: ${rememberMe ? 'Yes' : 'No'}, Session expires: ${expiryTime.toISOString()}`);
       }
       
-      // Redirect based on role (placeholder for now)
-      // window.location.href = '/dashboard';
+      // Redirect to dashboard
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
     } else {
       yield put(loginFailure('Invalid response from server'));
     }
@@ -43,7 +64,9 @@ function* loginSaga(action) {
     } else if (error?.message) {
       errorMessage = error.message;
     } else if (error?.response?.status === 401) {
-      errorMessage = 'Invalid credentials';
+      errorMessage = 'Invalid email or password';
+    } else if (error?.response?.status === 403) {
+      errorMessage = 'Account locked. Try again in 15 minutes.';
     } else if (error?.response?.status === 500) {
       errorMessage = 'Server error. Please try again later.';
     } else if (!navigator.onLine) {
