@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
+import { ButtonLoader } from '../components/ui/PageLoader';
 import { useToast } from '../hooks/use-toast';
 import { apiRequest } from '../utils/api';
 import { cn } from '../utils/cn';
@@ -156,8 +157,8 @@ const ForgotPassword = () => {
                   >
                     {isLoading || isSubmitting ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        <span>Sending Reset Link...</span>
+                        <ButtonLoader size="sm" />
+                        <span className="ml-2">Sending Reset Link...</span>
                       </>
                     ) : (
                       <>

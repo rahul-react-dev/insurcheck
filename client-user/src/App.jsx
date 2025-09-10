@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from './store';
 import { queryClient } from './utils/query-client';
 import { useToast } from './hooks/use-toast';
+import { usePageLoader } from './hooks/usePageLoader';
 import { Toaster } from './components/ui/Toast';
+import PageLoader from './components/ui/PageLoader';
 import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -17,9 +19,11 @@ import './index.css';
 
 function AppContent() {
   const { toasts, dismiss } = useToast();
+  const { isLoading, loadingMessage } = usePageLoader();
 
   return (
     <div className="App">
+      {isLoading && <PageLoader message={loadingMessage} />}
       <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<Login />} />
