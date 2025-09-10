@@ -175,7 +175,9 @@ const SignUp = () => {
   const passwordStrength = getPasswordStrength(watchedPassword || '');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50">
+      {/* Main Container - constrains max width on ultrawide screens */}
+      <div className="max-w-7xl mx-auto min-h-screen flex flex-col lg:flex-row">
       {/* Success Modal */}
       {showSuccessModal && (
         <motion.div
@@ -480,6 +482,7 @@ const SignUp = () => {
             </div>
           </div>
         </motion.div>
+      </div>
       </div>
     </div>
   );

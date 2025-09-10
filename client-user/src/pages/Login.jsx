@@ -56,7 +56,9 @@ const Login = () => {
   ];
 
   return (
-    <div className="min-h-screen gradient-primary flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen gradient-primary">
+      {/* Main Container - constrains max width on ultrawide screens */}
+      <div className="max-w-7xl mx-auto min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}
         <div className="text-center">
@@ -248,6 +250,7 @@ const Login = () => {
             <a href="#" className="hover:text-white transition-colors duration-200">Support</a>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
