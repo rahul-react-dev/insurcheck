@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,6 +25,7 @@ const loginSchema = z.object({
 
 const Login = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isLoading, error } = useSelector((state) => state.auth);
   const { toast } = useToast();
   
@@ -169,18 +171,23 @@ const Login = () => {
     dispatch(loginRequest(loginData));
   };
   
-  // Reset failed attempts on successful login  
+  // Reset failed attempts on successful login and handle navigation
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token && !error) {
+    if (token && !error && !isLoading) {
       setFailedAttempts(0);
       setIsLocked(false);
       setLockoutTime(null);
       localStorage.removeItem('loginFailedAttempts');
       localStorage.removeItem('loginLockoutTime');
       errorProcessedRef.current = null; // Reset error tracking
+      
+      // Navigate to dashboard on successful login
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     }
-  }, [error]);
+  }, [error, isLoading, navigate]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -370,7 +377,7 @@ const Login = () => {
               </div>
               <button
                 type="button"
-                onClick={() => window.location.href = '/forgot-password'}
+                onClick={() => navigate('/forgot-password')}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 focus:outline-none focus:underline"
                 data-testid="link-forgot-password"
               >
@@ -423,28 +430,28 @@ const Login = () => {
         >
           <p className="text-blue-100 text-sm">
             Don't have an account?{' '}
-            <button
-              onClick={() => window.location.href = '/signup'}
+            <Link
+              to="/signup"
               className="font-medium text-white hover:text-blue-200 transition-colors duration-200 underline focus:outline-none"
               data-testid="link-signup"
             >
               Sign up here
-            </button>
+            </Link>
           </p>
           <div className="mt-4 flex justify-center items-center space-x-4 text-blue-200 text-xs">
-            <button 
-              onClick={() => window.location.href = '/privacy'}
+            <Link 
+              to="/privacy"
               className="hover:text-white transition-colors duration-200 focus:outline-none"
             >
               Privacy Policy
-            </button>
+            </Link>
             <span>•</span>
-            <button 
-              onClick={() => window.location.href = '/terms'}
+            <Link 
+              to="/terms"
               className="hover:text-white transition-colors duration-200 focus:outline-none"
             >
               Terms of Service
-            </button>
+            </Link>
             <span>•</span>
             <a href="mailto:support@insurcheck.com" className="hover:text-white transition-colors duration-200">
               Support

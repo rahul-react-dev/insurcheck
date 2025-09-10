@@ -44,10 +44,8 @@ function* loginSaga(action) {
         console.log(`✅ Login successful - Remember Me: ${rememberMe ? 'Yes' : 'No'}, Session expires: ${expiryTime.toISOString()}`);
       }
       
-      // Redirect to dashboard
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 500);
+      // Redirect to dashboard will be handled by the component
+      // Remove programmatic navigation from saga
     } else {
       yield put(loginFailure('Invalid response from server'));
     }

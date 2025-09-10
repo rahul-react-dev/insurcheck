@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/authSlice';
 import { useToast } from './use-toast';
 
 // Hook for handling automatic logout on inactivity
 export const useInactivityLogout = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const warningShownRef = useRef(false);
   const timeoutRef = useRef(null);
@@ -84,7 +86,7 @@ export const useInactivityLogout = () => {
       title: 'Session Expired',
       description: 'Your session has expired. Please log in again.'
     });
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const handleInactivityLogout = () => {
@@ -94,7 +96,7 @@ export const useInactivityLogout = () => {
       title: 'Logged Out Due to Inactivity',
       description: 'You have been logged out due to inactivity.'
     });
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const checkSessionValidity = () => {
@@ -165,7 +167,7 @@ export const useInactivityLogout = () => {
         clearTimeout(warningTimeoutRef.current);
       }
     };
-  }, [dispatch, toast]);
+  }, [dispatch, navigate, toast]);
 
   return {
     resetInactivityTimer,

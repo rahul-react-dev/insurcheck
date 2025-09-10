@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Settings, FileText, BarChart3, Bell, LogOut } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
@@ -7,6 +8,7 @@ import Button from '../components/ui/Button';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   
   // Initialize inactivity logout
@@ -14,7 +16,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const dashboardCards = [
