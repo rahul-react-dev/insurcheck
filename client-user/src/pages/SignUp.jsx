@@ -175,7 +175,7 @@ const SignUp = () => {
   const passwordStrength = getPasswordStrength(watchedPassword || '');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50 flex flex-col lg:flex-row">
       {/* Success Modal */}
       {showSuccessModal && (
         <motion.div
@@ -208,43 +208,44 @@ const SignUp = () => {
         </motion.div>
       )}
 
-      {/* Left Side - Features */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 p-12 flex-col justify-center">
+      {/* Features Section - Mobile & Desktop */}
+      <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 p-6 lg:p-12 flex flex-col justify-center">
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-center lg:justify-start space-x-3 mb-6 lg:mb-8">
+            <div className="h-8 lg:h-10 w-8 lg:w-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <Shield className="h-5 lg:h-6 w-5 lg:w-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">InsurCheck</span>
+            <span className="text-xl lg:text-2xl font-bold text-white">InsurCheck</span>
           </div>
           
-          <h2 className="text-4xl font-bold text-white mb-6">
+          <h2 className="text-2xl lg:text-4xl font-bold text-white mb-4 lg:mb-6 text-center lg:text-left">
             Start Your 7-Day Free Trial
           </h2>
-          <p className="text-blue-100 text-lg mb-8">
+          <p className="text-blue-100 text-base lg:text-lg mb-6 lg:mb-8 text-center lg:text-left">
             Join thousands of insurance professionals who trust InsurCheck to streamline their operations.
           </p>
 
-          <div className="space-y-4">
+          {/* Features - Horizontal on mobile, vertical on desktop */}
+          <div className="grid grid-cols-2 lg:flex lg:flex-col gap-3 lg:gap-4 mb-6 lg:mb-0">
             {features.map((feature, index) => (
               <motion.div
                 key={feature}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 * index }}
-                className="flex items-center space-x-3"
+                className="flex items-center space-x-2 lg:space-x-3"
               >
-                <CheckCircle className="h-5 w-5 text-green-300 flex-shrink-0" />
-                <span className="text-white">{feature}</span>
+                <CheckCircle className="h-4 lg:h-5 w-4 lg:w-5 text-green-300 flex-shrink-0" />
+                <span className="text-white text-sm lg:text-base">{feature}</span>
               </motion.div>
             ))}
           </div>
 
-          <div className="mt-8 p-6 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+          <div className="hidden lg:block mt-8 p-6 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
             <p className="text-white text-sm">
               <strong>No Credit Card Required</strong><br />
               Get full access to all features for 7 days. Cancel anytime.
@@ -253,7 +254,7 @@ const SignUp = () => {
         </motion.div>
       </div>
 
-      {/* Right Side - Form */}
+      {/* Form Section */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -261,17 +262,6 @@ const SignUp = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-md"
         >
-          {/* Mobile Header */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                InsurCheck
-              </span>
-            </div>
-          </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-gray-200">
             <div className="text-center mb-8">
@@ -478,6 +468,14 @@ const SignUp = () => {
               <p className="text-xs text-gray-500 text-center">
                 By creating an account, you agree to our Terms of Service and Privacy Policy.
                 Your 7-day trial includes access to all premium features.
+              </p>
+            </div>
+
+            {/* Mobile Trial Info */}
+            <div className="lg:hidden mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <p className="text-blue-700 text-sm text-center">
+                <strong>No Credit Card Required</strong><br />
+                Get full access to all features for 7 days. Cancel anytime.
               </p>
             </div>
           </div>
