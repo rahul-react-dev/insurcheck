@@ -278,3 +278,6 @@ export const exportAuditLogs = async (format, data, filters = {}) => {
       throw new Error(`Unsupported export format: ${format}`);
   }
 };
+
+// Export individual functions as well for direct use
+export { exportToPDF, exportToExcel, exportToCSV };

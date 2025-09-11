@@ -6,6 +6,10 @@ const PORT = process.env.PORT || 5000;
 // Connect to database
 await connectDB();
 
-// Export the app instead of starting server here
-// Server startup is handled by server/index.ts
-export default app;
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 InsurCheck Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🏥 Health check: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
+});

@@ -14,7 +14,7 @@ const router = express.Router();
 // Webhook endpoint secret (should be set in environment)
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_webhook_secret';
 
-console.log('🔑 Stripe webhook secret loaded:', STRIPE_WEBHOOK_SECRET ? 'Present' : 'Missing');
+console.log('🔑 Stripe webhook secret loaded:', STRIPE_WEBHOOK_SECRET ? `Present (${STRIPE_WEBHOOK_SECRET.substring(0, 15)}...)` : 'Missing');
 
 /**
  * Handle Stripe webhook events
