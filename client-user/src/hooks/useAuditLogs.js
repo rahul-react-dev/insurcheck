@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-// import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils'; // Temporarily disabled
+import { exportAuditLogs } from '../utils/exportUtils';
 
 /**
  * Custom hook for managing audit logs data and operations
@@ -20,7 +20,7 @@ export const useAuditLogs = () => {
   });
   const [filters, setFilters] = useState({
     search: '',
-    sortBy: 'timestamp',
+    sortBy: 'createdAt',
     sortOrder: 'desc'
   });
 
@@ -60,20 +60,26 @@ export const useAuditLogs = () => {
       });
 
       if (response.data.data) {
-        // Map server data to match frontend expectations
+        // Map server data to match frontend expectations - provide both legacy and new fields
         const mappedData = response.data.data.map(log => ({
+          // Database fields (for table display)
           id: log.id,
-          logId: log.id ? String(log.id).slice(0, 8) : 'N/A', // Convert to string first to avoid crash
+          action: log.action || 'Unknown Action',
+          resource: log.resource || 'N/A',
+          resourceId: log.resourceId || null,
+          level: log.level || 'info',
+          ipAddress: log.ipAddress || 'N/A',
+          userAgent: log.userAgent || 'N/A',
+          createdAt: log.createdAt || new Date().toISOString(),
+          details: log.details || 'No details available',
+          
+          // Legacy fields (for backwards compatibility)
+          logId: log.id ? String(log.id).slice(0, 8) : 'N/A',
           documentName: log.documentName || log.affectedDocument || 'N/A',
-          version: log.version || '1.0', // Default version
+          version: log.version || '1.0',
           actionPerformed: log.action || log.actionPerformed || 'Unknown Action',
           timestamp: log.timestamp || log.createdAt || new Date().toISOString(),
-          userEmail: log.userEmail || 'System',
-          action: 'View', // Default action for UI
-          details: log.details || 'No details available',
-          level: log.level || 'info',
-          resource: log.resource || 'document',
-          ipAddress: log.ipAddress || 'Unknown'
+          userEmail: log.userEmail || 'System'
         }));
         
         setData(mappedData);
@@ -158,13 +164,80 @@ export const useAuditLogs = () => {
   }, [filters, fetchLogs]);
 
   /**
-   * Handle export functionality - Temporarily Disabled
+   * Fetch all audit logs for export (ignoring pagination)
+   */
+  const fetchAllLogsForExport = useCallback(async (exportFilters = {}) => {
+    try {
+      const params = {
+        limit: 10000, // High limit to get all data
+        page: 1,
+        ...filters,
+        ...exportFilters
+      };
+
+      // Remove empty filters
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
+      );
+
+      console.log('📥 Fetching all audit logs for export with params:', cleanParams);
+
+      const response = await axios.get('/api/user/activity-logs', {
+        params: cleanParams,
+        ...apiConfig
+      });
+
+      if (response.data.data) {
+        // Map server data to export format - use legacy field names for export utilities
+        const mappedData = response.data.data.map(log => ({
+          logId: log.id ? String(log.id).slice(0, 8) : 'N/A',
+          documentName: log.resource || 'N/A',
+          version: '1.0',
+          actionPerformed: log.action || 'Unknown Action',
+          timestamp: log.createdAt || new Date().toISOString(),
+          userEmail: 'System',
+          action: 'View',
+          details: typeof log.details === 'object' ? JSON.stringify(log.details) : (log.details || 'No details available'),
+          level: log.level || 'info',
+          ipAddress: log.ipAddress || 'N/A',
+          userAgent: log.userAgent || 'N/A'
+        }));
+        
+        console.log(`✅ Fetched ${mappedData.length} audit logs for export`);
+        return mappedData;
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err) {
+      console.error('❌ Error fetching all audit logs for export:', err);
+      throw err;
+    }
+  }, [filters, token, apiConfig]);
+
+  /**
+   * Handle export functionality
    */
   const handleExport = useCallback(async (format, exportFilters = {}) => {
-    // Export functionality temporarily disabled
-    console.log('Export feature is temporarily disabled');
-    return Promise.resolve();
-  }, []);
+    try {
+      console.log(`📊 Starting ${format.toUpperCase()} export...`);
+      
+      // Fetch all filtered data for export
+      const allData = await fetchAllLogsForExport(exportFilters);
+      
+      if (!allData || allData.length === 0) {
+        throw new Error('No data available to export');
+      }
+
+      // Use the export utilities to generate the file
+      await exportAuditLogs(format, allData, { ...filters, ...exportFilters });
+      
+      console.log(`✅ ${format.toUpperCase()} export completed successfully`);
+      return { success: true, count: allData.length };
+    } catch (error) {
+      console.error(`❌ ${format.toUpperCase()} export failed:`, error);
+      throw error;
+    }
+  }, [fetchAllLogsForExport, filters]);
 
   /**
    * Refresh data
@@ -179,7 +252,7 @@ export const useAuditLogs = () => {
   const resetFilters = useCallback(() => {
     const defaultFilters = {
       search: '',
-      sortBy: 'timestamp',
+      sortBy: 'createdAt',
       sortOrder: 'desc'
     };
     setFilters(defaultFilters);

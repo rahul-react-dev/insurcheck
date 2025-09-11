@@ -10,7 +10,9 @@ import {
   User,
   Eye,
   Mail,
-  AlertCircle
+  AlertCircle,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -18,7 +20,7 @@ import Button from './Button';
 import Input from './Input';
 import LoadingSkeleton from './LoadingSkeleton';
 import { useToast } from '../../hooks/use-toast';
-import { exportSingleLogToPDF } from '../../utils/exportUtils';
+import { viewSingleLogAsPDF } from '../../utils/exportUtils';
 
 const AuditLogsTable = ({ 
   data = [], 
@@ -89,23 +91,23 @@ const AuditLogsTable = ({
     onSearch?.({ search: '' }); // Explicitly pass empty search
   };
 
-  // Handle individual log PDF generation
+  // Handle individual log PDF viewer
   const handleViewLogPDF = async (log) => {
     try {
       setExportLoading(true);
-      const result = await exportSingleLogToPDF(log);
+      const result = await viewSingleLogAsPDF(log);
       
       toast({
         type: 'success',
-        title: 'PDF Generated',
-        description: `Audit log PDF "${result.fileName}" has been downloaded successfully.`
+        title: 'PDF Opened',
+        description: 'Audit log PDF has been opened in a new tab.'
       });
     } catch (error) {
-      console.error('PDF generation error:', error);
+      console.error('PDF viewer error:', error);
       toast({
         type: 'error',
-        title: 'PDF Generation Failed',
-        description: error.message || 'Failed to generate PDF. Please try again.'
+        title: 'PDF Viewer Failed',
+        description: error.message || 'Failed to open PDF viewer. Please try again.'
       });
     } finally {
       setExportLoading(false);
@@ -128,13 +130,13 @@ const AuditLogsTable = ({
 
   // Table columns configuration
   const columns = [
-    { key: 'logId', label: 'Log ID', sortable: true, width: 'w-24' },
-    { key: 'documentName', label: 'Document Name', sortable: true, width: 'w-48' },
-    { key: 'version', label: 'Version', sortable: false, width: 'w-20' },
-    { key: 'actionPerformed', label: 'Action Performed', sortable: false, width: 'w-40' },
-    { key: 'timestamp', label: 'Timestamp', sortable: true, width: 'w-44' },
-    { key: 'userEmail', label: 'User Email', sortable: false, width: 'w-48' },
-    { key: 'action', label: 'Action', sortable: false, width: 'w-24' }
+    { key: 'id', label: 'Log ID', sortable: true, width: 'w-32' },
+    { key: 'action', label: 'Action', sortable: true, width: 'w-40' },
+    { key: 'resource', label: 'Resource', sortable: true, width: 'w-32' },
+    { key: 'level', label: 'Level', sortable: false, width: 'w-24' },
+    { key: 'ipAddress', label: 'IP Address', sortable: false, width: 'w-32' },
+    { key: 'createdAt', label: 'Timestamp', sortable: true, width: 'w-44' },
+    { key: 'actions', label: 'Actions', sortable: false, width: 'w-24' }
   ];
 
   if (error) {
@@ -185,6 +187,28 @@ const AuditLogsTable = ({
                 )}
               </div>
             </form>
+            
+            {/* Export Buttons */}
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleExport('csv')}
+                disabled={exportLoading || loading || data.length === 0}
+                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200 flex items-center gap-2"
+                data-testid="button-export-csv"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </Button>
+              <Button
+                onClick={() => handleExport('excel')}
+                disabled={exportLoading || loading || data.length === 0}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200 flex items-center gap-2"
+                data-testid="button-export-excel"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export Excel
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -259,55 +283,49 @@ const AuditLogsTable = ({
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm" data-testid={`text-log-id-${log.id}`}>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      #{log.logId}
+                      #{log.id ? String(log.id).slice(0, 8) : 'N/A'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-testid={`text-document-name-${log.id}`}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-testid={`text-action-${log.id}`}>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {log.action || 'Unknown'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-resource-${log.id}`}>
                     <div className="flex items-center space-x-2">
                       <FileText className="w-4 h-4 text-gray-400" />
-                      <span className="truncate max-w-xs" title={log.documentName}>
-                        {log.documentName}
+                      <span className="truncate max-w-xs" title={log.resource}>
+                        {log.resource || 'N/A'}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-version-${log.id}`}>
-                    {log.version}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-action-${log.id}`}>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {log.actionPerformed}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-level-${log.id}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      log.level === 'error' ? 'bg-red-100 text-red-800' :
+                      log.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                      log.level === 'critical' ? 'bg-red-200 text-red-900' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {log.level || 'info'}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-ip-address-${log.id}`}>
+                    {log.ipAddress || 'N/A'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-timestamp-${log.id}`}>
-                    {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm')}
+                    {log.createdAt ? format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm:ss') : 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-user-email-${log.id}`}>
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-gray-400" />
-                      <span className="truncate max-w-xs" title={log.userEmail}>
-                        {log.userEmail}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`button-action-${log.id}`}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`button-actions-${log.id}`}>
                     <div className="flex space-x-1">
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="p-2 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200" 
-                        title="View Details (Download PDF)"
+                        title="View Details as PDF"
                         onClick={() => handleViewLogPDF(log)}
                         disabled={exportLoading}
                       >
                         <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-2 hover:bg-green-100 hover:text-green-700 transition-colors duration-200" 
-                        title="Contact User"
-                      >
-                        <Mail className="w-4 h-4" />
                       </Button>
                     </div>
                   </td>

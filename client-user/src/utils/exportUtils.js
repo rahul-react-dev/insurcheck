@@ -280,9 +280,9 @@ export const exportAuditLogs = async (format, data, filters = {}) => {
 };
 
 /**
- * Export single audit log to PDF format
+ * View single audit log as PDF in new tab
  */
-export const exportSingleLogToPDF = (log) => {
+export const viewSingleLogAsPDF = (log) => {
   try {
     const doc = new jsPDF();
     const currentDate = new Date();
@@ -308,12 +308,14 @@ export const exportSingleLogToPDF = (log) => {
     
     // Create details table
     const details = [
-      ['Log ID:', log.logId || 'N/A'],
-      ['Document Name:', log.documentName || 'N/A'],
-      ['Version:', log.version || '1.0'],
-      ['Action Performed:', log.actionPerformed || 'Unknown Action'],
-      ['Timestamp:', log.timestamp ? format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm') : 'N/A'],
-      ['User Email:', log.userEmail || 'System']
+      ['Log ID:', log.id || 'N/A'],
+      ['Action:', log.action || 'Unknown Action'],
+      ['Resource:', log.resource || 'N/A'],
+      ['Resource ID:', log.resourceId || 'N/A'],
+      ['Level:', log.level || 'info'],
+      ['Timestamp:', log.createdAt ? format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm:ss') : 'N/A'],
+      ['IP Address:', log.ipAddress || 'N/A'],
+      ['User Agent:', log.userAgent || 'N/A']
     ];
     
     // Add details with proper formatting
@@ -328,14 +330,22 @@ export const exportSingleLogToPDF = (log) => {
     });
     
     // Add additional information section if available
-    if (log.details && log.details !== 'No details available') {
+    if (log.details) {
       doc.setFontSize(14);
       doc.setFont(undefined, 'bold');
       doc.text('Additional Details', 14, yPos + 10);
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      const splitDetails = doc.splitTextToSize(log.details, 170);
+      
+      let detailsText = '';
+      if (typeof log.details === 'string') {
+        detailsText = log.details;
+      } else if (typeof log.details === 'object') {
+        detailsText = JSON.stringify(log.details, null, 2);
+      }
+      
+      const splitDetails = doc.splitTextToSize(detailsText, 170);
       doc.text(splitDetails, 14, yPos + 22);
     }
     
@@ -346,14 +356,25 @@ export const exportSingleLogToPDF = (log) => {
     doc.text(`Page 1 of 1`, 14, pageHeight - 10);
     doc.text(`Generated: ${format(currentDate, 'yyyy-MM-dd HH:mm')}`, doc.internal.pageSize.width - 50, pageHeight - 10);
     
-    // Save the PDF with specific naming convention
-    const fileName = `Audit_Log_${log.logId || 'Unknown'}.pdf`;
-    doc.save(fileName);
+    // Create blob URL and open in new tab
+    const pdfBlob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
     
-    return { success: true, fileName };
+    // Open in new tab
+    const newWindow = window.open(blobUrl, '_blank');
+    if (!newWindow) {
+      throw new Error('Popup blocked. Please allow popups and try again.');
+    }
+    
+    // Clean up blob URL after some time
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+    }, 30000);
+    
+    return { success: true, blobUrl };
   } catch (error) {
-    console.error('Single PDF export error:', error);
-    throw new Error('Failed to generate PDF. Please try again.');
+    console.error('PDF viewer error:', error);
+    throw new Error('Failed to open PDF viewer. Please try again.');
   }
 };
 
