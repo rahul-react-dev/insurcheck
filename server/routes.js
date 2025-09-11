@@ -4902,6 +4902,316 @@ router.get('/config', authenticateToken, requireSuperAdmin, async (req, res) => 
   }
 });
 
+// ===================== USER-SPECIFIC ROUTES (CLIENT-USER PANEL) =====================
+
+// Get activity logs for current user's tenant
+router.get("/user/activity-logs", authenticateToken, async (req, res) => {
+  try {
+    console.log('📋 Fetching activity logs for user tenant:', req.user.tenantId);
+
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '',
+      sortBy = 'timestamp',
+      sortOrder = 'desc',
+      actionPerformed = '',
+      documentName = '',
+      userEmail = '',
+      startDate,
+      endDate
+    } = req.query;
+
+    // Ensure user has a tenant
+    if (!req.user.tenantId) {
+      return res.status(400).json({
+        error: 'Tenant ID required',
+        message: 'User must be associated with a tenant'
+      });
+    }
+
+    // Build query conditions - always filter by user's tenant
+    const conditions = [eq(activityLogs.tenantId, req.user.tenantId)];
+
+    // Search by document name or user email
+    if (search && search.trim()) {
+      conditions.push(
+        or(
+          ilike(documents.originalName, `%${search.trim()}%`),
+          ilike(users.email, `%${search.trim()}%`)
+        )
+      );
+    }
+
+    // Specific filters
+    if (actionPerformed) {
+      conditions.push(ilike(activityLogs.action, `%${actionPerformed}%`));
+    }
+
+    if (documentName) {
+      conditions.push(ilike(documents.originalName, `%${documentName}%`));
+    }
+
+    if (userEmail) {
+      conditions.push(ilike(users.email, `%${userEmail}%`));
+    }
+
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      conditions.push(gte(activityLogs.createdAt, start));
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      conditions.push(lte(activityLogs.createdAt, end));
+    }
+
+    // Calculate offset
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get total count
+    const countQuery = db
+      .select({ count: count() })
+      .from(activityLogs)
+      .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+      .leftJoin(users, eq(activityLogs.userId, users.id))
+      .leftJoin(documents, eq(sql`CAST(${activityLogs.details}->>'documentId' as TEXT)`, sql`CAST(${documents.id} as TEXT)`))
+      .where(and(...conditions));
+
+    const totalResult = await countQuery;
+    const total = parseInt(totalResult[0]?.count || 0);
+
+    // Build sort order
+    let orderByClause;
+    const sortField = sortBy === 'timestamp' ? activityLogs.createdAt :
+                     sortBy === 'documentName' ? documents.originalName :
+                     sortBy === 'logId' ? activityLogs.id :
+                     activityLogs.createdAt;
+    
+    orderByClause = sortOrder === 'asc' ? asc(sortField) : desc(sortField);
+
+    // Get activity logs with pagination
+    const logsQuery = db
+      .select({
+        id: activityLogs.id,
+        timestamp: activityLogs.createdAt,
+        action: activityLogs.action,
+        resource: activityLogs.resource,
+        level: activityLogs.level,
+        details: activityLogs.details,
+        ipAddress: activityLogs.ipAddress,
+        tenantName: tenants.name,
+        userEmail: users.email,
+        userId: activityLogs.userId,
+        tenantId: activityLogs.tenantId,
+        documentName: documents.originalName,
+        documentId: documents.id
+      })
+      .from(activityLogs)
+      .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+      .leftJoin(users, eq(activityLogs.userId, users.id))
+      .leftJoin(documents, eq(sql`CAST(${activityLogs.details}->>'documentId' as TEXT)`, sql`CAST(${documents.id} as TEXT)`))
+      .where(and(...conditions))
+      .orderBy(orderByClause)
+      .limit(parseInt(limit))
+      .offset(offset);
+
+    const result = await logsQuery;
+
+    // Format logs for frontend
+    const logs = result.map(log => {
+      let parsedDetails = log.details;
+      if (typeof log.details === 'string') {
+        try {
+          parsedDetails = JSON.parse(log.details);
+        } catch (e) {
+          parsedDetails = { message: log.details };
+        }
+      }
+
+      return {
+        id: log.id,
+        logId: log.id.slice(0, 8), // Short ID for display
+        documentName: log.documentName || parsedDetails?.documentName || 'N/A',
+        version: parsedDetails?.version || '1.0',
+        actionPerformed: log.action || 'Unknown Action',
+        timestamp: log.timestamp?.toISOString() || new Date().toISOString(),
+        userEmail: log.userEmail || 'System',
+        action: 'View', // Default action for UI
+        details: parsedDetails?.message || parsedDetails?.reason || log.action || 'No details available',
+        level: log.level,
+        resource: log.resource || 'document',
+        ipAddress: log.ipAddress || 'Unknown'
+      };
+    });
+
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    console.log(`✅ Retrieved ${logs.length} activity logs for tenant (page ${page}/${totalPages}, total: ${total})`);
+
+    res.json({
+      data: logs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages
+      },
+      filters: {
+        search,
+        sortBy,
+        sortOrder,
+        actionPerformed,
+        documentName,
+        userEmail,
+        startDate,
+        endDate
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching user activity logs:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch activity logs',
+      message: error.message 
+    });
+  }
+});
+
+// Export activity logs for current user's tenant
+router.post("/user/activity-logs/export", authenticateToken, async (req, res) => {
+  try {
+    console.log('📥 Exporting activity logs for user tenant:', req.user.tenantId);
+    
+    const { format = 'csv', filters = {} } = req.body;
+
+    if (!req.user.tenantId) {
+      return res.status(400).json({
+        error: 'Tenant ID required',
+        message: 'User must be associated with a tenant'
+      });
+    }
+
+    // Build same query as GET endpoint but without pagination
+    const conditions = [eq(activityLogs.tenantId, req.user.tenantId)];
+
+    // Apply filters
+    if (filters.search) {
+      conditions.push(
+        or(
+          ilike(documents.originalName, `%${filters.search}%`),
+          ilike(users.email, `%${filters.search}%`)
+        )
+      );
+    }
+
+    if (filters.actionPerformed) {
+      conditions.push(ilike(activityLogs.action, `%${filters.actionPerformed}%`));
+    }
+
+    if (filters.documentName) {
+      conditions.push(ilike(documents.originalName, `%${filters.documentName}%`));
+    }
+
+    if (filters.userEmail) {
+      conditions.push(ilike(users.email, `%${filters.userEmail}%`));
+    }
+
+    if (filters.startDate) {
+      const start = new Date(filters.startDate);
+      start.setHours(0, 0, 0, 0);
+      conditions.push(gte(activityLogs.createdAt, start));
+    }
+
+    if (filters.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      conditions.push(lte(activityLogs.createdAt, end));
+    }
+
+    // Get all matching logs for export
+    const logsQuery = db
+      .select({
+        id: activityLogs.id,
+        timestamp: activityLogs.createdAt,
+        action: activityLogs.action,
+        resource: activityLogs.resource,
+        level: activityLogs.level,
+        details: activityLogs.details,
+        ipAddress: activityLogs.ipAddress,
+        tenantName: tenants.name,
+        userEmail: users.email,
+        documentName: documents.originalName
+      })
+      .from(activityLogs)
+      .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+      .leftJoin(users, eq(activityLogs.userId, users.id))
+      .leftJoin(documents, eq(sql`CAST(${activityLogs.details}->>'documentId' as TEXT)`, sql`CAST(${documents.id} as TEXT)`))
+      .where(and(...conditions))
+      .orderBy(desc(activityLogs.createdAt));
+
+    const result = await logsQuery;
+
+    // Format data for export
+    const exportData = result.map(log => {
+      let parsedDetails = log.details;
+      if (typeof log.details === 'string') {
+        try {
+          parsedDetails = JSON.parse(log.details);
+        } catch (e) {
+          parsedDetails = { message: log.details };
+        }
+      }
+
+      return {
+        logId: log.id.slice(0, 8),
+        documentName: log.documentName || parsedDetails?.documentName || 'N/A',
+        version: parsedDetails?.version || '1.0',
+        actionPerformed: log.action || 'Unknown Action',
+        timestamp: log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A',
+        userEmail: log.userEmail || 'System',
+        action: 'View'
+      };
+    });
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `Audit_Logs_${timestamp}`;
+
+    if (format === 'csv') {
+      // Generate CSV
+      const csvHeader = "Log ID,Document Name,Version,Action Performed,Timestamp,User Email,Action\n";
+      const csvData = exportData
+        .map(row => 
+          `"${row.logId}","${row.documentName}","${row.version}","${row.actionPerformed}","${row.timestamp}","${row.userEmail}","${row.action}"`
+        )
+        .join("\n");
+
+      const csv = csvHeader + csvData;
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}.csv`);
+      res.send(csv);
+    } else {
+      res.status(400).json({
+        error: 'Invalid format',
+        message: 'Only CSV format is supported currently'
+      });
+    }
+
+    console.log(`✅ Exported ${exportData.length} activity logs as ${format}`);
+
+  } catch (error) {
+    console.error('❌ Error exporting user activity logs:', error);
+    res.status(500).json({
+      error: 'Failed to export activity logs',
+      message: error.message
+    });
+  }
+});
+
 // Add missing /api/system-config route
 router.get('/system-config', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {

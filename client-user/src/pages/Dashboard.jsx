@@ -4,7 +4,9 @@ import { Shield, Settings, FileText, BarChart3, Bell, LogOut } from 'lucide-reac
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
 import { useInactivityLogout } from '../hooks/useInactivityLogout';
+import { useAuditLogs } from '../hooks/useAuditLogs';
 import Button from '../components/ui/Button';
+import AuditLogsTable from '../components/ui/AuditLogsTable';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -13,6 +15,20 @@ const Dashboard = () => {
   
   // Initialize inactivity logout
   useInactivityLogout();
+
+  // Initialize audit logs functionality
+  const {
+    data: auditLogsData,
+    loading: auditLogsLoading,
+    error: auditLogsError,
+    pagination: auditLogsPagination,
+    filters: auditLogsFilters,
+    handlePageChange: handleAuditLogsPageChange,
+    handleLimitChange: handleAuditLogsLimitChange,
+    handleSort: handleAuditLogsSort,
+    handleSearch: handleAuditLogsSearch,
+    handleExport: handleAuditLogsExport
+  } = useAuditLogs();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -120,6 +136,27 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Audit Logs and Version History Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mb-8"
+        >
+          <AuditLogsTable
+            data={auditLogsData}
+            loading={auditLogsLoading}
+            error={auditLogsError}
+            pagination={auditLogsPagination}
+            filters={auditLogsFilters}
+            onPageChange={handleAuditLogsPageChange}
+            onLimitChange={handleAuditLogsLimitChange}
+            onSort={handleAuditLogsSort}
+            onSearch={handleAuditLogsSearch}
+            onExport={handleAuditLogsExport}
+          />
+        </motion.div>
 
         {/* Session Info */}
         <motion.div
