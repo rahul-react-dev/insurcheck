@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
+// import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils'; // Temporarily disabled
 
 /**
  * Custom hook for managing audit logs data and operations
@@ -149,72 +149,13 @@ export const useAuditLogs = () => {
   }, [filters, fetchLogs]);
 
   /**
-   * Handle export functionality
+   * Handle export functionality - Temporarily Disabled
    */
   const handleExport = useCallback(async (format, exportFilters = {}) => {
-    try {
-      if (format === 'csv') {
-        // Use backend CSV export for consistency
-        const params = { ...filters, ...exportFilters };
-        const cleanParams = Object.fromEntries(
-          Object.entries(params).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
-        );
-
-        console.log('📥 Requesting CSV export from backend with filters:', cleanParams);
-
-        const response = await axios.post('/api/user/activity-logs/export', {
-          format: 'csv',
-          filters: cleanParams
-        }, {
-          ...apiConfig,
-          responseType: 'blob'
-        });
-
-        // Create download link
-        const blob = new Blob([response.data], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        
-        // Extract filename from response headers or use default
-        const contentDisposition = response.headers['content-disposition'];
-        const filename = contentDisposition
-          ? contentDisposition.split('filename=')[1]?.replace(/['"]/g, '')
-          : `Audit_Logs_${new Date().toISOString().split('T')[0]}.csv`;
-        
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        console.log('✅ CSV export completed:', filename);
-      } else {
-        // Use frontend export utilities for PDF and Excel
-        if (data.length === 0) {
-          throw new Error('No data available to export');
-        }
-
-        console.log(`📥 Exporting ${data.length} records as ${format.toUpperCase()}`);
-        
-        let result;
-        if (format === 'pdf') {
-          result = await exportToPDF(data, { ...filters, ...exportFilters });
-        } else if (format === 'excel' || format === 'xlsx') {
-          result = await exportToExcel(data, { ...filters, ...exportFilters });
-        } else {
-          throw new Error(`Unsupported export format: ${format}`);
-        }
-        
-        if (result.success) {
-          console.log('✅ Export completed:', result.fileName);
-        }
-      }
-    } catch (error) {
-      console.error(`❌ Export failed (${format}):`, error);
-      throw error; // Re-throw for component error handling
-    }
-  }, [data, filters, token]);
+    // Export functionality temporarily disabled
+    console.log('Export feature is temporarily disabled');
+    return Promise.resolve();
+  }, []);
 
   /**
    * Refresh data

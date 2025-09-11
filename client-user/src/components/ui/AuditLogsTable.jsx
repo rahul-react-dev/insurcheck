@@ -178,52 +178,20 @@ const AuditLogsTable = ({
               <span>Filters</span>
             </Button>
 
-            {/* Export Dropdown */}
+            {/* Export Dropdown - Temporarily Disabled */}
+            {/*
             <div className="relative group">
               <Button
                 variant="primary"
-                disabled={exportLoading || data.length === 0}
-                className="flex items-center space-x-2"
+                disabled={true}
+                className="flex items-center space-x-2 opacity-50"
                 data-testid="button-export"
               >
                 <Download className="w-4 h-4" />
-                <span>Export</span>
-                <ChevronDown className="w-4 h-4" />
+                <span>Export (Coming Soon)</span>
               </Button>
-              
-              {/* Export Menu */}
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="py-2">
-                  <button
-                    onClick={() => handleExport('pdf')}
-                    disabled={exportLoading}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    data-testid="button-export-pdf"
-                  >
-                    <FileText className="w-4 h-4 inline mr-2" />
-                    Export as PDF
-                  </button>
-                  <button
-                    onClick={() => handleExport('csv')}
-                    disabled={exportLoading}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    data-testid="button-export-csv"
-                  >
-                    <FileText className="w-4 h-4 inline mr-2" />
-                    Export as CSV
-                  </button>
-                  <button
-                    onClick={() => handleExport('excel')}
-                    disabled={exportLoading}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    data-testid="button-export-excel"
-                  >
-                    <FileText className="w-4 h-4 inline mr-2" />
-                    Export as Excel
-                  </button>
-                </div>
-              </div>
             </div>
+            */}
           </div>
         </div>
 
