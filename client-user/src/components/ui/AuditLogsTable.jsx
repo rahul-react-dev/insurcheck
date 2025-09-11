@@ -85,7 +85,7 @@ const AuditLogsTable = ({
   // Clear search
   const clearSearch = () => {
     reset({ search: '' });
-    onSearch?.({});
+    onSearch?.({ search: '' }); // Explicitly pass empty search
   };
 
   // Get sort icon
@@ -195,7 +195,12 @@ const AuditLogsTable = ({
           <div className="p-8 text-center" data-testid="text-no-data">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No audit logs available</h3>
-            <p className="text-gray-600">There are no audit logs to display for the current filters.</p>
+            <p className="text-gray-600">
+              {watchedValues.search 
+                ? `No audit logs found matching "${watchedValues.search}".`
+                : "There are no audit logs to display."
+              }
+            </p>
           </div>
         ) : (
           <table className="w-full" data-testid="table-audit-logs">

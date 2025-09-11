@@ -145,7 +145,13 @@ export const useAuditLogs = () => {
    * Handle search and filtering
    */
   const handleSearch = useCallback((searchFilters) => {
-    const newFilters = { ...filters, ...searchFilters };
+    // If search is explicitly set to empty or missing, clear it
+    const newFilters = { 
+      ...filters, 
+      ...searchFilters,
+      // Ensure search is properly cleared when empty
+      search: searchFilters.search !== undefined ? searchFilters.search : filters.search
+    };
     setFilters(newFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchLogs(newFilters, { page: 1 });
