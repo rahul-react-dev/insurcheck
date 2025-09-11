@@ -2,10 +2,10 @@
   "name": "insurcheck-server",
   "version": "1.0.0",
   "description": "InsurCheck Backend API",
-  "main": "src/server.js",
+  "main": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/server.js",
+    "dev": "tsx index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
     "seed": "tsx scripts/seedTestData.ts"

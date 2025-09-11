@@ -173,16 +173,30 @@ async function startServer() {
     const emailService = await import('./services/emailService.js');
     emailService.initializeEmailService();
     
-    app.listen(PORT, '0.0.0.0', () => {
-      const timestamp = new Date().toLocaleTimeString();
-      console.log(`${timestamp} [express] 🚀 InsurCheck Server running on port ${PORT}`);
-      console.log(`${timestamp} [express] 📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`${timestamp} [express] 🏥 Health check: http://0.0.0.0:${PORT}/api/health`);
-      console.log(`${timestamp} [express] 🔗 API Base: http://0.0.0.0:${PORT}/api`);
-      console.log(`${timestamp} [express] 🎯 Super Admin Login: http://0.0.0.0:${PORT}/api/auth/super-admin/login`);
-      console.log(`${timestamp} [express] 🎯 Run client-admin: cd client-admin && npm run dev`);
-      console.log(`${timestamp} [express] 🎯 Run client-user: cd client-user && npm run dev`);
-    });
+    // Single-instance guard to prevent double-binding during dev reloads
+    if (!globalThis.__server) {
+      globalThis.__server = app.listen(PORT, '0.0.0.0', () => {
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`${timestamp} [express] 🚀 InsurCheck Server running on port ${PORT}`);
+        console.log(`${timestamp} [express] 📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`${timestamp} [express] 🏥 Health check: http://0.0.0.0:${PORT}/api/health`);
+        console.log(`${timestamp} [express] 🔗 API Base: http://0.0.0.0:${PORT}/api`);
+        console.log(`${timestamp} [express] 🎯 Super Admin Login: http://0.0.0.0:${PORT}/api/auth/super-admin/login`);
+        console.log(`${timestamp} [express] 🎯 Run client-admin: cd client-admin && npm run dev`);
+        console.log(`${timestamp} [express] 🎯 Run client-user: cd client-user && npm run dev`);
+      });
+
+      // Add error handler for port conflicts
+      globalThis.__server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log('⚠️ Port already in use - reusing existing server instance');
+          return;
+        }
+        throw err;
+      });
+    } else {
+      console.log('🔄 Reusing existing server instance on port', PORT);
+    }
     
   } catch (error) {
     console.error('❌ Failed to start server:', error);
