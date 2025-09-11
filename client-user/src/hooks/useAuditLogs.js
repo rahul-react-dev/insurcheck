@@ -68,7 +68,7 @@ export const useAuditLogs = () => {
         // Map server data to match frontend expectations
         const mappedData = response.data.data.map(log => ({
           id: log.id,
-          logId: log.id ? log.id.slice(0, 8) : 'N/A', // Short ID for display
+          logId: log.id ? String(log.id).slice(0, 8) : 'N/A', // Convert to string first to avoid crash
           documentName: log.documentName || log.affectedDocument || 'N/A',
           version: log.version || '1.0', // Default version
           actionPerformed: log.action || log.actionPerformed || 'Unknown Action',
@@ -130,10 +130,18 @@ export const useAuditLogs = () => {
   }, [fetchLogs]);
 
   /**
-   * Handle sorting
+   * Handle sorting - Map frontend sort keys to backend fields
    */
   const handleSort = useCallback((sortBy, sortOrder) => {
-    const newFilters = { ...filters, sortBy, sortOrder };
+    // Map frontend sort keys to backend database fields
+    const sortFieldMap = {
+      'logId': 'id',
+      'timestamp': 'timestamp', // Backend uses timestamp, not createdAt for this endpoint
+      'documentName': 'documentName'
+    };
+    
+    const backendSortBy = sortFieldMap[sortBy] || sortBy;
+    const newFilters = { ...filters, sortBy: backendSortBy, sortOrder };
     setFilters(newFilters);
     fetchLogs(newFilters, { page: 1 });
   }, [filters, fetchLogs]);
