@@ -77,9 +77,36 @@ const ResetPassword = () => {
     }
 
     setToken(resetToken);
-    // For now, assume token is valid if present
-    // In a real implementation, you'd verify the token with the backend
-    setIsTokenValid(true);
+    
+    // Validate token with backend
+    const validateToken = async () => {
+      try {
+        const response = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(resetToken)}`);
+        const result = await response.json();
+        
+        if (response.ok && result.success && result.valid) {
+          setIsTokenValid(true);
+          console.log('Token validation successful');
+        } else {
+          setIsTokenValid(false);
+          toast({
+            type: 'error',
+            title: 'Invalid or Expired Link',
+            description: result.message || 'This password reset link is no longer valid.'
+          });
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        setIsTokenValid(false);
+        toast({
+          type: 'error',
+          title: 'Validation Failed',
+          description: 'Unable to validate reset link. Please try again.'
+        });
+      }
+    };
+    
+    validateToken();
   }, [searchParams, toast]);
 
   const onSubmit = async (data) => {

@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,8 +7,6 @@ import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/use-toast';
-import { checkEmailRequest, clearEmailCheck } from '../store/authSlice';
-import { apiRequest } from '../utils/api';
 import { cn } from '../utils/cn';
 
 // Validation schema for forgot password
@@ -20,27 +17,15 @@ const forgotPasswordSchema = z.object({
 });
 
 const ForgotPassword = () => {
-  const dispatch = useDispatch();
   const { toast } = useToast();
-  
-  // Redux state for email checking
-  const { 
-    isCheckingEmail,
-    emailExists,
-    emailCheckError
-  } = useSelector((state) => state.auth);
-  
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
-    reset,
-    setError,
-    clearErrors
+    reset
   } = useForm({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -48,44 +33,7 @@ const ForgotPassword = () => {
     }
   });
 
-  const watchedEmail = watch('email');
-
-  // Real-time email existence check with debounce
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (watchedEmail && z.string().email().safeParse(watchedEmail).success) {
-        dispatch(checkEmailRequest(watchedEmail));
-      } else {
-        dispatch(clearEmailCheck());
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [watchedEmail, dispatch]);
-
-  // Handle email check results
-  useEffect(() => {
-    if (emailExists === false) {
-      setError('email', {
-        type: 'manual',
-        message: 'Email not registered. Please provide a registered email address.',
-      });
-    } else if (emailExists === true) {
-      clearErrors('email');
-    }
-  }, [emailExists, setError, clearErrors]);
-
   const onSubmit = async (data) => {
-    // Don't submit if email doesn't exist
-    if (emailExists !== true) {
-      toast({
-        type: 'error',
-        title: 'Invalid Email',
-        description: 'Please provide a registered email address.'
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await fetch('/api/auth/forgot-password', {
@@ -126,12 +74,8 @@ const ForgotPassword = () => {
 
   const handleTryAgain = () => {
     setIsSubmitted(false);
-    dispatch(clearEmailCheck());
     reset();
   };
-
-  // Check if form is valid for submission
-  const isFormValid = emailExists === true && watchedEmail && !errors.email;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50">
@@ -174,37 +118,21 @@ const ForgotPassword = () => {
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Mail className={cn(
                           "w-4 h-4 transition-colors duration-200",
-                          errors.email ? "text-red-400" : 
-                          emailExists === true ? "text-green-500" :
-                          watchedEmail ? "text-blue-500" : "text-gray-400"
+                          errors.email ? "text-red-400" : "text-gray-400"
                         )} />
                       </div>
                       
-                      {/* Email validation indicator */}
-                      {watchedEmail && !errors.email && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                          {isCheckingEmail ? (
-                            <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                          ) : emailExists === true ? (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                          ) : emailExists === false ? (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                          ) : null}
-                        </div>
-                      )}
                       <input
                         {...register('email')}
                         type="email"
                         id="email"
                         className={cn(
-                          "block w-full pl-10 pr-12 py-3 border rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50",
+                          "block w-full pl-10 pr-4 py-3 border rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50",
                           errors.email 
                             ? "border-red-300 focus:ring-red-500" 
-                            : emailExists === true
-                            ? "border-green-300 focus:ring-green-500"
                             : "border-gray-200 focus:ring-blue-500 hover:border-gray-300"
                         )}
-                        placeholder="Enter your registered email address"
+                        placeholder="Enter your email address"
                         data-testid="input-email"
                       />
                     </div>
@@ -223,12 +151,10 @@ const ForgotPassword = () => {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    disabled={isLoading || isSubmitting || !isFormValid || isCheckingEmail}
+                    disabled={isLoading || isSubmitting}
                     className={cn(
                       "w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl font-semibold text-sm transition-all duration-200 transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
-                      !isFormValid || isCheckingEmail
-                        ? "bg-gray-400 text-white cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                     data-testid="button-send-reset"
                   >
@@ -237,13 +163,6 @@ const ForgotPassword = () => {
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         <span>Sending Reset Link...</span>
                       </>
-                    ) : isCheckingEmail ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        <span>Verifying Email...</span>
-                      </>
-                    ) : !isFormValid ? (
-                      <span>Enter Registered Email</span>
                     ) : (
                       <>
                         <span>Send Reset Link</span>
@@ -284,8 +203,7 @@ const ForgotPassword = () => {
                       Reset Link Sent!
                     </h3>
                     <p className="text-gray-600 text-sm">
-                      We've sent password reset instructions to <br />
-                      <span className="font-medium text-gray-900">{watchedEmail}</span>
+                      If that email address is registered with us, you'll receive password reset instructions shortly.
                     </p>
                   </div>
 

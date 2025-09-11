@@ -42,6 +42,9 @@ router.post('/forgot-password', [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.userForgotPassword);
 
+// Validate reset token
+router.get('/validate-reset-token', authController.validateResetToken);
+
 router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token is required'),
   body('password')

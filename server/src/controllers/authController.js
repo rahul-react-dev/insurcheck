@@ -6,7 +6,7 @@ import { db } from '../../db.ts';
 import { users, tenants } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
-import { sendEmailVerification } from '../../services/emailService.js';
+import { sendEmailVerification, sendPasswordResetEmail } from '../../services/emailService.js';
 
 export const login = async (req, res) => {
   try {
@@ -1006,11 +1006,12 @@ export const userForgotPassword = async (req, res) => {
 
     const user = userResult[0];
 
-    // Check if user is active
+    // Check if user is active (but don't reveal this information)
     if (!user.isActive) {
-      return res.status(400).json({
-        success: false,
-        message: 'Account is deactivated. Please contact support.'
+      // For security, don't reveal account status - return same success message
+      return res.status(200).json({
+        success: true,
+        message: 'If that email address is registered, you will receive password reset instructions'
       });
     }
 
@@ -1030,7 +1031,7 @@ export const userForgotPassword = async (req, res) => {
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
     
     try {
-      await emailService.sendPasswordResetEmail(email, resetLink, user.firstName || 'User');
+      await sendPasswordResetEmail(email, resetLink, user.firstName || 'User');
       console.log(`Password reset email sent to: ${email}`);
     } catch (emailError) {
       console.error('Failed to send password reset email:', emailError);
@@ -1042,9 +1043,10 @@ export const userForgotPassword = async (req, res) => {
         })
         .where(eq(users.id, user.id));
       
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to send reset email. Please try again.'
+      // For security, don't reveal email sending failure - return same success message
+      return res.status(200).json({
+        success: true,
+        message: 'If that email address is registered, you will receive password reset instructions'
       });
     }
 
@@ -1058,6 +1060,72 @@ export const userForgotPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error. Please try again later.'
+    });
+  }
+};
+
+// Validate reset token
+export const validateResetToken = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token is required'
+      });
+    }
+
+    console.log(`Token validation request for token: ${token?.substring(0, 8)}...`);
+
+    // Find user by reset token
+    const userResult = await db.select()
+      .from(users)
+      .where(eq(users.passwordResetToken, token))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link',
+        valid: false
+      });
+    }
+
+    const user = userResult[0];
+
+    // Check if token is expired
+    const now = new Date();
+    if (!user.passwordResetExpires || now > user.passwordResetExpires) {
+      // Clear expired token
+      await db.update(users)
+        .set({
+          passwordResetToken: null,
+          passwordResetExpires: null
+        })
+        .where(eq(users.id, user.id));
+
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset link',
+        valid: false
+      });
+    }
+
+    console.log(`Token validation successful for user: ${user.email}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Token is valid',
+      valid: true
+    });
+
+  } catch (error) {
+    console.error('Token validation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error. Please try again later.',
+      valid: false
     });
   }
 };
