@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import Button from './Button';
 import Input from './Input';
-import LoadingSkeleton from './LoadingSkeleton';
+import { Skeleton } from './LoadingSkeleton';
 import { useToast } from '../../hooks/use-toast';
 
 const AuditLogsTable = ({ 
@@ -286,8 +286,14 @@ const AuditLogsTable = ({
       {/* Table */}
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="p-6">
-            <LoadingSkeleton rows={pagination.limit} cols={7} />
+          <div className="p-6 space-y-4">
+            {Array.from({ length: pagination.limit || 10 }).map((_, index) => (
+              <div key={index} className="flex space-x-4">
+                {Array.from({ length: 7 }).map((_, colIndex) => (
+                  <Skeleton key={colIndex} className="h-4 flex-1" />
+                ))}
+              </div>
+            ))}
           </div>
         ) : data.length === 0 ? (
           <div className="p-8 text-center" data-testid="text-no-data">
