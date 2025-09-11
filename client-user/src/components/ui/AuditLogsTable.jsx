@@ -18,6 +18,7 @@ import Button from './Button';
 import Input from './Input';
 import LoadingSkeleton from './LoadingSkeleton';
 import { useToast } from '../../hooks/use-toast';
+import { exportSingleLogToPDF } from '../../utils/exportUtils';
 
 const AuditLogsTable = ({ 
   data = [], 
@@ -86,6 +87,29 @@ const AuditLogsTable = ({
   const clearSearch = () => {
     reset({ search: '' });
     onSearch?.({ search: '' }); // Explicitly pass empty search
+  };
+
+  // Handle individual log PDF generation
+  const handleViewLogPDF = async (log) => {
+    try {
+      setExportLoading(true);
+      const result = await exportSingleLogToPDF(log);
+      
+      toast({
+        type: 'success',
+        title: 'PDF Generated',
+        description: `Audit log PDF "${result.fileName}" has been downloaded successfully.`
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        type: 'error',
+        title: 'PDF Generation Failed',
+        description: error.message || 'Failed to generate PDF. Please try again.'
+      });
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   // Get sort icon
@@ -271,7 +295,9 @@ const AuditLogsTable = ({
                         variant="ghost" 
                         size="sm" 
                         className="p-2 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200" 
-                        title="View Details"
+                        title="View Details (Download PDF)"
+                        onClick={() => handleViewLogPDF(log)}
+                        disabled={exportLoading}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>

@@ -279,5 +279,83 @@ export const exportAuditLogs = async (format, data, filters = {}) => {
   }
 };
 
+/**
+ * Export single audit log to PDF format
+ */
+export const exportSingleLogToPDF = (log) => {
+  try {
+    const doc = new jsPDF();
+    const currentDate = new Date();
+    
+    // Add header with logo placeholder and title
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text('InsurCheck - Audit Log Report', 14, 22);
+    
+    // Add a line under the header
+    doc.setLineWidth(0.5);
+    doc.line(14, 26, 196, 26);
+    
+    // Add generation info
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Generated on: ${format(currentDate, 'MMM dd, yyyy HH:mm')}`, 14, 35);
+    
+    // Add log details section
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Audit Log Details', 14, 50);
+    
+    // Create details table
+    const details = [
+      ['Log ID:', log.logId || 'N/A'],
+      ['Document Name:', log.documentName || 'N/A'],
+      ['Version:', log.version || '1.0'],
+      ['Action Performed:', log.actionPerformed || 'Unknown Action'],
+      ['Timestamp:', log.timestamp ? format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm') : 'N/A'],
+      ['User Email:', log.userEmail || 'System']
+    ];
+    
+    // Add details with proper formatting
+    let yPos = 60;
+    details.forEach(([label, value]) => {
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(label, 14, yPos);
+      doc.setFont(undefined, 'normal');
+      doc.text(value, 55, yPos);
+      yPos += 12;
+    });
+    
+    // Add additional information section if available
+    if (log.details && log.details !== 'No details available') {
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text('Additional Details', 14, yPos + 10);
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const splitDetails = doc.splitTextToSize(log.details, 170);
+      doc.text(splitDetails, 14, yPos + 22);
+    }
+    
+    // Add footer with page number and generation date
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Page 1 of 1`, 14, pageHeight - 10);
+    doc.text(`Generated: ${format(currentDate, 'yyyy-MM-dd HH:mm')}`, doc.internal.pageSize.width - 50, pageHeight - 10);
+    
+    // Save the PDF with specific naming convention
+    const fileName = `Audit_Log_${log.logId || 'Unknown'}.pdf`;
+    doc.save(fileName);
+    
+    return { success: true, fileName };
+  } catch (error) {
+    console.error('Single PDF export error:', error);
+    throw new Error('Failed to generate PDF. Please try again.');
+  }
+};
+
 // Export individual functions as well for direct use
-export { exportToPDF, exportToExcel, exportToCSV };
+export { exportToPDF, exportToExcel, exportToCSV, exportSingleLogToPDF };
