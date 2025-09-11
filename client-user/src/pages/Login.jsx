@@ -106,12 +106,22 @@ const Login = () => {
     }
   }, [dispatch, toast]);
   
-  // Handle failed login attempts and tenant status errors - using useRef to avoid dependency loop
-  const errorProcessedRef = useRef(null);
+  // Handle failed login attempts and tenant status errors
+  const lastProcessedErrorRef = useRef(null);
+  const attemptIdRef = useRef(0);
   
   useEffect(() => {
-    if (error && error !== errorProcessedRef.current && !error.includes('Account locked') && hasAttemptedLogin) {
-      errorProcessedRef.current = error;
+    if (error && hasAttemptedLogin && !error.includes('Account locked')) {
+      // Create unique identifier for this error occurrence
+      attemptIdRef.current += 1;
+      const currentAttemptId = attemptIdRef.current;
+      
+      // Prevent processing the same specific attempt multiple times
+      if (lastProcessedErrorRef.current === currentAttemptId) {
+        return;
+      }
+      
+      lastProcessedErrorRef.current = currentAttemptId;
       
       // Try to parse error as JSON to get detailed error info
       let errorData;
@@ -138,9 +148,11 @@ const Login = () => {
         return; // Don't process as regular login failure
       }
       
-      // Handle regular login failures
+      // Handle regular login failures - increment count every time we get a real error
       const currentFailedAttempts = parseInt(localStorage.getItem('loginFailedAttempts') || '0');
       const newFailedAttempts = currentFailedAttempts + 1;
+      
+      console.log(`Failed login attempt #${newFailedAttempts} - Error: ${errorData.message || error}`);
       
       setFailedAttempts(newFailedAttempts);
       localStorage.setItem('loginFailedAttempts', newFailedAttempts.toString());
