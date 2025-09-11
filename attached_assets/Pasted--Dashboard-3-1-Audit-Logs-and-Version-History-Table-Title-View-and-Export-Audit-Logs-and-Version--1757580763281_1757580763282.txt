@@ -1,0 +1,32 @@
+ Dashboard
+3.1 Audit Logs and Version History Table
+Title: View and Export Audit Logs and Version History
+Story Description: As a logged-in user, I want to view a table of audit logs and document version history and export it in PDF, CSV, or Excel formats so that I can track my past activities and document versions and save or share the data.
+Acceptance Criteria:
+Given I am on the dashboard, I see a table with columns: Log ID, Document Name, Version, Action Performed, Timestamp, User Email, Action (View, Email).
+I can sort the table by Log ID, Timestamp, or Document Name.
+I can paginate the table with options for 10, 25, or 50 entries per page.
+I can search by Document Name or User Email.
+I can export the table data in PDF, CSV, or Excel formats via an "Export" dropdown or buttons.
+Exported files are named appropriately (e.g., "Audit_Logs_{Timestamp}.pdf/csv/xlsx").
+Validations with Success/Error Messages:
+Table Data:
+Success: Table loads with correct data.
+Error: If no data, display: "No audit logs available."
+Search:
+Success: Results filter based on input.
+Error: If no results, display: "No results found."
+Export:
+Success: File downloads in selected format (PDF, CSV, Excel).
+Error: "Failed to export [format]. Please try again."
+Expected Outcome:
+The user views, sorts, searches, and exports audit logs and version history in PDF, CSV, or Excel formats.
+If no data is available or an export fails, clear error messages are displayed.
+Definition of Done:
+Table with specified columns is implemented on the dashboard.
+Sorting, pagination (10, 25, 50 entries), and search by Document Name/User Email are functional.
+Export functionality for PDF, CSV, and Excel is implemented with appropriate file naming.
+Error messages for empty data or failed exports are displayed.
+Unit tests cover table rendering, sorting, pagination, search, and export (all formats).
+UI/UX is tested for responsiveness, accessibility, and export button clarity.
+Features are deployed and verified in production.
