@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import * as React from 'react';
 
 export function useToast() {
-  const [toasts, setToasts] = useState([]);
+  const [toasts, setToasts] = React.useState([]);
 
-  const toast = useCallback((props) => {
+  const toast = React.useCallback((props) => {
     const id = Math.random().toString(36).substr(2, 9);
     const toastWithId = { ...props, id };
     
@@ -20,7 +20,7 @@ export function useToast() {
     };
   }, []);
 
-  const dismiss = useCallback((id) => {
+  const dismiss = React.useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
