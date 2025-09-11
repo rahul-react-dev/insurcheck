@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Lock, CheckCircle, XCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import Button from '../components/ui/Button';
 
 // Validation schema for password reset
 const resetPasswordSchema = z.object({
@@ -139,7 +140,7 @@ const ResetPassword = () => {
         toast({
           type: 'success',
           title: 'Password Reset Successful',
-          description: 'Your password has been reset successfully. Please log in with your new password.'
+          description: result.message || 'Password has been reset successfully. Please log in with your new password.'
         });
         
         // Redirect to login after success
@@ -152,18 +153,30 @@ const ResetPassword = () => {
     } catch (error) {
       console.error('Password reset error:', error);
       
-      if (error.message.includes('Invalid or expired')) {
+      // Try to get the actual error message from the server response
+      let errorMessage = 'Failed to reset password. Please try again.';
+      
+      try {
+        // If it's a fetch error with response, try to parse it
+        if (error.message && typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+      } catch (parseError) {
+        console.error('Error parsing reset password error:', parseError);
+      }
+      
+      if (errorMessage.includes('Invalid or expired')) {
         setIsTokenValid(false);
         toast({
           type: 'error',
           title: 'Invalid or Expired Link',
-          description: 'This password reset link is no longer valid. Please request a new one.'
+          description: errorMessage
         });
       } else {
         toast({
           type: 'error',
           title: 'Reset Failed',
-          description: 'Failed to reset password. Please try again.'
+          description: errorMessage
         });
       }
     } finally {
@@ -205,20 +218,24 @@ const ResetPassword = () => {
               <p className="text-gray-600 mb-6">
                 This password reset link is invalid or has expired. Please request a new password reset.
               </p>
-              <button
+              <Button
                 onClick={() => navigate('/forgot-password')}
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                variant="primary"
+                size="lg"
+                className="w-full"
                 data-testid="button-request-new-reset"
               >
                 Request New Reset Link
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => navigate('/login')}
-                className="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-all duration-200"
+                variant="secondary"
+                size="lg"
+                className="w-full mt-3"
                 data-testid="button-back-to-login"
               >
                 Back to Login
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -349,25 +366,17 @@ const ResetPassword = () => {
             </div>
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
-              disabled={isSubmitting || !isValid}
-              className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg ${
-                isSubmitting || !isValid
-                  ? 'bg-gray-300 cursor-not-allowed text-white'
-                  : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white hover:shadow-xl'
-              }`}
+              variant="primary"
+              size="lg"
+              className="w-full"
+              loading={isSubmitting}
+              disabled={!isValid}
               data-testid="button-reset-password"
             >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center">
-                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                  Resetting Password...
-                </div>
-              ) : (
-                'Reset Password'
-              )}
-            </button>
+              {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
+            </Button>
 
             {/* Back to Login */}
             <div className="text-center">
