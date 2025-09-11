@@ -2,14 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
-  Download, 
   ChevronUp, 
   ChevronDown, 
   ChevronLeft, 
   ChevronRight,
-  Filter,
   FileText,
-  Calendar,
   User,
   Eye,
   Mail,
@@ -36,18 +33,12 @@ const AuditLogsTable = ({
 }) => {
   const { toast } = useToast();
   const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'desc' });
-  const [showFilters, setShowFilters] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Search form
+  // Search form (simplified - filters removed)
   const { register, handleSubmit, watch, reset } = useForm({
     defaultValues: {
-      search: filters.search || '',
-      documentName: filters.documentName || '',
-      userEmail: filters.userEmail || '',
-      actionPerformed: filters.actionPerformed || '',
-      startDate: filters.startDate || '',
-      endDate: filters.endDate || ''
+      search: filters.search || ''
     }
   });
 
@@ -91,16 +82,9 @@ const AuditLogsTable = ({
     }
   };
 
-  // Clear filters
-  const clearFilters = () => {
-    reset({
-      search: '',
-      documentName: '',
-      userEmail: '',
-      actionPerformed: '',
-      startDate: '',
-      endDate: ''
-    });
+  // Clear search
+  const clearSearch = () => {
+    reset({ search: '' });
     onSearch?.({});
   };
 
@@ -140,9 +124,9 @@ const AuditLogsTable = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Enhanced Header with Gradient */}
+      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900" data-testid="text-audit-logs-title">
@@ -154,101 +138,51 @@ const AuditLogsTable = ({
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
+            {/* Enhanced Search */}
             <form onSubmit={handleSubmit(onSearchSubmit)} className="flex-1 sm:flex-none">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input
                   {...register('search')}
-                  placeholder="Search by document or user..."
-                  className="pl-10 w-full sm:w-64"
+                  placeholder="Search documents, users, or actions..."
+                  className="pl-10 w-full sm:w-80 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
                   data-testid="input-search"
                 />
+                {watchedValues.search && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </form>
-
-            {/* Filter Toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-2"
-              data-testid="button-filter-toggle"
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filters</span>
-            </Button>
-
-            {/* Export Dropdown - Temporarily Disabled */}
-            {/*
-            <div className="relative group">
-              <Button
-                variant="primary"
-                disabled={true}
-                className="flex items-center space-x-2 opacity-50"
-                data-testid="button-export"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export (Coming Soon)</span>
-              </Button>
-            </div>
-            */}
           </div>
         </div>
 
-        {/* Advanced Filters */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 pt-4 border-t border-gray-200"
-            >
-              <form onSubmit={handleSubmit(onSearchSubmit)} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Input
-                  {...register('documentName')}
-                  placeholder="Document Name"
-                  icon={FileText}
-                  data-testid="input-document-name"
-                />
-                <Input
-                  {...register('userEmail')}
-                  placeholder="User Email"
-                  icon={User}
-                  data-testid="input-user-email"
-                />
-                <Input
-                  {...register('actionPerformed')}
-                  placeholder="Action Performed"
-                  icon={Eye}
-                  data-testid="input-action-performed"
-                />
-                <Input
-                  {...register('startDate')}
-                  type="date"
-                  placeholder="Start Date"
-                  icon={Calendar}
-                  data-testid="input-start-date"
-                />
-                <Input
-                  {...register('endDate')}
-                  type="date"
-                  placeholder="End Date"
-                  icon={Calendar}
-                  data-testid="input-end-date"
-                />
-                <div className="flex gap-2">
-                  <Button type="submit" variant="primary" size="sm" data-testid="button-apply-filters">
-                    Apply Filters
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
-                    Clear
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Search Results Summary */}
+        {watchedValues.search && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Search className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-gray-600">
+                  Searching for: <span className="font-medium text-gray-900">"{watchedValues.search}"</span>
+                </span>
+              </div>
+              <button
+                onClick={clearSearch}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                Clear search
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -265,13 +199,13 @@ const AuditLogsTable = ({
           </div>
         ) : (
           <table className="w-full" data-testid="table-audit-logs">
-            <thead className="bg-gray-50">
-              <tr>
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+              <tr className="border-b border-gray-200">
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.width} ${
-                      column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
+                    className={`px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider ${column.width} ${
+                      column.sortable ? 'cursor-pointer hover:bg-gray-200 transition-colors duration-150' : ''
                     }`}
                     onClick={column.sortable ? () => handleSort(column.key) : undefined}
                     data-testid={`header-${column.key}`}
@@ -291,11 +225,13 @@ const AuditLogsTable = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-gray-50"
+                  className="hover:bg-blue-50/50 hover:shadow-sm transition-all duration-200 border-b border-gray-100 last:border-b-0"
                   data-testid={`row-log-${log.id}`}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" data-testid={`text-log-id-${log.id}`}>
-                    {log.logId}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm" data-testid={`text-log-id-${log.id}`}>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      #{log.logId}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" data-testid={`text-document-name-${log.id}`}>
                     <div className="flex items-center space-x-2">
@@ -309,7 +245,7 @@ const AuditLogsTable = ({
                     {log.version}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`text-action-${log.id}`}>
-                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       {log.actionPerformed}
                     </span>
                   </td>
@@ -325,11 +261,21 @@ const AuditLogsTable = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-testid={`button-action-${log.id}`}>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm" className="p-1" title="View Details">
+                    <div className="flex space-x-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-2 hover:bg-blue-100 hover:text-blue-700 transition-colors duration-200" 
+                        title="View Details"
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="p-1" title="Email">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-2 hover:bg-green-100 hover:text-green-700 transition-colors duration-200" 
+                        title="Contact User"
+                      >
                         <Mail className="w-4 h-4" />
                       </Button>
                     </div>

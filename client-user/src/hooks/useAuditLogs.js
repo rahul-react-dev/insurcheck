@@ -21,12 +21,7 @@ export const useAuditLogs = () => {
   const [filters, setFilters] = useState({
     search: '',
     sortBy: 'timestamp',
-    sortOrder: 'desc',
-    documentName: '',
-    userEmail: '',
-    actionPerformed: '',
-    startDate: '',
-    endDate: ''
+    sortOrder: 'desc'
   });
 
   // API base configuration
@@ -173,18 +168,13 @@ export const useAuditLogs = () => {
   }, [fetchLogs]);
 
   /**
-   * Reset filters
+   * Reset filters (now only search and sorting)
    */
   const resetFilters = useCallback(() => {
     const defaultFilters = {
       search: '',
       sortBy: 'timestamp',
-      sortOrder: 'desc',
-      documentName: '',
-      userEmail: '',
-      actionPerformed: '',
-      startDate: '',
-      endDate: ''
+      sortOrder: 'desc'
     };
     setFilters(defaultFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
