@@ -273,7 +273,7 @@ const Login = () => {
       setLockoutTime(null);
       localStorage.removeItem('loginFailedAttempts');
       localStorage.removeItem('loginLockoutTime');
-      errorProcessedRef.current = null; // Reset error tracking
+      lastProcessedErrorRef.current = null; // Reset error tracking
       
       // Navigate to dashboard on successful login
       setTimeout(() => {
