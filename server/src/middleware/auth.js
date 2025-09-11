@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { db } from '../../db.js';
-import { users } from '../../../shared/schema.js';
+import { users, tenants } from '../../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 import { config } from '../config/env.js';
 
@@ -38,6 +38,57 @@ export const authMiddleware = async (req, res, next) => {
           success: false,
           message: 'Invalid token or user inactive'
         });
+      }
+
+      // Check tenant status for ongoing session validation (except super-admin)
+      if (user.role !== 'super-admin' && user.tenantId) {
+        const tenantResult = await db.select()
+          .from(tenants)
+          .where(eq(tenants.id, user.tenantId))
+          .limit(1);
+        
+        if (tenantResult.length === 0) {
+          return res.status(401).json({
+            success: false,
+            message: 'Your account is inactive. Please contact your administrator.',
+            code: 'TENANT_NOT_FOUND'
+          });
+        }
+        
+        const tenant = tenantResult[0];
+        
+        // Check if tenant is deactivated - immediate logout
+        if (['deactivated', 'suspended', 'inactive'].includes(tenant.status)) {
+          return res.status(403).json({
+            success: false,
+            message: 'Your account is inactive. Please contact your administrator.',
+            code: 'TENANT_DEACTIVATED',
+            forceLogout: true
+          });
+        }
+        
+        // Check trial expiration - immediate logout
+        const now = new Date();
+        if (tenant.isTrialActive && tenant.trialEndsAt && new Date(tenant.trialEndsAt) < now) {
+          return res.status(403).json({
+            success: false,
+            message: 'Your trial period has ended. Please upgrade to continue.',
+            code: 'TRIAL_EXPIRED',
+            forceLogout: true
+          });
+        }
+
+        // Add tenant info to request for downstream use
+        req.tenant = {
+          id: tenant.id,
+          name: tenant.name,
+          status: tenant.status,
+          subscriptionPlan: tenant.subscriptionPlan,
+          isTrialActive: tenant.isTrialActive,
+          trialEndsAt: tenant.trialEndsAt,
+          maxUsers: tenant.maxUsers,
+          storageLimit: tenant.storageLimit
+        };
       }
 
       // Add user info to request

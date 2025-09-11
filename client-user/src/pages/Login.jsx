@@ -10,6 +10,8 @@ import { loginRequest, clearError } from '../store/authSlice';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
+import TenantStatusError from '../components/ui/TenantStatusError';
+import UpgradePrompt from '../components/ui/UpgradePrompt';
 import { useToast } from '../hooks/use-toast';
 import { cn } from '../utils/cn';
 
@@ -34,6 +36,11 @@ const Login = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutTime, setLockoutTime] = useState(null);
   const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
+  
+  // Tenant status error handling
+  const [tenantError, setTenantError] = useState(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   
   // Initialize form with react-hook-form and zod validation
   const {
@@ -99,13 +106,39 @@ const Login = () => {
     }
   }, [dispatch, toast]);
   
-  // Handle failed login attempts - using useRef to avoid dependency loop
+  // Handle failed login attempts and tenant status errors - using useRef to avoid dependency loop
   const errorProcessedRef = useRef(null);
   
   useEffect(() => {
     if (error && error !== errorProcessedRef.current && !error.includes('Account locked') && hasAttemptedLogin) {
       errorProcessedRef.current = error;
       
+      // Try to parse error as JSON to get detailed error info
+      let errorData;
+      try {
+        errorData = typeof error === 'string' ? JSON.parse(error) : error;
+      } catch {
+        errorData = { message: error };
+      }
+
+      // Check for tenant status errors
+      if (errorData.code && ['TENANT_DEACTIVATED', 'TRIAL_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'TENANT_NOT_FOUND'].includes(errorData.code)) {
+        setTenantError({
+          code: errorData.code,
+          message: errorData.message,
+          tenantStatus: errorData.tenantStatus,
+          trialEndDate: errorData.trialEndDate,
+          trialEnded: errorData.trialEnded
+        });
+        
+        // For trial expired, automatically show upgrade prompt
+        if (errorData.code === 'TRIAL_EXPIRED') {
+          setShowUpgradePrompt(true);
+        }
+        return; // Don't process as regular login failure
+      }
+      
+      // Handle regular login failures
       const currentFailedAttempts = parseInt(localStorage.getItem('loginFailedAttempts') || '0');
       const newFailedAttempts = currentFailedAttempts + 1;
       
@@ -141,7 +174,7 @@ const Login = () => {
         toast({
           type: 'error',
           title: 'Login Failed',
-          description: `${error}. ${5 - newFailedAttempts} attempts remaining.`
+          description: `${errorData.message || error}. ${5 - newFailedAttempts} attempts remaining.`
         });
       }
     }
@@ -153,10 +186,49 @@ const Login = () => {
       if (error) {
         dispatch(clearError());
         clearErrors();
+        setTenantError(null); // Clear tenant error as well
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, error, dispatch, clearErrors]);
+
+  // Handler functions for tenant status error actions
+  const handleUpgrade = (selectedPlan) => {
+    setIsUpgrading(true);
+    // TODO: Implement actual upgrade logic
+    toast({
+      type: 'info',
+      title: 'Upgrade Initiated',
+      description: `Upgrading to ${selectedPlan?.name || 'selected plan'}...`
+    });
+    
+    // Simulate upgrade process
+    setTimeout(() => {
+      setIsUpgrading(false);
+      setShowUpgradePrompt(false);
+      setTenantError(null);
+      toast({
+        type: 'success',
+        title: 'Upgrade Successful',
+        description: 'Please try logging in again.'
+      });
+    }, 2000);
+  };
+
+  const handleContactSupport = () => {
+    // TODO: Implement contact support functionality
+    toast({
+      type: 'info',
+      title: 'Contact Support',
+      description: 'Please contact support at support@insurcheck.com or call 1-800-SUPPORT'
+    });
+  };
+
+  const handleRetryLogin = () => {
+    setTenantError(null);
+    dispatch(clearError());
+    clearErrors();
+  };
   
   const onSubmit = (data) => {
     if (isLocked) {
@@ -226,20 +298,32 @@ const Login = () => {
           <p className="text-blue-100 text-sm font-medium">Professional Insurance Management Platform</p>
         </div>
 
-        {/* Login Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-2xl p-8 space-y-6"
-        >
-          {/* Welcome Text */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl mb-4">
-              <Shield className="w-8 h-8 text-white" />
+        {/* Show tenant status error instead of login form */}
+        {tenantError ? (
+          <TenantStatusError
+            code={tenantError.code}
+            message={tenantError.message}
+            tenantStatus={tenantError.tenantStatus}
+            trialEndDate={tenantError.trialEndDate}
+            onUpgrade={() => setShowUpgradePrompt(true)}
+            onContactSupport={handleContactSupport}
+            onRetry={handleRetryLogin}
+          />
+        ) : (
+          /* Login Form Card */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-2xl p-8 space-y-6"
+          >
+            {/* Welcome Text */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl mb-4">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome Back</h2>
+              <p className="text-gray-500 text-sm">Sign in to access your dashboard</p>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome Back</h2>
-            <p className="text-gray-500 text-sm">Sign in to access your dashboard</p>
-          </div>
           
           {/* Account Status Messages */}
           {isLocked && (
@@ -444,46 +528,58 @@ const Login = () => {
           </form>
 
         </motion.div>
+        )}
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-center"
-        >
-          <p className="text-blue-100 text-sm">
-            Don't have an account?{' '}
-            <Link
-              to="/signup"
-              className="font-medium text-white hover:text-blue-200 transition-colors duration-200 underline focus:outline-none"
-              data-testid="link-signup"
-            >
-              Sign up here
-            </Link>
-          </p>
-          <div className="mt-4 flex justify-center items-center space-x-4 text-blue-200 text-xs">
-            <Link 
-              to="/privacy"
-              className="hover:text-white transition-colors duration-200 focus:outline-none"
-            >
-              Privacy Policy
-            </Link>
-            <span>•</span>
-            <Link 
-              to="/terms"
-              className="hover:text-white transition-colors duration-200 focus:outline-none"
-            >
-              Terms of Service
-            </Link>
-            <span>•</span>
-            <a href="mailto:support@insurcheck.com" className="hover:text-white transition-colors duration-200">
-              Support
-            </a>
-          </div>
-        </motion.div>
+        {/* Footer - Only show when not showing tenant error */}
+        {!tenantError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-center"
+          >
+            <p className="text-blue-100 text-sm">
+              Don't have an account?{' '}
+              <Link
+                to="/signup"
+                className="font-medium text-white hover:text-blue-200 transition-colors duration-200 underline focus:outline-none"
+                data-testid="link-signup"
+              >
+                Sign up here
+              </Link>
+            </p>
+            <div className="mt-4 flex justify-center items-center space-x-4 text-blue-200 text-xs">
+              <Link 
+                to="/privacy"
+                className="hover:text-white transition-colors duration-200 focus:outline-none"
+              >
+                Privacy Policy
+              </Link>
+              <span>•</span>
+              <Link 
+                to="/terms"
+                className="hover:text-white transition-colors duration-200 focus:outline-none"
+              >
+                Terms of Service
+              </Link>
+              <span>•</span>
+              <a href="mailto:support@insurcheck.com" className="hover:text-white transition-colors duration-200">
+                Support
+              </a>
+            </div>
+          </motion.div>
+        )}
       </div>
       </div>
+
+      {/* Upgrade Prompt Modal */}
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        onUpgrade={handleUpgrade}
+        trialEndDate={tenantError?.trialEndDate}
+        isLoading={isUpgrading}
+      />
     </div>
   );
 };

@@ -67,6 +67,60 @@ export const login = async (req, res) => {
       });
     }
 
+    // Check tenant status and subscription for all tenant users (except super-admin)
+    if (user.role !== 'super-admin' && user.tenantId) {
+      console.log(`Checking tenant status for tenant ID: ${user.tenantId}`);
+      
+      const tenantResult = await db.select()
+        .from(tenants)
+        .where(eq(tenants.id, user.tenantId))
+        .limit(1);
+      
+      if (tenantResult.length === 0) {
+        console.log(`Tenant not found for ID: ${user.tenantId}`);
+        return res.status(401).json({
+          success: false,
+          message: 'Your account is inactive. Please contact your administrator.',
+          code: 'TENANT_NOT_FOUND'
+        });
+      }
+      
+      const tenant = tenantResult[0];
+      console.log(`Tenant status check - Tenant: ${tenant.name}, Status: ${tenant.status}, Trial Active: ${tenant.isTrialActive}, Trial Ends: ${tenant.trialEndsAt}`);
+      
+      // Check if tenant is deactivated
+      if (['deactivated', 'suspended', 'inactive'].includes(tenant.status)) {
+        console.log(`Login blocked - Tenant ${tenant.name} has status: ${tenant.status}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is inactive. Please contact your administrator.',
+          code: 'TENANT_DEACTIVATED',
+          tenantStatus: tenant.status
+        });
+      }
+      
+      // Check trial period expiration
+      const now = new Date();
+      if (tenant.isTrialActive && tenant.trialEndsAt && new Date(tenant.trialEndsAt) < now) {
+        console.log(`Login blocked - Trial expired for tenant ${tenant.name}. Trial ended: ${tenant.trialEndsAt}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Your trial period has ended. Please upgrade to continue.',
+          code: 'TRIAL_EXPIRED',
+          tenantStatus: tenant.status,
+          trialEnded: true,
+          trialEndDate: tenant.trialEndsAt
+        });
+      }
+      
+      // Check if subscription is cancelled but tenant still has some access
+      if (tenant.status === 'cancelled') {
+        console.log(`Login allowed but restricted - Tenant ${tenant.name} subscription cancelled`);
+        // Allow login but will be restricted to read-only mode
+        // This will be handled by middleware and frontend
+      }
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { 
@@ -90,18 +144,42 @@ export const login = async (req, res) => {
         })
         .where(eq(users.id, user.id));
 
+      // Get tenant information for response if user has tenantId
+      let tenantInfo = null;
+      if (user.tenantId) {
+        const tenantResult = await db.select()
+          .from(tenants)
+          .where(eq(tenants.id, user.tenantId))
+          .limit(1);
+        
+        if (tenantResult.length > 0) {
+          const tenant = tenantResult[0];
+          tenantInfo = {
+            id: tenant.id,
+            name: tenant.name,
+            status: tenant.status,
+            subscriptionPlan: tenant.subscriptionPlan,
+            isTrialActive: tenant.isTrialActive,
+            trialEndsAt: tenant.trialEndsAt,
+            maxUsers: tenant.maxUsers,
+            storageLimit: tenant.storageLimit
+          };
+        }
+      }
+
       res.status(200).json({
         success: true,
-        message: 'Login successful',
+        message: 'Welcome back!',
         data: {
           user: {
             id: user.id,
             username: user.username,
             email: user.email,
             role: user.role,
-            tenantId: user.tenant_id,
-            isActive: user.is_active
+            tenantId: user.tenantId,
+            isActive: user.isActive
           },
+          tenant: tenantInfo,
           token
         }
       });
