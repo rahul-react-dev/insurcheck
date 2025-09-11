@@ -44,6 +44,12 @@ export const tenants = pgTable("tenants", {
   email: varchar("email", { length: 255 }).unique(), // Email field that exists in database
   domain: text("domain").unique(),
   status: varchar("status", { length: 20 }).notNull().default('active'), // Status field that exists in database
+  subscriptionId: integer("subscription_id").references(() => subscriptionPlans.id), // Reference to subscription plan
+  subscriptionPlan: varchar("subscription_plan", { length: 50 }).default('trial'), // Plan name for quick reference
+  trialEndsAt: timestamp("trial_ends_at"), // When trial period ends
+  isTrialActive: boolean("is_trial_active").default(true), // Whether tenant is in trial
+  maxUsers: integer("max_users").default(5), // Maximum users allowed
+  storageLimit: integer("storage_limit_gb").default(1), // Storage limit in GB
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
