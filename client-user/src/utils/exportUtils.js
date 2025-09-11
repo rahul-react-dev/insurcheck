@@ -358,4 +358,4 @@ export const exportSingleLogToPDF = (log) => {
 };
 
 // Export individual functions as well for direct use
-export { exportToPDF, exportToExcel, exportToCSV, exportSingleLogToPDF };
+export { exportToPDF, exportToExcel, exportToCSV };
