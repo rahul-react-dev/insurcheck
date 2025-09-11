@@ -20,6 +20,45 @@ const initializeEmailService = () => {
 };
 
 /**
+ * Retry function for failed email deliveries
+ */
+const retryEmailDelivery = async (emailFunction, params, maxRetries = 3) => {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📧 Email delivery attempt ${attempt}/${maxRetries}`);
+      const result = await emailFunction(params);
+      
+      if (result.success) {
+        console.log(`✅ Email delivery successful on attempt ${attempt}`);
+        return result;
+      } else {
+        lastError = result.error || 'Unknown error';
+        console.log(`❌ Email delivery failed on attempt ${attempt}: ${lastError}`);
+      }
+    } catch (error) {
+      lastError = error.message || 'Unknown error';
+      console.log(`❌ Email delivery error on attempt ${attempt}: ${lastError}`);
+    }
+    
+    // Wait before retrying (exponential backoff)
+    if (attempt < maxRetries) {
+      const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+      console.log(`⏳ Waiting ${delay/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  console.log(`❌ Email delivery failed after ${maxRetries} attempts`);
+  return { 
+    success: false, 
+    error: `Failed after ${maxRetries} attempts. Last error: ${lastError}`,
+    attempts: maxRetries
+  };
+};
+
+/**
  * Send tenant admin invitation email
  * @param {Object} params - Email parameters
  * @param {string} params.to - Recipient email
@@ -653,10 +692,206 @@ InsurCheck Security Team
   `.trim();
 };
 
+/**
+ * Send audit log email with PDF attachment
+ * @param {Object} params - Email parameters
+ * @param {string} params.to - Recipient email
+ * @param {Object} params.auditLog - Audit log data
+ * @param {Buffer} params.pdfAttachment - PDF attachment buffer
+ */
+const sendAuditLogEmail = async ({ to, auditLog, pdfAttachment }) => {
+  try {
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log('📧 Email service disabled - would send audit log to:', to);
+      console.log('📋 Audit Log ID:', auditLog.id);
+      return { success: false, reason: 'Email service not configured' };
+    }
+
+    const logId = auditLog.id ? String(auditLog.id).slice(0, 8) : 'Unknown';
+    const msg = {
+      to,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL || 'noreply@insurcheck.com',
+        name: 'InsurCheck Platform'
+      },
+      subject: `Audit Log Details - Log ID: ${logId}`,
+      html: generateAuditLogHTML({ to, auditLog }),
+      text: generateAuditLogText({ to, auditLog }),
+      attachments: [
+        {
+          content: pdfAttachment.toString('base64'),
+          filename: `Audit_Log_${logId}.pdf`,
+          type: 'application/pdf',
+          disposition: 'attachment'
+        }
+      ]
+    };
+
+    console.log(`📧 Sending audit log email to: ${to}`);
+    console.log(`📤 Email details:`, {
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject,
+      attachmentSize: pdfAttachment.length
+    });
+    
+    const result = await sgMail.send(msg);
+    
+    console.log(`✅ SendGrid response:`, result[0]?.statusCode, result[0]?.headers);
+    console.log(`✅ Audit log email sent successfully to: ${to}`);
+    return { success: true, message: 'Audit log email sent successfully' };
+    
+  } catch (error) {
+    console.error('❌ SendGrid audit log email error:', error.response?.body || error.message);
+    return { 
+      success: false, 
+      error: error.message,
+      details: error.response?.body 
+    };
+  }
+};
+
+/**
+ * Send audit log email with retry logic
+ */
+const sendAuditLogEmailWithRetry = async (params) => {
+  return retryEmailDelivery(sendAuditLogEmail, params, 3);
+};
+
+/**
+ * Generate HTML email template for audit log
+ */
+const generateAuditLogHTML = ({ to, auditLog }) => {
+  const logId = auditLog.id ? String(auditLog.id).slice(0, 8) : 'Unknown';
+  const timestamp = auditLog.createdAt ? new Date(auditLog.createdAt).toLocaleString() : 'N/A';
+  const details = typeof auditLog.details === 'object' ? JSON.stringify(auditLog.details, null, 2) : (auditLog.details || 'No details available');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Audit Log Details - InsurCheck</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 40px 30px; text-align: center; }
+            .content { padding: 40px 30px; }
+            .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .info-table th { background-color: #f8fafc; color: #374151; padding: 12px; text-align: left; border: 1px solid #e5e7eb; font-weight: 600; }
+            .info-table td { padding: 12px; border: 1px solid #e5e7eb; color: #6b7280; }
+            .details-box { background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 6px; padding: 16px; margin: 20px 0; font-family: monospace; font-size: 12px; color: #374151; white-space: pre-wrap; }
+            .footer { background-color: #f8fafc; padding: 20px 30px; text-align: center; font-size: 14px; color: #6b7280; }
+            .attachment-note { background-color: #eff6ff; color: #1d4ed8; padding: 16px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #3b82f6; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1 style="margin: 0; font-size: 28px;">InsurCheck Audit Log</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">Activity Record Details</p>
+            </div>
+            
+            <div class="content">
+                <h2 style="color: #1f2937; margin-top: 0;">Audit Log Details</h2>
+                
+                <p style="color: #374151; line-height: 1.6;">
+                    Please find below the details of the requested audit log entry. A PDF attachment with complete information is also included for your records.
+                </p>
+                
+                <table class="info-table">
+                    <tr>
+                        <th>Log ID</th>
+                        <td>${logId}</td>
+                    </tr>
+                    <tr>
+                        <th>Action</th>
+                        <td>${auditLog.action || 'Unknown'}</td>
+                    </tr>
+                    <tr>
+                        <th>Resource</th>
+                        <td>${auditLog.resource || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>Resource ID</th>
+                        <td>${auditLog.resourceId || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>Level</th>
+                        <td>${auditLog.level || 'info'}</td>
+                    </tr>
+                    <tr>
+                        <th>Timestamp</th>
+                        <td>${timestamp}</td>
+                    </tr>
+                    <tr>
+                        <th>IP Address</th>
+                        <td>${auditLog.ipAddress || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>User Agent</th>
+                        <td style="word-break: break-all;">${auditLog.userAgent || 'N/A'}</td>
+                    </tr>
+                </table>
+                
+                <h3 style="color: #1f2937;">Additional Details</h3>
+                <div class="details-box">${details}</div>
+                
+                <div class="attachment-note">
+                    <strong>📎 PDF Attachment:</strong> A complete PDF report of this audit log has been attached to this email for your records.
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p style="margin: 0;">
+                    This audit log was sent by InsurCheck Platform<br>
+                    Generated on ${new Date().toLocaleString()}
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Generate plain text email template for audit log
+ */
+const generateAuditLogText = ({ to, auditLog }) => {
+  const logId = auditLog.id ? String(auditLog.id).slice(0, 8) : 'Unknown';
+  const timestamp = auditLog.createdAt ? new Date(auditLog.createdAt).toLocaleString() : 'N/A';
+  const details = typeof auditLog.details === 'object' ? JSON.stringify(auditLog.details, null, 2) : (auditLog.details || 'No details available');
+
+  return `
+InsurCheck - Audit Log Details
+
+Log ID: ${logId}
+Action: ${auditLog.action || 'Unknown'}
+Resource: ${auditLog.resource || 'N/A'}
+Resource ID: ${auditLog.resourceId || 'N/A'}
+Level: ${auditLog.level || 'info'}
+Timestamp: ${timestamp}
+IP Address: ${auditLog.ipAddress || 'N/A'}
+User Agent: ${auditLog.userAgent || 'N/A'}
+
+Additional Details:
+${details}
+
+A PDF attachment with complete information is also included for your records.
+
+---
+This audit log was sent by InsurCheck Platform
+Generated on ${new Date().toLocaleString()}
+  `;
+};
+
 export {
   initializeEmailService,
   sendTenantAdminInvitation,
   sendUserInvitation,
   sendEmailVerification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendAuditLogEmailWithRetry,
+  retryEmailDelivery
 };

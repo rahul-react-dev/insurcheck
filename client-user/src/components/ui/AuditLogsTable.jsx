@@ -12,7 +12,8 @@ import {
   Mail,
   AlertCircle,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Send
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -108,6 +109,44 @@ const AuditLogsTable = ({
         type: 'error',
         title: 'PDF Viewer Failed',
         description: error.message || 'Failed to open PDF viewer. Please try again.'
+      });
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Handle email audit log
+  const handleEmailLog = async (log) => {
+    try {
+      setExportLoading(true);
+      
+      // Make API request to send email
+      const response = await fetch('/api/user/audit-logs/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({ logId: log.id })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast({
+          type: 'success',
+          title: 'Email Sent Successfully',
+          description: 'Audit log details have been sent to your registered email address.'
+        });
+      } else {
+        throw new Error(result.message || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Email audit log error:', error);
+      toast({
+        type: 'error',
+        title: 'Email Failed',
+        description: error.message || 'Failed to send audit log email. Please try again.'
       });
     } finally {
       setExportLoading(false);
@@ -324,8 +363,20 @@ const AuditLogsTable = ({
                         title="View Details as PDF"
                         onClick={() => handleViewLogPDF(log)}
                         disabled={exportLoading}
+                        data-testid={`button-view-pdf-${log.id}`}
                       >
                         <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-2 hover:bg-green-100 hover:text-green-700 transition-colors duration-200" 
+                        title="Email Audit Log Details"
+                        onClick={() => handleEmailLog(log)}
+                        disabled={exportLoading}
+                        data-testid={`button-email-log-${log.id}`}
+                      >
+                        <Send className="w-4 h-4" />
                       </Button>
                     </div>
                   </td>

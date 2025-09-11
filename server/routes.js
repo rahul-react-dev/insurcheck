@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { db } from "./db.js";
 import { s3Service } from "./services/s3Service.js";
+import { sendAuditLogEmailWithRetry } from "./services/emailService.js";
+import { jsPDF } from "jspdf";
 import {
   users,
   tenants,
@@ -5207,6 +5209,188 @@ router.post("/user/activity-logs/export", authenticateToken, async (req, res) =>
     console.error('❌ Error exporting user activity logs:', error);
     res.status(500).json({
       error: 'Failed to export activity logs',
+      message: error.message
+    });
+  }
+});
+
+// Email audit log details with PDF attachment
+router.post("/user/audit-logs/email", authenticateToken, async (req, res) => {
+  try {
+    console.log('📧 Email audit log for user tenant:', req.user.tenantId);
+    
+    const { logId } = req.body;
+
+    if (!logId) {
+      return res.status(400).json({
+        error: 'Log ID required',
+        message: 'Please provide a valid log ID'
+      });
+    }
+
+    if (!req.user.tenantId) {
+      return res.status(400).json({
+        error: 'Tenant ID required',
+        message: 'User must be associated with a tenant'
+      });
+    }
+
+    // Get user's email
+    const user = await db.select()
+      .from(users)
+      .where(eq(users.id, req.user.userId))
+      .limit(1);
+
+    if (!user[0] || !user[0].email) {
+      return res.status(400).json({
+        error: 'User email not found',
+        message: 'Unable to determine recipient email address'
+      });
+    }
+
+    // Get the specific audit log
+    const auditLog = await db
+      .select({
+        id: activityLogs.id,
+        action: activityLogs.action,
+        resource: activityLogs.resource,
+        resourceId: activityLogs.resourceId,
+        level: activityLogs.level,
+        details: activityLogs.details,
+        ipAddress: activityLogs.ipAddress,
+        userAgent: activityLogs.userAgent,
+        createdAt: activityLogs.createdAt,
+        tenantName: tenants.name,
+        userEmail: users.email
+      })
+      .from(activityLogs)
+      .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
+      .leftJoin(users, eq(activityLogs.userId, users.id))
+      .where(and(
+        eq(activityLogs.id, logId),
+        eq(activityLogs.tenantId, req.user.tenantId)
+      ))
+      .limit(1);
+
+    if (!auditLog[0]) {
+      return res.status(404).json({
+        error: 'Audit log not found',
+        message: 'The requested audit log was not found or you do not have access to it'
+      });
+    }
+
+    const log = auditLog[0];
+    
+    // Generate PDF attachment
+    const doc = new jsPDF();
+    const currentDate = new Date();
+    
+    // Add header with logo placeholder and title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('InsurCheck - Audit Log Report', 14, 22);
+    
+    // Add a line under the header
+    doc.setLineWidth(0.5);
+    doc.line(14, 26, 196, 26);
+    
+    // Add generation info
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`, 14, 35);
+    
+    // Add log details section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Audit Log Details', 14, 50);
+    
+    // Create details table
+    const logId8 = log.id ? String(log.id).slice(0, 8) : 'N/A';
+    const timestamp = log.createdAt ? new Date(log.createdAt).toLocaleDateString() + ' ' + new Date(log.createdAt).toLocaleTimeString() : 'N/A';
+    
+    const details = [
+      ['Log ID:', logId8],
+      ['Action:', log.action || 'Unknown'],
+      ['Resource:', log.resource || 'N/A'],
+      ['Resource ID:', log.resourceId || 'N/A'],
+      ['Level:', log.level || 'info'],
+      ['Timestamp:', timestamp],
+      ['IP Address:', log.ipAddress || 'N/A'],
+      ['User Agent:', log.userAgent || 'N/A']
+    ];
+    
+    // Add details with proper formatting
+    let yPos = 60;
+    details.forEach(([label, value]) => {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, 14, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(value), 55, yPos);
+      yPos += 12;
+    });
+    
+    // Add additional information section if available
+    if (log.details && log.details !== 'No details available') {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Additional Details', 14, yPos + 10);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      let detailsText = '';
+      if (typeof log.details === 'string') {
+        detailsText = log.details;
+      } else if (typeof log.details === 'object') {
+        detailsText = JSON.stringify(log.details, null, 2);
+      }
+      
+      const splitDetails = doc.splitTextToSize(detailsText, 170);
+      doc.text(splitDetails, 14, yPos + 22);
+    }
+    
+    // Add footer with page number and generation date
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Page 1 of 1`, 14, pageHeight - 10);
+    doc.text(`Generated: ${currentDate.toISOString().split('T')[0]} ${currentDate.toTimeString().split(' ')[0]}`, doc.internal.pageSize.width - 50, pageHeight - 10);
+    
+    // Get PDF as buffer
+    const arrayBuffer = doc.output('arraybuffer');
+    const pdfBuffer = Buffer.from(arrayBuffer);
+    
+    console.log(`📧 Sending audit log email to: ${user[0].email}`);
+    
+    // Send email with retry logic
+    const emailResult = await sendAuditLogEmailWithRetry({
+      to: user[0].email,
+      auditLog: log,
+      pdfAttachment: pdfBuffer
+    });
+
+    if (emailResult.success) {
+      console.log(`✅ Audit log email sent successfully to: ${user[0].email}`);
+      res.status(200).json({
+        success: true,
+        message: 'Email sent successfully.',
+        logId: logId8
+      });
+    } else {
+      console.error('❌ Failed to send audit log email:', emailResult.error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email. Please try again.',
+        details: emailResult.error,
+        attempts: emailResult.attempts || 1
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending audit log email:', error);
+    res.status(500).json({
+      error: 'Failed to send audit log email',
       message: error.message
     });
   }
