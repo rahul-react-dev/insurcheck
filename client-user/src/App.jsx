@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { store } from './store';
 import { queryClient } from './utils/query-client';
 import { useToast } from './hooks/use-toast';
@@ -20,67 +20,24 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 
-// Navigation loader component that ensures visibility
-function NavigationLoader() {
-  const [showLoader, setShowLoader] = useState(true);
-  
-  useEffect(() => {
-    // Force loader to show for at least 300ms to ensure visibility
-    const timer = setTimeout(() => {
-      setShowLoader(false);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (!showLoader) return null;
-  return <PageLoader message="Loading page..." />;
-}
-
-// Navigation wrapper to detect route changes
-function NavigationWrapper({ children }) {
-  const location = useLocation();
-  const [isNavigating, setIsNavigating] = useState(false);
-  
-  useEffect(() => {
-    // Show loader on route change
-    setIsNavigating(true);
-    
-    // Hide loader after route has loaded and minimum display time
-    const timer = setTimeout(() => {
-      setIsNavigating(false);
-    }, 200); // Minimum loader display time
-    
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
-  
-  if (isNavigating) {
-    return <NavigationLoader />;
-  }
-  
-  return children;
-}
-
 function AppContent() {
   const { toasts, dismiss } = useToast();
 
   return (
     <div className="App">
-      <NavigationWrapper>
-        <Suspense fallback={<NavigationLoader />}>
-          <Routes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-          </Routes>
-        </Suspense>
-      </NavigationWrapper>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Homepage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+        </Routes>
+      </Suspense>
       <Toaster toasts={toasts} onDismiss={dismiss} />
     </div>
   );
