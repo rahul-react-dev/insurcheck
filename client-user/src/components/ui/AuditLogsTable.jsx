@@ -120,6 +120,13 @@ const AuditLogsTable = ({
     try {
       setExportLoading(true);
       
+      // Show sending toast immediately
+      toast({
+        type: 'info',
+        title: 'Sending Email...',
+        description: 'Preparing to send audit log details to your email address.'
+      });
+      
       // Make API request to send email
       const response = await fetch('/api/user/audit-logs/email', {
         method: 'POST',
@@ -136,7 +143,7 @@ const AuditLogsTable = ({
         toast({
           type: 'success',
           title: 'Email Sent Successfully',
-          description: 'Audit log details have been sent to your registered email address.'
+          description: 'Audit log details with PDF attachment have been sent to your registered email address.'
         });
       } else {
         throw new Error(result.message || 'Failed to send email');
@@ -145,7 +152,7 @@ const AuditLogsTable = ({
       console.error('Email audit log error:', error);
       toast({
         type: 'error',
-        title: 'Email Failed',
+        title: 'Email Failed', 
         description: error.message || 'Failed to send audit log email. Please try again.'
       });
     } finally {
