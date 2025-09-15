@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Settings, FileText, BarChart3, Bell, LogOut } from 'lucide-react';
+import { Shield, Settings, FileText, BarChart3, Bell, LogOut, Plus, MessageCircle, Sparkles } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
 import { useInactivityLogout } from '../hooks/useInactivityLogout';
 import { useAuditLogs } from '../hooks/useAuditLogs';
+import { useToast } from '../hooks/use-toast';
 import Button from '../components/ui/Button';
 import AuditLogsTable from '../components/ui/AuditLogsTable';
 
@@ -12,6 +13,7 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const { toast } = useToast();
   
   // Initialize inactivity logout
   useInactivityLogout();
@@ -33,6 +35,24 @@ const Dashboard = () => {
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
+  };
+
+  const handleStartNew = () => {
+    // Clear session data for new workflow
+    localStorage.removeItem('chatHistory');
+    localStorage.removeItem('currentWorkflow');
+    localStorage.removeItem('workflowState');
+    localStorage.removeItem('documentProcessingData');
+    
+    // Show success message
+    toast({
+      type: 'success',
+      title: 'New Session Started',
+      description: 'Previous workflow data cleared. Starting fresh!'
+    });
+    
+    // Navigate to AI chat agent
+    navigate('/ai-chat');
   };
 
   const dashboardCards = [
@@ -105,14 +125,66 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
+        {/* Welcome Section with Start New Button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-          <p className="text-gray-600">Manage your insurance policies and claims in one place.</p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
+              <p className="text-gray-600">Manage your insurance policies and claims in one place.</p>
+            </div>
+            
+            {/* Start New Button - Call to Action */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <div className="relative">
+                {/* Animated background glow */}
+                <motion.div
+                  className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-xl opacity-75 blur"
+                  animate={{
+                    opacity: [0.5, 0.8, 0.5],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                
+                {/* Main button */}
+                <Button
+                  onClick={handleStartNew}
+                  variant="primary"
+                  size="lg"
+                  className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 hover:from-blue-700 hover:via-blue-800 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-4 text-lg font-semibold"
+                  icon={<Plus className="w-6 h-6" />}
+                  data-testid="button-start-new"
+                >
+                  <span className="flex items-center space-x-2">
+                    <span>Start New</span>
+                    <Sparkles className="w-5 h-5 opacity-80" />
+                  </span>
+                </Button>
+              </div>
+              
+              {/* Helper text */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-sm text-gray-500 mt-2 text-center"
+              >
+                Begin processing a new document
+              </motion.p>
+            </motion.div>
+          </div>
         </motion.div>
 
         {/* Dashboard Cards */}
