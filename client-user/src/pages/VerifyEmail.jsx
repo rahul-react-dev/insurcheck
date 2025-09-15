@@ -8,7 +8,7 @@ import { Mail, CheckCircle, AlertCircle, Shield, Loader2, RefreshCw } from 'luci
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../contexts/ToastContext';
 import { apiRequest } from '../utils/api';
 
 const resendSchema = z.object({

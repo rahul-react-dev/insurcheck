@@ -20,7 +20,7 @@ import { useForm } from 'react-hook-form';
 import Button from './Button';
 import Input from './Input';
 import LoadingSkeleton from './LoadingSkeleton';
-import { useToast } from '../../hooks/use-toast';
+import { useToast } from '../../contexts/ToastContext';
 import { viewSingleLogAsPDF } from '../../utils/exportUtils';
 
 const AuditLogsTable = ({ 

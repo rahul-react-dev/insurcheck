@@ -16,7 +16,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../contexts/ToastContext';
 import Button from '../components/ui/Button';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 

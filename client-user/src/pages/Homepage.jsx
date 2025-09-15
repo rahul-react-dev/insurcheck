@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Shield, Users, TrendingUp, CheckCircle, ArrowRight, Star } from 'lucide-react';
 import Button from '../components/ui/Button';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../contexts/ToastContext';
 import { cn } from '../utils/cn';
 
 const Homepage = () => {

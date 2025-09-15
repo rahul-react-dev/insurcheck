@@ -12,7 +12,7 @@ import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import TenantStatusError from '../components/ui/TenantStatusError';
 import UpgradePrompt from '../components/ui/UpgradePrompt';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../contexts/ToastContext';
 import { cn } from '../utils/cn';
 
 // Enhanced validation schema for login

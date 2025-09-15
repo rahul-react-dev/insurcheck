@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense } from 'react';
 import { store } from './store';
 import { queryClient } from './utils/query-client';
-import { useToast } from './hooks/use-toast';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import { Toaster } from './components/ui/Toast';
 import PageLoader from './components/ui/PageLoader';
 import './index.css';
@@ -49,9 +49,11 @@ function App() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <AppContent />
-        </Router>
+        <ToastProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </ToastProvider>
       </QueryClientProvider>
     </Provider>
   );

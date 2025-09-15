@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../contexts/ToastContext';
 import { cn } from '../utils/cn';
 
 // Validation schema for forgot password

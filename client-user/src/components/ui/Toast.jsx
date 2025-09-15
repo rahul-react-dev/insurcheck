@@ -60,14 +60,15 @@ const Toast = ({ toast, onDismiss }) => {
 
 export const Toaster = ({ toasts, onDismiss }) => {
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            toast={toast}
-            onDismiss={onDismiss}
-          />
+          <div key={toast.id} className="pointer-events-auto">
+            <Toast
+              toast={toast}
+              onDismiss={onDismiss}
+            />
+          </div>
         ))}
       </AnimatePresence>
     </div>

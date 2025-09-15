@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
 import { useInactivityLogout } from '../hooks/useInactivityLogout';
 import { useAuditLogs } from '../hooks/useAuditLogs';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '../contexts/ToastContext';
 import Button from '../components/ui/Button';
 import AuditLogsTable from '../components/ui/AuditLogsTable';
 
