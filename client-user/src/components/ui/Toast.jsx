@@ -13,10 +13,10 @@ const Toast = ({ toast, onDismiss }) => {
   const Icon = icons[toast.type] || Info;
 
   const variants = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
+    success: 'bg-green-50 border-green-200 text-green-800 shadow-green-100',
+    error: 'bg-red-50 border-red-200 text-red-800 shadow-red-100',
+    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800 shadow-yellow-100',
+    info: 'bg-blue-50 border-blue-200 text-blue-800 shadow-blue-100',
   };
 
   return (
@@ -25,7 +25,7 @@ const Toast = ({ toast, onDismiss }) => {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -50, scale: 0.9 }}
       className={cn(
-        'relative max-w-sm w-full p-4 rounded-lg border shadow-lg',
+        'relative w-80 max-w-md p-4 rounded-lg border shadow-lg backdrop-blur-sm',
         variants[toast.type] || variants.info
       )}
     >
@@ -33,14 +33,14 @@ const Toast = ({ toast, onDismiss }) => {
         <div className="flex-shrink-0">
           <Icon className="h-5 w-5" />
         </div>
-        <div className="ml-3 w-0 flex-1">
+        <div className="ml-3 flex-1 min-w-0">
           {toast.title && (
-            <p className="text-sm font-medium">
+            <p className="text-sm font-semibold leading-tight">
               {toast.title}
             </p>
           )}
           {toast.description && (
-            <p className="mt-1 text-sm opacity-90">
+            <p className="mt-1 text-sm opacity-90 leading-relaxed">
               {toast.description}
             </p>
           )}
@@ -60,7 +60,7 @@ const Toast = ({ toast, onDismiss }) => {
 
 export const Toaster = ({ toasts, onDismiss }) => {
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none max-w-md">
       <AnimatePresence>
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
