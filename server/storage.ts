@@ -2,9 +2,9 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import ws from "ws";
-import { eq, and, or, desc, asc, count, sum, gte, lte, like, sql, isNull, isNotNull } from "drizzle-orm";
+import { eq, and, or, desc, asc, count, sum, gte, lte, like, ilike, sql, isNull, isNotNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import * as schema from "../shared/schema";
+import * as schema from "./src/schema";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -22,7 +22,7 @@ export const storage = {
     return users[0];
   },
 
-  async getUserById(id: number) {
+  async getUserById(id: string) {
     const users = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
     return users[0];
   },
@@ -36,12 +36,12 @@ export const storage = {
     return users[0];
   },
 
-  async updateUser(id: number, userData: Partial<typeof schema.users.$inferSelect>) {
+  async updateUser(id: string, userData: Partial<typeof schema.users.$inferSelect>) {
     const users = await db.update(schema.users).set(userData).where(eq(schema.users.id, id)).returning();
     return users[0];
   },
 
-  async incrementLoginAttempts(userId: number) {
+  async incrementLoginAttempts(userId: string) {
     const user = await this.getUserById(userId);
     const newAttempts = (user?.failedLoginAttempts || 0) + 1;
     const lockUntil = newAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
@@ -52,14 +52,14 @@ export const storage = {
     }).where(eq(schema.users.id, userId));
   },
 
-  async resetLoginAttempts(userId: number) {
+  async resetLoginAttempts(userId: string) {
     await db.update(schema.users).set({
       failedLoginAttempts: 0,
       accountLockedUntil: null
     }).where(eq(schema.users.id, userId));
   },
 
-  async updateLastLogin(userId: number) {
+  async updateLastLogin(userId: string) {
     await db.update(schema.users).set({
       lastLoginAt: new Date()
     }).where(eq(schema.users.id, userId));
@@ -169,9 +169,9 @@ export const storage = {
       query = query.where(and(eq(schema.activityLogs.level, 'error'), ...additionalConditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.activityLogs).where(eq(schema.activityLogs.level, 'error'));
+    let totalQuery = db.select({ count: count() }).from(schema.activityLogs).where(eq(schema.activityLogs.level, 'error'));
     if (additionalConditions.length > 0) {
-      totalQuery.where(and(eq(schema.activityLogs.level, 'error'), ...additionalConditions));
+      totalQuery = db.select({ count: count() }).from(schema.activityLogs).where(and(eq(schema.activityLogs.level, 'error'), ...additionalConditions));
     }
 
     const [data, total] = await Promise.all([
@@ -200,10 +200,9 @@ export const storage = {
       name: schema.tenants.name,
       domain: schema.tenants.domain,
       email: schema.tenants.email,
-      phone: schema.tenants.phone,
-      isActive: schema.tenants.isActive,
-      trialStartDate: schema.tenants.trialStartDate,
-      trialEndDate: schema.tenants.trialEndDate,
+      status: schema.tenants.status,
+      isTrialActive: schema.tenants.isTrialActive,
+      trialEndsAt: schema.tenants.trialEndsAt,
       createdAt: schema.tenants.createdAt,
       userCount: count(schema.users.id)
     })
@@ -224,16 +223,16 @@ export const storage = {
     }
 
     if (filters.status) {
-      conditions.push(eq(schema.tenants.isActive, filters.status === 'active'));
+      conditions.push(eq(schema.tenants.status, filters.status));
     }
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.tenants);
+    let totalQuery = db.select({ count: count() }).from(schema.tenants);
     if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
+      totalQuery = db.select({ count: count() }).from(schema.tenants).where(and(...conditions));
     }
 
     const [data, total] = await Promise.all([
@@ -278,7 +277,7 @@ export const storage = {
       firstName: schema.users.firstName,
       lastName: schema.users.lastName,
       email: schema.users.email,
-      phone: schema.users.phone,
+      phoneNumber: schema.users.phoneNumber,
       role: schema.users.role,
       isActive: schema.users.isActive,
       lastLoginAt: schema.users.lastLoginAt,
@@ -352,44 +351,43 @@ export const storage = {
   // Tenant subscriptions
   async getTenantSubscriptions(filters: any) {
     let query = db.select({
-      id: schema.tenantSubscriptions.id,
-      tenantId: schema.tenantSubscriptions.tenantId,
+      id: schema.subscriptions.id,
+      tenantId: schema.subscriptions.tenantId,
       tenantName: schema.tenants.name,
-      planId: schema.tenantSubscriptions.planId,
+      planId: schema.subscriptions.planId,
       planName: schema.subscriptionPlans.name,
       planPrice: schema.subscriptionPlans.price,
-      status: schema.tenantSubscriptions.status,
-      startDate: schema.tenantSubscriptions.startDate,
-      endDate: schema.tenantSubscriptions.endDate,
-      autoRenew: schema.tenantSubscriptions.autoRenew,
-      createdAt: schema.tenantSubscriptions.createdAt
+      status: schema.subscriptions.status,
+      startedAt: schema.subscriptions.startedAt,
+      endsAt: schema.subscriptions.endsAt,
+      createdAt: schema.subscriptions.createdAt
     })
-    .from(schema.tenantSubscriptions)
-    .leftJoin(schema.tenants, eq(schema.tenantSubscriptions.tenantId, schema.tenants.id))
-    .leftJoin(schema.subscriptionPlans, eq(schema.tenantSubscriptions.planId, schema.subscriptionPlans.id));
+    .from(schema.subscriptions)
+    .leftJoin(schema.tenants, eq(schema.subscriptions.tenantId, schema.tenants.id))
+    .leftJoin(schema.subscriptionPlans, eq(schema.subscriptions.planId, schema.subscriptionPlans.id));
 
     const conditions = [];
 
     if (filters.tenantId) {
-      conditions.push(eq(schema.tenantSubscriptions.tenantId, filters.tenantId));
+      conditions.push(eq(schema.subscriptions.tenantId, filters.tenantId));
     }
 
     if (filters.status) {
-      conditions.push(eq(schema.tenantSubscriptions.status, filters.status));
+      conditions.push(eq(schema.subscriptions.status, filters.status));
     }
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.tenantSubscriptions);
+    let totalQuery = db.select({ count: count() }).from(schema.subscriptions);
     if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
+      totalQuery = db.select({ count: count() }).from(schema.subscriptions).where(and(...conditions));
     }
 
     const [data, total] = await Promise.all([
       query
-        .orderBy(desc(schema.tenantSubscriptions.createdAt))
+        .orderBy(desc(schema.subscriptions.createdAt))
         .limit(filters.limit)
         .offset((filters.page - 1) * filters.limit),
       totalQuery
@@ -406,8 +404,8 @@ export const storage = {
     };
   },
 
-  async createTenantSubscription(subscriptionData: schema.InsertTenantSubscription) {
-    const subscriptions = await db.insert(schema.tenantSubscriptions).values(subscriptionData).returning();
+  async createTenantSubscription(subscriptionData: schema.InsertSubscription) {
+    const subscriptions = await db.insert(schema.subscriptions).values(subscriptionData).returning();
     return subscriptions[0];
   },
 
@@ -422,7 +420,7 @@ export const storage = {
       status: schema.payments.status,
       paymentMethod: schema.payments.paymentMethod,
       transactionId: schema.payments.transactionId,
-      paidAt: schema.payments.paidAt,
+      paymentDate: schema.payments.paymentDate,
       createdAt: schema.payments.createdAt
     })
     .from(schema.payments)
@@ -450,9 +448,9 @@ export const storage = {
       query = query.where(and(...conditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.payments);
+    let totalQuery = db.select({ count: count() }).from(schema.payments);
     if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
+      totalQuery = db.select({ count: count() }).from(schema.payments).where(and(...conditions));
     }
 
     const [data, total] = await Promise.all([
@@ -482,11 +480,11 @@ export const storage = {
       tenantName: schema.tenants.name,
       invoiceNumber: schema.invoices.invoiceNumber,
       amount: schema.invoices.amount,
-      tax: schema.invoices.tax,
-      total: schema.invoices.total,
+      taxAmount: schema.invoices.taxAmount,
+      totalAmount: schema.invoices.totalAmount,
       status: schema.invoices.status,
       dueDate: schema.invoices.dueDate,
-      paidAt: schema.invoices.paidAt,
+      paidDate: schema.invoices.paidDate,
       createdAt: schema.invoices.createdAt
     })
     .from(schema.invoices)
@@ -514,9 +512,9 @@ export const storage = {
       query = query.where(and(...conditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.invoices);
+    let totalQuery = db.select({ count: count() }).from(schema.invoices);
     if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
+      totalQuery = db.select({ count: count() }).from(schema.invoices).where(and(...conditions));
     }
 
     const [data, total] = await Promise.all([
@@ -543,7 +541,7 @@ export const storage = {
     return invoices[0];
   },
 
-  async updateInvoice(id: number, invoiceData: Partial<schema.Invoice>) {
+  async updateInvoice(id: string, invoiceData: Partial<schema.Invoice>) {
     const invoices = await db.update(schema.invoices).set({
       ...invoiceData,
       updatedAt: new Date()
@@ -559,8 +557,8 @@ export const storage = {
       tenantName: schema.tenants.name,
       userId: schema.activityLogs.userId,
       userEmail: schema.users.email,
-      type: schema.activityLogs.type,
-      description: schema.activityLogs.description,
+      action: schema.activityLogs.action,
+      resource: schema.activityLogs.resource,
       ipAddress: schema.activityLogs.ipAddress,
       createdAt: schema.activityLogs.createdAt
     })
@@ -578,8 +576,8 @@ export const storage = {
       conditions.push(eq(schema.activityLogs.userId, filters.userId));
     }
 
-    if (filters.type) {
-      conditions.push(eq(schema.activityLogs.type, filters.type));
+    if (filters.action) {
+      conditions.push(eq(schema.activityLogs.action, filters.action));
     }
 
     if (filters.startDate) {
@@ -594,9 +592,9 @@ export const storage = {
       query = query.where(and(...conditions));
     }
 
-    const totalQuery = db.select({ count: count() }).from(schema.activityLogs);
+    let totalQuery = db.select({ count: count() }).from(schema.activityLogs);
     if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
+      totalQuery = db.select({ count: count() }).from(schema.activityLogs).where(and(...conditions));
     }
 
     const [data, total] = await Promise.all([

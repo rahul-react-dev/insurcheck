@@ -8,7 +8,7 @@ import {
   subscriptionPlans,
   payments,
   invoices
-} from '../shared/schema.js';
+} from './src/schema.ts';
 import bcrypt from 'bcrypt';
 
 async function seedTestData() {
