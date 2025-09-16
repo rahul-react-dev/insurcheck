@@ -4,32 +4,58 @@
  */
 
 import express from 'express';
-import { verifyWebhookSignature } from '../../services/stripeService.js';
+import rateLimit from 'express-rate-limit';
+import { verifyWebhookSignature } from '../services/stripeService.js';
 import { db } from '../../db.ts';
-import { subscriptions } from '@shared/schema';
+import { subscriptions } from '../schema.ts';
 import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
-// Webhook endpoint secret (should be set in environment)
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_webhook_secret';
+// Validate webhook secret is present - CRITICAL for security
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
-console.log('🔑 Stripe webhook secret loaded:', STRIPE_WEBHOOK_SECRET ? `Present (${STRIPE_WEBHOOK_SECRET.substring(0, 15)}...)` : 'Missing');
+if (!STRIPE_WEBHOOK_SECRET) {
+  console.error('❌ CRITICAL: STRIPE_WEBHOOK_SECRET is missing. This is a production-blocking security vulnerability.');
+  throw new Error('STRIPE_WEBHOOK_SECRET environment variable is required for webhook security');
+}
+
+// Rate limiting for webhook endpoint to prevent abuse
+const webhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Allow up to 100 webhook requests per window
+  message: 'Too many webhook requests',
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Use default key generator for proper IPv6 support
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return false;
+  }
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  console.log('🔑 Stripe webhook secret loaded: Present');
+}
 
 /**
  * Handle Stripe webhook events
  * Raw body parser middleware is required for webhook signature verification
  */
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+router.post('/webhook', webhookLimiter, express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const payload = req.body;
 
-  console.log('📨 Received Stripe webhook');
-  console.log('🔍 Webhook signature header:', sig ? 'Present' : 'Missing');
-  console.log('📦 Webhook payload size:', payload ? payload.length : 0);
-  console.log('🕒 Webhook timestamp:', new Date().toISOString());
-  console.log('📝 Full request headers:', JSON.stringify(req.headers, null, 2));
-  console.log('📄 Raw payload preview:', payload ? payload.toString().substring(0, 200) + '...' : 'Empty');
+  // Only log basic webhook info, never headers or payload in production
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('📨 Received Stripe webhook');
+    console.log('🔍 Webhook signature header:', sig ? 'Present' : 'Missing');
+    console.log('📦 Webhook payload size:', payload ? payload.length : 0);
+    console.log('🕒 Webhook timestamp:', new Date().toISOString());
+  } else {
+    // Production: minimal logging only
+    console.log(`📨 Webhook received at ${new Date().toISOString()}`);
+  }
 
   // Verify webhook signature
   const verification = verifyWebhookSignature(payload, sig, STRIPE_WEBHOOK_SECRET);
@@ -40,7 +66,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   }
 
   const event = verification.event;
-  console.log(`🎯 Processing webhook event: ${event.type}`);
+  
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🎯 Processing webhook event: ${event.type}`);
+  }
 
   try {
     switch (event.type) {
@@ -77,22 +106,26 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
  */
 async function handlePaymentSuccess(paymentIntent) {
   try {
-    console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
-    console.log(`💰 Payment amount: $${(paymentIntent.amount / 100).toFixed(2)}`);
-    console.log(`💳 Payment status: ${paymentIntent.status}`);
-    console.log(`📋 Payment Intent Metadata:`, JSON.stringify(paymentIntent.metadata, null, 2));
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
+      console.log(`💰 Payment amount: $${(paymentIntent.amount / 100).toFixed(2)}`);
+      console.log(`💳 Payment status: ${paymentIntent.status}`);
+      console.log(`📋 Payment Intent Metadata:`, JSON.stringify(paymentIntent.metadata, null, 2));
+    }
     
     const metadata = paymentIntent.metadata;
     
     if (metadata.source === 'insurcheck_subscription_upgrade') {
       const { tenantId, newPlanId, subscriptionId } = metadata;
       
-      console.log(`🔄 Processing subscription upgrade:`, {
-        tenantId,
-        newPlanId, 
-        subscriptionId,
-        paymentIntentId: paymentIntent.id
-      });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🔄 Processing subscription upgrade:`, {
+          tenantId,
+          newPlanId, 
+          subscriptionId,
+          paymentIntentId: paymentIntent.id
+        });
+      }
       
       if (tenantId && newPlanId && subscriptionId) {
         // Update subscription in database
@@ -106,8 +139,10 @@ async function handlePaymentSuccess(paymentIntent) {
           .where(eq(subscriptions.id, parseInt(subscriptionId)))
           .returning();
           
-        console.log(`✅ Subscription updated successfully:`, updateResult);
-        console.log(`🎉 Subscription ${subscriptionId} upgraded to plan ${newPlanId} for tenant ${tenantId}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`✅ Subscription updated successfully:`, updateResult);
+          console.log(`🎉 Subscription ${subscriptionId} upgraded to plan ${newPlanId} for tenant ${tenantId}`);
+        }
       } else {
         console.error(`❌ Missing required metadata fields:`, {
           tenantId: !!tenantId,
@@ -116,7 +151,9 @@ async function handlePaymentSuccess(paymentIntent) {
         });
       }
     } else {
-      console.log(`ℹ️ Payment intent not for subscription upgrade. Source: ${metadata.source}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`ℹ️ Payment intent not for subscription upgrade. Source: ${metadata.source}`);
+      }
     }
     
   } catch (error) {
@@ -131,6 +168,7 @@ async function handlePaymentSuccess(paymentIntent) {
  */
 async function handlePaymentFailure(paymentIntent) {
   try {
+    // Always log payment failures as they are critical for business operations
     console.log(`❌ Payment failed: ${paymentIntent.id}`);
     
     const metadata = paymentIntent.metadata;
@@ -154,7 +192,9 @@ async function handlePaymentFailure(paymentIntent) {
  */
 async function handleSubscriptionUpdate(subscription) {
   try {
-    console.log(`🔄 Subscription updated: ${subscription.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🔄 Subscription updated: ${subscription.id}`);
+    }
     // Handle subscription modifications if using Stripe subscriptions
   } catch (error) {
     console.error('❌ Error handling subscription update:', error);
@@ -167,7 +207,9 @@ async function handleSubscriptionUpdate(subscription) {
  */
 async function handleInvoicePaymentSuccess(invoice) {
   try {
-    console.log(`💰 Invoice payment succeeded: ${invoice.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`💰 Invoice payment succeeded: ${invoice.id}`);
+    }
     // Handle recurring billing if implemented
   } catch (error) {
     console.error('❌ Error handling invoice payment:', error);

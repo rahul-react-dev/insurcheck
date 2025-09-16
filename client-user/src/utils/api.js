@@ -3,6 +3,13 @@ import axios from 'axios';
 // API configuration for user frontend
 // Use relative URLs since Vite proxy will handle the backend forwarding
 const getApiBaseUrl = () => {
+  // First priority: Use environment variable if available (for independent deployment)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    console.log('[API] Using environment API URL:', import.meta.env.VITE_API_BASE_URL);
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Second priority: Dynamic detection for development
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
@@ -14,7 +21,7 @@ const getApiBaseUrl = () => {
       return ''; // Empty string means relative to current origin
     }
     
-    // Production - same origin
+    // Production fallback - same origin
     return window.location.origin;
   }
   

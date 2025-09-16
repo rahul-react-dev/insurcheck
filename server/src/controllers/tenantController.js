@@ -1,7 +1,7 @@
 
 import { validationResult } from 'express-validator';
 import { db } from '../../db.ts';
-import { tenants, users } from '@shared/schema';
+import { tenants, users } from '../schema.ts';
 import { eq, ilike, and, desc, count, sql } from 'drizzle-orm';
 
 export const getTenants = async (req, res) => {

@@ -1,7 +1,7 @@
 
 import { sql } from 'drizzle-orm';
 import { db } from '../db.ts';
-import { users, tenants } from '../../shared/schema.ts';
+import { users, tenants } from '../src/schema.ts';
 
 const initDatabase = async () => {
   try {

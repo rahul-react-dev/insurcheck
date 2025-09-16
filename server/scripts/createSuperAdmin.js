@@ -1,7 +1,7 @@
 
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
-import { db } from '../db.js';
+import { db } from '../db.ts';
 
 const createSuperAdmin = async () => {
   try {

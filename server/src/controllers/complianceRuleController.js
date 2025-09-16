@@ -1,6 +1,6 @@
 import { eq, desc, like, or, and, count } from 'drizzle-orm';
-import { complianceRules, complianceRuleAuditLogs, users, documents } from '../../../shared/schema.ts';
-import { db } from '../../db.js';
+import { complianceRules, complianceRuleAuditLogs, users, documents } from '../schema.ts';
+import { db } from '../../db.ts';
 
 // Helper function to generate unique rule ID
 const generateRuleId = async (tenantId, prefix = 'RULE') => {

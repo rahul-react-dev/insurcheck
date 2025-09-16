@@ -1,6 +1,6 @@
 import express from 'express';
-import { db } from '../../db.js';
-import { users, tenants } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { users, tenants } from '../schema.ts';
 import { eq, desc, like, and, sql, count } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth.js';
 import { adminRoleMiddleware } from '../middleware/adminRole.js';

@@ -1,10 +1,13 @@
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { db } from './db';
-import routes from './routes.js';
+import healthRoutes from './src/routes/health.js';
+import tenantRoutes from './src/routes/tenants.js';
 import authRoutes from './src/routes/auth.js';
 import adminUserRoutes from './src/routes/adminUsers.js';
 import complianceRuleRoutes from './src/routes/complianceRules.js';
@@ -23,38 +26,75 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Rate limiting for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: 'Too many authentication attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to auth routes
+app.use('/api/auth', authLimiter);
+
 // Middleware - Enhanced CORS configuration
 app.use(cors({
   origin: function (origin: any, callback: any) {
-    console.log('[CORS] Checking origin:', origin);
+    // Only log CORS details in development
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[CORS] Checking origin:', origin);
+    }
     
     // Allow requests with no origin (mobile apps, curl requests, etc.)
     if (!origin) {
-      console.log('[CORS] No origin - allowing');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[CORS] No origin - allowing');
+      }
       return callback(null, true);
     }
     
-    // Allow Replit dev origins (including janeway.replit.dev)
-    if (origin && (origin.includes('.replit.dev') || origin.includes('.repl.co'))) {
-      console.log('[CORS] Replit domain detected - allowing:', origin);
+    // Allow Replit dev origins ONLY in development
+    if (process.env.NODE_ENV === 'development' && origin && (origin.includes('.replit.dev') || origin.includes('.repl.co'))) {
+      console.log('[CORS] Replit domain detected (dev mode) - allowing:', origin);
       return callback(null, true);
     }
     
     // Allow localhost origins in development
     if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-      console.log('[CORS] Localhost domain detected - allowing:', origin);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[CORS] Localhost domain detected - allowing:', origin);
+      }
       return callback(null, true);
     }
     
-    // Allow specific production domains
+    // Allow specific production domains from environment
+    const corsOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [];
     const allowedOrigins = [
       'http://localhost:3000',
-      'http://localhost:3001', 
-      'https://insurcheck-admin.replit.app'
-    ];
+      'http://localhost:3001',
+      process.env.CLIENT_ADMIN_URL,
+      process.env.CLIENT_USER_URL,
+      ...corsOrigins
+    ].filter(Boolean); // Remove undefined values
     
     if (allowedOrigins.includes(origin)) {
-      console.log('[CORS] Allowed origin matched - allowing:', origin);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[CORS] Allowed origin matched - allowing:', origin);
+      }
       return callback(null, true);
     }
     
@@ -64,7 +104,9 @@ app.use(cors({
       return callback(null, true);
     }
     
-    console.log('[CORS] Origin not allowed:', origin);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[CORS] Origin not allowed:', origin);
+    }
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -79,34 +121,16 @@ app.use('/api/stripe', stripeWebhookRoutes);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Handle preflight requests
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  console.log('[CORS] Preflight request from origin:', origin);
-  
-  // Set CORS headers for preflight
-  res.header('Access-Control-Allow-Origin', origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
 
-// Logging middleware
+// Logging middleware (sanitized for production)
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  }
   next();
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
-  });
-});
+// Health endpoint now handled by modular health routes
 
 // Auth routes
 app.use('/api/auth', authRoutes);
@@ -123,11 +147,15 @@ app.use('/api/admin/subscription', adminSubscriptionRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api/billing', usageRoutes);
 
-// API routes
-app.use('/api', routes);
+// System routes
+app.use('/api/health', healthRoutes);
 
-// Serve static files from client-user build directory (switched for testing user panel)
-app.use(express.static(path.join(__dirname, '../client-user/dist')));
+// Super Admin routes
+app.use('/api/tenants', tenantRoutes);
+
+// Static file serving removed for independent deployment
+// Each client should be served from its own hosting (Vercel, Netlify, etc.)
+// For local development, run each client separately with 'npm run dev'
 
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -138,14 +166,99 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Handle SPA routing - serve index.html for non-API routes
+// API-only server - no SPA fallback routing
+// Clients handle their own routing when served independently
 app.get('*', (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     res.status(404).json({ error: 'API route not found' });
   } else {
-    res.sendFile(path.join(__dirname, '../client-user/dist/index.html'));
+    res.status(404).json({ 
+      error: 'Not found',
+      message: 'This is an API-only server. Please access the frontend applications separately.'
+    });
   }
 });
+
+// Validate required environment variables
+function validateRequiredSecrets() {
+  // Core required secrets for all deployments
+  const requiredSecrets = [
+    'JWT_SECRET',
+    'DATABASE_URL', // PostgreSQL connection required
+  ];
+  
+  // Payment processing secrets (critical for subscription functionality)
+  const paymentSecrets = [
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET'
+  ];
+  
+  // Email service secrets (critical for user communication)
+  const emailSecrets = [
+    'SENDGRID_API_KEY',
+    'SENDGRID_FROM_EMAIL'
+  ];
+  
+  // AWS secrets (required if S3 features are enabled)
+  const awsSecrets = [
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_S3_BUCKET_NAME'
+  ];
+  
+  // Check core secrets first (always required)
+  const missingCoreSecrets = requiredSecrets.filter(secret => !process.env[secret]);
+  
+  // Check payment secrets (required for production)
+  const missingPaymentSecrets = paymentSecrets.filter(secret => !process.env[secret]);
+  
+  // Check email secrets (required for user operations)
+  const missingEmailSecrets = emailSecrets.filter(secret => !process.env[secret]);
+  
+  // Check AWS secrets (conditionally required)
+  const missingAwsSecrets = awsSecrets.filter(secret => !process.env[secret]);
+  const hasAnyAwsSecret = awsSecrets.some(secret => process.env[secret]);
+  
+  // Collect all missing secrets
+  const allMissingSecrets = [
+    ...missingCoreSecrets,
+    ...missingPaymentSecrets,
+    ...missingEmailSecrets
+  ];
+  
+  // Add AWS secrets to missing list if any AWS secret is present (indicating S3 is intended to be used)
+  if (hasAnyAwsSecret && missingAwsSecrets.length > 0) {
+    allMissingSecrets.push(...missingAwsSecrets);
+  }
+  
+  if (allMissingSecrets.length > 0) {
+    console.error('❌ CRITICAL: Missing required environment variables for production deployment:');
+    console.error('Core secrets:', missingCoreSecrets.length > 0 ? missingCoreSecrets : '✅ All present');
+    console.error('Payment secrets:', missingPaymentSecrets.length > 0 ? missingPaymentSecrets : '✅ All present');
+    console.error('Email secrets:', missingEmailSecrets.length > 0 ? missingEmailSecrets : '✅ All present');
+    
+    if (hasAnyAwsSecret) {
+      console.error('AWS secrets (S3 detected):', missingAwsSecrets.length > 0 ? missingAwsSecrets : '✅ All present');
+    } else {
+      console.error('AWS secrets: ⚠️ Not configured (S3 features disabled)');
+    }
+    
+    console.error('❌ Server cannot start without required secrets. Please set:', allMissingSecrets.join(', '));
+    console.error('❌ This is a production-blocking security issue.');
+    process.exit(1);
+  }
+  
+  console.log('✅ All required secrets are present and validated');
+  console.log('🔒 Core secrets: ✅');
+  console.log('💳 Payment secrets: ✅');
+  console.log('📧 Email secrets: ✅');
+  
+  if (hasAnyAwsSecret) {
+    console.log('☁️ AWS S3 secrets: ✅');
+  } else {
+    console.log('☁️ AWS S3: Not configured (optional)');
+  }
+}
 
 // Database connection test
 async function testDatabaseConnection() {
@@ -161,16 +274,21 @@ async function testDatabaseConnection() {
 // Start server
 async function startServer() {
   try {
+    // Validate required secrets first
+    validateRequiredSecrets();
+    
     await testDatabaseConnection();
 
-    // Environment variables logging
-    console.log('🔑 JWT_SECRET loaded:', process.env.JWT_SECRET ? 'Present' : 'Missing');
-    console.log('📧 SENDGRID_API_KEY loaded:', process.env.SENDGRID_API_KEY ? 'Present' : 'Missing');
-    console.log('📬 SENDGRID_FROM_EMAIL:', process.env.SENDGRID_FROM_EMAIL || 'Not set');
-    console.log('🌐 FRONTEND_URL:', process.env.FRONTEND_URL || 'Not set');
+    // Environment variables logging (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔑 JWT_SECRET loaded:', process.env.JWT_SECRET ? 'Present' : 'Missing');
+      console.log('📧 SENDGRID_API_KEY loaded:', process.env.SENDGRID_API_KEY ? 'Present' : 'Missing');
+      console.log('📬 SENDGRID_FROM_EMAIL:', process.env.SENDGRID_FROM_EMAIL ? 'Present' : 'Missing');
+      console.log('🌐 FRONTEND_URL:', process.env.FRONTEND_URL ? 'Present' : 'Missing');
+    }
 
     // Initialize email service
-    const emailService = await import('./services/emailService.js');
+    const emailService = await import('./src/services/emailService.js');
     emailService.initializeEmailService();
     
     app.listen(PORT, '0.0.0.0', () => {

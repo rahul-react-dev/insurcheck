@@ -3,10 +3,10 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import { config } from '../config/env.js';
 import { db } from '../../db.ts';
-import { users, tenants } from '@shared/schema';
+import { users, tenants } from '../schema.ts';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
-import { sendEmailVerification, sendPasswordResetEmail } from '../../services/emailService.js';
+import { sendEmailVerification, sendPasswordResetEmail } from '../services/emailService.js';
 
 export const login = async (req, res) => {
   try {

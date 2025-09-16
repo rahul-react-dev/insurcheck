@@ -1,6 +1,6 @@
 import { eq, desc, like, ilike, or, and, count, sql } from 'drizzle-orm';
-import { notificationTemplates, notificationTemplateAuditLogs, users } from '../../../shared/schema.ts';
-import { db } from '../../db.js';
+import { notificationTemplates, notificationTemplateAuditLogs, users } from '../schema.ts';
+import { db } from '../../db.ts';
 
 // Helper function to log template changes for audit
 const logTemplateChange = async (templateId, action, oldValues, newValues, userId, tenantId, ipAddress, userAgent, changeReason = null) => {

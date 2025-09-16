@@ -732,13 +732,11 @@ export const storage = {
         db.insert(schema.systemConfig).values({
           key,
           value: value as any,
-          updatedBy,
           updatedAt: new Date()
         }).onConflictDoUpdate({
           target: schema.systemConfig.key,
           set: {
             value: value as any,
-            updatedBy,
             updatedAt: new Date()
           }
         })

@@ -1,5 +1,5 @@
-import { db } from '../../db.js';
-import { usageEvents, usageLimits, subscriptions } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { usageEvents, usageLimits, subscriptions } from '../schema.ts';
 import { eq, and } from 'drizzle-orm';
 
 // Helper function to get current billing period

@@ -1,9 +1,33 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { body } from 'express-validator';
 import * as authController from '../controllers/authController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Enhanced rate limiting for password-related endpoints
+const passwordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Very strict: only 3 password reset attempts per window
+  message: 'Too many password reset attempts. Please wait 15 minutes before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Use default key generator for proper IPv6 support
+  skip: (req) => {
+    // Skip rate limiting for health checks and other non-sensitive operations
+    return false;
+  }
+});
+
+// Rate limiter for token validation (slightly more permissive)
+const tokenValidationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes  
+  max: 10, // Allow more validation attempts
+  message: 'Too many token validation attempts. Please wait 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Validation rules
 const loginValidation = [
@@ -33,19 +57,19 @@ router.post('/admin/login', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], authController.adminLogin);
 
-router.post('/admin/forgot-password', [
+router.post('/admin/forgot-password', passwordLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.adminForgotPassword);
 
 // User password reset routes
-router.post('/forgot-password', [
+router.post('/forgot-password', passwordLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.userForgotPassword);
 
 // Validate reset token
-router.get('/validate-reset-token', authController.validateResetToken);
+router.get('/validate-reset-token', tokenValidationLimiter, authController.validateResetToken);
 
-router.post('/reset-password', [
+router.post('/reset-password', passwordLimiter, [
   body('token').notEmpty().withMessage('Reset token is required'),
   body('password')
     .isLength({ min: 10 }).withMessage('Password must be at least 10 characters')
@@ -59,7 +83,7 @@ router.post('/admin-login', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], authController.adminLogin);
 
-router.post('/admin-forgot-password', [
+router.post('/admin-forgot-password', passwordLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.adminForgotPassword);
 

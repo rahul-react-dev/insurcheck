@@ -1,9 +1,9 @@
 import { db } from '../../db.ts';
-import { users, tenants, subscriptions, subscriptionPlans } from '@shared/schema';
+import { users, tenants, subscriptions, subscriptionPlans } from '../schema.ts';
 import { eq, like, or, and, desc, asc, count, gte } from 'drizzle-orm';
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
-import { sendUserInvitation } from '../../services/emailService.js';
+import { sendUserInvitation } from '../services/emailService.js';
 import XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';

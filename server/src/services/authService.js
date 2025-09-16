@@ -1,6 +1,6 @@
 
-import { db } from '../../db.js';
-import { users, tenants } from '@shared/schema';
+import { db } from '../../db.ts';
+import { users, tenants } from '../schema.ts';
 import { eq, and } from 'drizzle-orm';
 
 export class AuthService {

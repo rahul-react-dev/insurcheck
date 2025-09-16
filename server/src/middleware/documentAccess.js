@@ -1,5 +1,5 @@
-import { db } from '../../db.js';
-import { tenants } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { tenants } from '../schema.ts';
 import { eq } from 'drizzle-orm';
 
 /**

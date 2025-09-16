@@ -1,11 +1,11 @@
 import { db } from '../../db.ts';
-import { subscriptions, subscriptionPlans, users } from '@shared/schema';
+import { subscriptions, subscriptionPlans, users } from '../schema.ts';
 import { eq, and, count } from 'drizzle-orm';
 import { 
   createPaymentIntent, 
   createOrGetCustomer, 
   calculateProratedAmount 
-} from '../../services/stripeService.js';
+} from '../services/stripeService.js';
 
 // Get current subscription for the tenant admin
 export const getCurrentSubscription = async (req, res) => {

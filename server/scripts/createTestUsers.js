@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { sql } from 'drizzle-orm';
 import { db } from '../db.ts';
-import { users, tenants, insertUserSchema } from '@shared/schema';
+import { users, tenants, insertUserSchema } from '../src/schema.ts';
 import { eq } from 'drizzle-orm';
 
 const createTestUsers = async () => {

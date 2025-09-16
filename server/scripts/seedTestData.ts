@@ -10,7 +10,7 @@ import {
   activityLogs, 
   systemConfig,
   systemMetrics
-} from '../../shared/schema';
+} from '../src/schema.ts';
 import bcrypt from 'bcryptjs';
 
 async function seedTestData() {

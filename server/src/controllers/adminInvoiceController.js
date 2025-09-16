@@ -1,5 +1,5 @@
-import { db } from '../../db.js';
-import { invoices, tenants, users, complianceRuleAuditLogs, subscriptionPlans, subscriptions } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { invoices, tenants, users, complianceRuleAuditLogs, subscriptionPlans, subscriptions } from '../schema.ts';
 import { eq, and, like, desc, asc, count, sql, or } from 'drizzle-orm';
 
 // Get invoices for tenant admin with enhanced filtering and statistics

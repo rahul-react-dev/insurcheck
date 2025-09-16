@@ -1,5 +1,5 @@
 
-import { db } from '../db.js';
+import { db } from '../db.ts';
 import { sql } from 'drizzle-orm';
 
 async function initializeDatabase() {

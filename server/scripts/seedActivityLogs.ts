@@ -1,6 +1,6 @@
 
-import { db } from '../db.js';
-import { activityLogs } from '../../shared/schema.js';
+import { db } from '../db.ts';
+import { activityLogs } from '../src/schema.ts';
 
 async function seedActivityLogs() {
   try {

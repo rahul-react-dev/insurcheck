@@ -1,7 +1,7 @@
 
-import { db } from '../db.js';
+import { db } from '../db.ts';
 import { sql } from 'drizzle-orm';
-import * as schema from '../../shared/schema.js';
+import * as schema from '../src/schema.ts';
 
 const reviewDatabase = async () => {
   try {

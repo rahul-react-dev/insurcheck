@@ -1,7 +1,7 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "../../shared/schema";
+import * as schema from "../src/schema.ts";
 import bcrypt from "bcrypt";
 
 const connection = postgres(process.env.DATABASE_URL!);
@@ -218,7 +218,7 @@ async function initFullSchema() {
       }
     ];
 
-    const createdSubscriptions = await db.insert(schema.tenantSubscriptions).values(tenantSubscriptions).returning();
+    const createdSubscriptions = await db.insert(schema.subscriptions).values(tenantSubscriptions).returning();
     console.log(`✅ Created ${createdSubscriptions.length} tenant subscriptions`);
 
     // Create sample payments
@@ -250,15 +250,17 @@ async function initFullSchema() {
     // Create sample invoices
     const sampleInvoices = [
       {
+        invoiceNumber: "INV-2024-001",
         tenantId: createdTenants[0].id,
         subscriptionId: createdSubscriptions[0].id,
-        invoiceNumber: "INV-2024-001",
         amount: "79.99",
-        tax: "6.40",
-        total: "86.39",
+        taxAmount: "6.40",
+        totalAmount: "86.39",
         status: "paid" as const,
+        issueDate: new Date(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        paidAt: new Date(),
+        billingPeriodStart: new Date(),
+        billingPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         items: [
           {
             description: "Premium Plan - Monthly",

@@ -1,5 +1,5 @@
-import { db } from '../../db.js';
-import { usageEvents, usageSummaries, tenants, users } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { usageEvents, usageSummaries, tenants, users } from '../schema.ts';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 
 // Export usage data in various formats

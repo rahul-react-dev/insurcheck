@@ -1,14 +1,14 @@
 import { S3Client, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { fileTypeFromBuffer } from 'file-type';
-import { config } from '../src/config/env.js';
+import { config } from '../config/env.js';
 
 // Initialize S3 client with proper credential validation
 const awsAccessKeyId = config.awsAccessKeyId || process.env.AWS_ACCESS_KEY_ID;
 const awsSecretAccessKey = config.awsSecretAccessKey || process.env.AWS_SECRET_ACCESS_KEY;
 const awsRegion = config.awsRegion || process.env.AWS_REGION || 'us-east-1';
 
-console.log(`🔑 AWS Credentials - AccessKeyId: ${awsAccessKeyId}, SecretKey: ${awsSecretAccessKey ? '[HIDDEN]' : 'MISSING'}`);
+console.log(`🔑 AWS Credentials - AccessKeyId: ${awsAccessKeyId ? 'Present' : 'Missing'}, SecretKey: ${awsSecretAccessKey ? 'Present' : 'Missing'}`);
 
 const s3Client = new S3Client({
   region: awsRegion,

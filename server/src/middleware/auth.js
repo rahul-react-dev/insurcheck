@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { db } from '../../db.js';
-import { users, tenants } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { users, tenants } from '../schema.ts';
 import { eq } from 'drizzle-orm';
 import { config } from '../config/env.js';
 
@@ -115,4 +115,23 @@ export const authMiddleware = async (req, res, next) => {
       message: 'Authentication error'
     });
   }
+};
+
+// Super admin role check middleware
+export const superAdminOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'User not authenticated'
+    });
+  }
+
+  if (req.user.role !== 'super-admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Super admin access required'
+    });
+  }
+
+  next();
 };

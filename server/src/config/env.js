@@ -4,13 +4,13 @@ import path from 'path';
 // Load .env from server directory
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') });
 console.log('🔧 Loading environment variables...');
-console.log('AWS_S3_BUCKET_NAME from env:', process.env.AWS_S3_BUCKET_NAME);
-console.log('AWS_ACCESS_KEY_ID from env:', process.env.AWS_ACCESS_KEY_ID);
+console.log('AWS_S3_BUCKET_NAME:', process.env.AWS_S3_BUCKET_NAME ? 'Present' : 'Missing');
+console.log('AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'Present' : 'Missing');
 console.log('Current working directory:', process.cwd());
 
 export const config = {
   port: process.env.PORT || 5000,
-  jwtSecret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+  jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 12,
   nodeEnv: process.env.NODE_ENV || 'development',

@@ -1,5 +1,5 @@
-import { db } from '../../db.js';
-import { usageEvents, usageSummaries, usageLimits, subscriptionPlans, subscriptions, invoices } from '../../../shared/schema.js';
+import { db } from '../../db.ts';
+import { usageEvents, usageSummaries, usageLimits, subscriptionPlans, subscriptions, invoices } from '../schema.ts';
 import { eq, and, gte, lte, sql, sum } from 'drizzle-orm';
 
 // Calculate usage-based billing for a tenant
