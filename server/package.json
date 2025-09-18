@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/server.js",
+    "dev": "tsx index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
     "seed": "tsx scripts/seedTestData.ts"
