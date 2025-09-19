@@ -1584,9 +1584,26 @@ router.get('/super-admin/invoices', authenticateToken, requireSuperAdmin, async 
       endDate = ''
     } = req.query;
 
+    // Check if invoices table has any structure by trying a simple count first
+    const tableCheck = await db.execute(sql`SELECT COUNT(*) FROM invoices`).catch(() => null);
+    
+    if (!tableCheck) {
+      // Table doesn't exist or is inaccessible, return empty result
+      console.log('⚠️ Invoices table is not accessible, returning empty result');
+      return res.json({
+        invoices: [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: 0,
+          totalPages: 0
+        }
+      });
+    }
+
     const offset = (parseInt(page) - 1) * parseInt(limit);
     
-    // Build query conditions
+    // Build query conditions safely
     let query = db.select({
       id: invoices.id,
       invoiceNumber: invoices.invoiceNumber,
@@ -3928,7 +3945,7 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
     const monthlyUploadsData = await db
       .select({
         tenantName: tenants.name,
-        month: sql`TO_CHAR(${documents.createdAt}, 'Mon')`,
+        month: sql`TO_CHAR(${documents.createdAt}::timestamp, 'Mon')`,
         uploads: count()
       })
       .from(documents)
@@ -3936,27 +3953,27 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
       .where(and(
         eq(documents.status, 'active'),
         ne(tenants.status, 'deleted'),
-        gte(documents.createdAt, sixMonthsAgo)
+        sql`${documents.createdAt}::timestamp >= ${sixMonthsAgo}`
       ))
-      .groupBy(tenants.name, sql`TO_CHAR(${documents.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${documents.createdAt})`)
-      .orderBy(sql`EXTRACT(MONTH FROM ${documents.createdAt})`);
+      .groupBy(tenants.name, sql`TO_CHAR(${documents.createdAt}::timestamp, 'Mon')`, sql`EXTRACT(MONTH FROM ${documents.createdAt}::timestamp)`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${documents.createdAt}::timestamp)`);
 
     // Query 4: Compliance trends (weekly document processing)
     const complianceTrendsData = await db
       .select({
-        period: sql`'Week ' || EXTRACT(WEEK FROM ${documents.createdAt})::text`,
+        period: sql`'Week ' || EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)::text`,
         total: count(),
-        week: sql`EXTRACT(WEEK FROM ${documents.createdAt})`
+        week: sql`EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)`
       })
       .from(documents)
       .leftJoin(tenants, eq(documents.tenantId, tenants.id))
       .where(and(
         eq(documents.status, 'active'),
         ne(tenants.status, 'deleted'),
-        gte(documents.createdAt, fourWeeksAgo)
+        sql`${documents.createdAt}::timestamp >= ${fourWeeksAgo}`
       ))
-      .groupBy(sql`EXTRACT(WEEK FROM ${documents.createdAt})`)
-      .orderBy(sql`EXTRACT(WEEK FROM ${documents.createdAt})`);
+      .groupBy(sql`EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)`)
+      .orderBy(sql`EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)`);
 
     // Query 5: Tenant performance overview
     const tenantPerformanceData = await db
