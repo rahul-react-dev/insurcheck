@@ -4,15 +4,22 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // Only localhost uses relative URLs for local development
+    // Check if we're on production domains first
+    if (hostname.includes('insurcheck.ai')) {
+      console.log('[API] Using production dev API endpoint for production domain:', hostname);
+      return 'https://dev-api.insurcheck.ai';
+    }
+    
+    // Local development (localhost, Replit) - use relative URLs
     // The Vite proxy will forward /api requests to localhost:5000
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      console.log('[API] Using relative URL with Vite proxy (localhost)');
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
+        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
+      console.log('[API] Using relative URL with Vite proxy (local/replit):', hostname);
       return ''; // Empty string means relative to current origin
     }
     
-    // All non-localhost environments use dev API endpoint
-    console.log('[API] Using production dev API endpoint for hostname:', hostname);
+    // Fallback for other domains - use dev API endpoint
+    console.log('[API] Using production dev API endpoint for other domain:', hostname);
     return 'https://dev-api.insurcheck.ai';
   }
   
