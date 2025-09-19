@@ -14,8 +14,8 @@ const getApiBaseUrl = () => {
       return ''; // Empty string means relative to current origin
     }
     
-    // Production - same origin
-    return window.location.origin;
+    // Production - use external API
+    return 'https://dev-api.insurcheck.ai';
   }
   
   // Fallback for server-side rendering
@@ -56,11 +56,29 @@ api.interceptors.response.use(
   (error) => {
     console.error('API Response error:', error);
 
-    // Don't redirect on login page errors
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
-      localStorage.removeItem('token');
-      // Only redirect if not on login page
-      // window.location.href = '/login';
+    // Handle 401 Unauthorized - redirect to login
+    if (error.response?.status === 401) {
+      const errorMessage = error.response?.data?.message || '';
+      // Check for specific unauthorized messages or any 401
+      if (errorMessage.toLowerCase().includes('invalid token') || 
+          errorMessage.toLowerCase().includes('user inactive') ||
+          errorMessage.toLowerCase().includes('unauthorized') ||
+          error.response?.status === 401) {
+        console.log('[API] 401 Unauthorized - redirecting to login');
+        
+        // Clear stored tokens
+        localStorage.removeItem('token');
+        localStorage.removeItem('sessionType');
+        localStorage.removeItem('sessionExpiry');
+        localStorage.removeItem('lastActivity');
+        
+        // Redirect to login page (avoid if already on login)
+        if (!window.location.pathname.includes('/login') && 
+            !window.location.pathname.includes('/auth')) {
+          window.location.href = '/login';
+          return Promise.reject(error); // Still reject but redirect handles the flow
+        }
+      }
     }
 
     // Return a properly formatted error

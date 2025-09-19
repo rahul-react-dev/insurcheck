@@ -12,8 +12,8 @@ const getApiBaseUrl = () => {
       return ''; // Empty string means relative to current origin
     }
     
-    // Production - same origin
-    return window.location.origin;
+    // Production - use external API
+    return 'https://dev-api.insurcheck.ai';
   }
   
   // Fallback for server-side rendering
@@ -75,6 +75,27 @@ export const apiCall = async (endpoint, options = {}) => {
     console.error('[API] Error response:', error);
     console.error('[API] URL:', fullUrl);
     console.error('[API] Status:', response.status);
+    
+    // Handle 401 Unauthorized - redirect to login
+    if (response.status === 401) {
+      const errorMessage = error.message || '';
+      // Check for specific unauthorized messages
+      if (errorMessage.toLowerCase().includes('invalid token') || 
+          errorMessage.toLowerCase().includes('user inactive') ||
+          errorMessage.toLowerCase().includes('unauthorized')) {
+        console.log('[API] 401 Unauthorized - redirecting to login');
+        
+        // Clear stored token
+        localStorage.removeItem('adminToken');
+        
+        // Redirect to login page (avoid if already on login)
+        if (!window.location.pathname.includes('/login') && 
+            !window.location.pathname.includes('/auth')) {
+          window.location.href = '/login';
+          return; // Don't throw error, redirect handles the flow
+        }
+      }
+    }
     
     // Create an isolated error object that won't corrupt global state
     const apiError = new Error(error.message || `HTTP ${response.status} Error`);
