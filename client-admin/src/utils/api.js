@@ -12,8 +12,9 @@ const getApiBaseUrl = () => {
       return ''; // Empty string means relative to current origin
     }
     
-    // Production - same origin
-    return window.location.origin;
+    // Production - use dev API endpoint
+    console.log('[API] Using production dev API endpoint');
+    return 'https://dev-api.insurcheck.ai';
   }
   
   // Fallback for server-side rendering
