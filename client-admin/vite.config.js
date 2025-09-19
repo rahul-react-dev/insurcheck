@@ -22,22 +22,15 @@ export default defineConfig({
       'dev-admin.insurcheck.ai'
     ],
     host: "0.0.0.0",
-    cors: {
-      origin: [
-        'https://ebcfcb6d-a885-4385-8cca-9bccc32ba267-00-23atzs88dn1h1.worf.replit.dev:3000',
-        'https://ebcfcb6d-a885-4385-8cca-9bccc32ba267-00-23atzs88dn1h1.worf.replit.dev:3001'
-      ],
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-    },
+    // Allow all hosts for dynamic Replit domains
+    allowedHosts: 'all',
     fs: {
       // Allow serving files from one level up to access root node_modules
       allow: ['..'],
     },
     proxy: {
       '/api': {
-        target: process.env.REPLIT_DEV_DOMAIN ? 'http://0.0.0.0:5000' : 'http://localhost:5000',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         ws: true,
