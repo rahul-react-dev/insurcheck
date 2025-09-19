@@ -1,27 +1,4 @@
-// API configuration for admin frontend
-// Use relative URLs since Vite proxy will handle the backend forwarding
-const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    // If running in development (localhost or Replit), use relative URLs
-    // The Vite proxy will forward /api requests to localhost:5000
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
-        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
-      console.log('[API] Using relative URL with Vite proxy');
-      return ''; // Empty string means relative to current origin
-    }
-    
-    // Production - same origin
-    return window.location.origin;
-  }
-  
-  // Fallback for server-side rendering
-  return '';
-};
-
-export const API_BASE_URL = getApiBaseUrl();
-console.log('[API] Configured API_BASE_URL:', API_BASE_URL);
+import { API_BASE_URL } from './config.js';
 
 // Helper function for making authenticated API calls with error isolation
 export const apiCall = async (endpoint, options = {}) => {
@@ -30,9 +7,11 @@ export const apiCall = async (endpoint, options = {}) => {
     const fullUrl = `${API_BASE_URL}${endpoint}`;
     
     // Debug logging
-    console.log('[API] Making request to:', fullUrl);
-    console.log('[API] Base URL:', API_BASE_URL);
-    console.log('[API] Endpoint:', endpoint);
+    if (import.meta.env.DEV) {
+      console.log('[API] Making request to:', fullUrl);
+      console.log('[API] Base URL:', API_BASE_URL);
+      console.log('[API] Endpoint:', endpoint);
+    }
     
     const defaultHeaders = {
       'Content-Type': 'application/json',
@@ -57,8 +36,10 @@ export const apiCall = async (endpoint, options = {}) => {
     });
 
     clearTimeout(timeoutId);
-    console.log('[API] Response status:', response.status);
-    console.log('[API] Response ok:', response.ok);
+    if (import.meta.env.DEV) {
+      console.log('[API] Response status:', response.status);
+      console.log('[API] Response ok:', response.ok);
+    }
 
   if (!response.ok) {
     let error;

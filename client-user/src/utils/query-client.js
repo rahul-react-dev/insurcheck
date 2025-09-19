@@ -1,9 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
-// Create axios instance with base configuration
+import { API_BASE_URL } from './config.js';
+
+// Create axios instance with base configuration  
 export const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_BASE_URL ? API_BASE_URL + '/api' : '/api'}`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -13,7 +15,7 @@ export const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token'); // Use consistent token key
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,7 +31,7 @@ apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token'); // Use consistent token key
       window.location.href = '/login';
     }
     return Promise.reject(error.response?.data || error.message);

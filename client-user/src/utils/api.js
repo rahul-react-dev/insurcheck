@@ -1,29 +1,6 @@
 import axios from 'axios';
 
-// API configuration for user frontend
-// Use relative URLs since Vite proxy will handle the backend forwarding
-const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    // If running in development (localhost or Replit), use relative URLs
-    // The Vite proxy will forward /api requests to localhost:5000
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || 
-        hostname.includes('replit.dev') || hostname.includes('repl.co')) {
-      console.log('[API] Using relative URL with Vite proxy');
-      return ''; // Empty string means relative to current origin
-    }
-    
-    // Production - same origin
-    return window.location.origin;
-  }
-  
-  // Fallback for server-side rendering
-  return '';
-};
-
-export const API_BASE_URL = getApiBaseUrl();
-console.log('[API] Configured API_BASE_URL:', API_BASE_URL);
+import { API_BASE_URL } from './config.js';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -72,36 +49,48 @@ api.interceptors.response.use(
 export const authApi = {
   login: async (credentials) => {
     try {
-      console.log('[API] Login request:', credentials);
+      if (import.meta.env.DEV) {
+        console.log('[API] Login request initiated');
+      }
       const response = await api.post('/auth/login', credentials);
-      console.log('[API] Login response:', response.data);
+      if (import.meta.env.DEV) {
+        console.log('[API] Login response received');
+      }
       return response;
     } catch (error) {
-      console.error('[API] Login error:', error);
+      console.error('[API] Login error:', error.response?.status || 'Network error');
       throw error;
     }
   },
 
   signup: async (userData) => {
     try {
-      console.log('[API] Signup request:', userData);
+      if (import.meta.env.DEV) {
+        console.log('[API] Signup request initiated');
+      }
       const response = await api.post('/auth/signup', userData);
-      console.log('[API] Signup response:', response.data);
+      if (import.meta.env.DEV) {
+        console.log('[API] Signup response received');
+      }
       return response;
     } catch (error) {
-      console.error('[API] Signup error:', error);
+      console.error('[API] Signup error:', error.response?.status || 'Network error');
       throw error;
     }
   },
 
   checkEmail: async (email) => {
     try {
-      console.log('[API] Check email request:', email);
+      if (import.meta.env.DEV) {
+        console.log('[API] Check email request initiated');
+      }
       const response = await api.post('/auth/check-email', { email });
-      console.log('[API] Check email response:', response.data);
+      if (import.meta.env.DEV) {
+        console.log('[API] Check email response received');
+      }
       return response;
     } catch (error) {
-      console.error('[API] Check email error:', error);
+      console.error('[API] Check email error:', error.response?.status || 'Network error');
       throw error;
     }
   },
@@ -114,8 +103,12 @@ export const authApi = {
 // Generic API request function (similar to client-admin's apiCall)
 export const apiRequest = async (endpoint, options = {}) => {
   try {
-    console.log('[API] Making request to:', endpoint);
-    console.log('[API] Options:', options);
+    if (import.meta.env.DEV) {
+      console.log('[API] Making request to:', endpoint);
+    }
+    if (import.meta.env.DEV) {
+      console.log('[API] Options:', options);
+    }
     
     // Remove the /api prefix if it's already included in the endpoint
     const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.replace('/api', '') : endpoint;
@@ -133,7 +126,9 @@ export const apiRequest = async (endpoint, options = {}) => {
     }
 
     const response = await api(config);
-    console.log('[API] Response:', response.data);
+    if (import.meta.env.DEV) {
+      console.log('[API] Response received successfully');
+    }
     return response.data;
     
   } catch (error) {
@@ -161,24 +156,32 @@ export const apiRequest = async (endpoint, options = {}) => {
 // Add email verification functions to authApi
 authApi.verifyEmail = async (tokenData) => {
   try {
-    console.log('[API] Verify email request:', tokenData);
+    if (import.meta.env.DEV) {
+      console.log('[API] Verify email request initiated');
+    }
     const response = await api.post('/auth/verify-email', tokenData);
-    console.log('[API] Verify email response:', response.data);
+    if (import.meta.env.DEV) {
+      console.log('[API] Verify email response received');
+    }
     return response.data;
   } catch (error) {
-    console.error('[API] Verify email error:', error);
+    console.error('[API] Verify email error:', error.response?.status || 'Network error');
     throw error;
   }
 };
 
 authApi.resendVerification = async (emailData) => {
   try {
-    console.log('[API] Resend verification request:', emailData);
+    if (import.meta.env.DEV) {
+      console.log('[API] Resend verification request initiated');
+    }
     const response = await api.post('/auth/resend-verification', emailData);
-    console.log('[API] Resend verification response:', response.data);
+    if (import.meta.env.DEV) {
+      console.log('[API] Resend verification response received');
+    }
     return response.data;
   } catch (error) {
-    console.error('[API] Resend verification error:', error);
+    console.error('[API] Resend verification error:', error.response?.status || 'Network error');
     throw error;
   }
 };
