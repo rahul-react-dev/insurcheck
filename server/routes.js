@@ -192,16 +192,9 @@ router.get('/system-metrics', async (req, res) => {
         db.select({ count: sql`count(*)` }).from(documents).where(eq(documents.tenantId, parseInt(tenantId))) :
         db.select({ count: sql`count(*)` }).from(documents),
       tenantId ?
-        db.select({ count: sql`count(*)` }).from(activityLogs).where(and(eq(activityLogs.tenantId, parseInt(tenantId)), gte(activityLogs.createdAt, sql`NOW() - INTERVAL '24 hours'`))) :
-        db.select({ count: sql`count(*)` }).from(activityLogs).where(gte(activityLogs.createdAt, sql`NOW() - INTERVAL '24 hours'`)),
-      db.select({ 
-        total: sql`coalesce(sum(${payments.amount}), 0)` 
-      }).from(payments).where(
-        and(
-          eq(payments.status, 'completed'),
-          gte(payments.createdAt, sql`NOW() - INTERVAL '30 days'`)
-        )
-      )
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(and(eq(activityLogs.tenantId, parseInt(tenantId)), sql`created_at::timestamp >= NOW() - INTERVAL '24 hours'`)) :
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(sql`created_at::timestamp >= NOW() - INTERVAL '24 hours'`),
+      Promise.resolve([{ total: 0 }])
     ]);
 
     // Calculate error rate percentage
@@ -405,7 +398,7 @@ router.get(
         .from(activityLogs)
         .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
         .leftJoin(users, eq(activityLogs.userId, users.id))
-        .leftJoin(documents, eq(sql`CAST(${activityLogs.details}->>'documentId' as TEXT)`, sql`CAST(${documents.id} as TEXT)`));
+        .leftJoin(documents, eq(activityLogs.resourceId, documents.id));
 
       if (conditions.length > 0) {
         logsQuery.where(and(...conditions));
