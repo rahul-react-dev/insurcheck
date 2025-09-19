@@ -37,10 +37,18 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: process.env.REPLIT_DEV_DOMAIN ? 'http://0.0.0.0:5000' : 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         ws: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('[PROXY] Forwarding request:', req.method, req.url, '-> target:', options.target);
+          });
+          proxy.on('error', (err, req, res) => {
+            console.error('[PROXY] Error:', err.message);
+          });
+        },
       },
     },
   },
