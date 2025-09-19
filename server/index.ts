@@ -50,7 +50,9 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001', 
-      'https://insurcheck-admin.replit.app'
+      'https://insurcheck-admin.replit.app',
+      'https://dev-admin.insurcheck.ai',
+      'https://dev-user.insurcheck.ai',
     ];
     
     if (allowedOrigins.includes(origin)) {
