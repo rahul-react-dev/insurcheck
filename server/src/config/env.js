@@ -4,8 +4,8 @@ import path from 'path';
 // Load .env from server directory
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') });
 console.log('🔧 Loading environment variables...');
-console.log('AWS_S3_BUCKET_NAME from env:', process.env.AWS_S3_BUCKET_NAME || 'undefined');
-console.log('AWS_ACCESS_KEY_ID from env:', process.env.AWS_ACCESS_KEY_ID ? '[CONFIGURED]' : 'undefined');
+console.log('AWS_S3_BUCKET_NAME from env:', process.env.AWS_S3_BUCKET_NAME);
+console.log('AWS_ACCESS_KEY_ID from env:', process.env.AWS_ACCESS_KEY_ID);
 console.log('Current working directory:', process.cwd());
 
 export const config = {

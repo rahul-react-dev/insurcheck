@@ -8,7 +8,7 @@ const awsAccessKeyId = config.awsAccessKeyId || process.env.AWS_ACCESS_KEY_ID;
 const awsSecretAccessKey = config.awsSecretAccessKey || process.env.AWS_SECRET_ACCESS_KEY;
 const awsRegion = config.awsRegion || process.env.AWS_REGION || 'us-east-1';
 
-console.log(`🔑 AWS Credentials - AccessKeyId: ${awsAccessKeyId ? '[CONFIGURED]' : 'MISSING'}, SecretKey: ${awsSecretAccessKey ? '[CONFIGURED]' : 'MISSING'}`);
+console.log(`🔑 AWS Credentials - AccessKeyId: ${awsAccessKeyId}, SecretKey: ${awsSecretAccessKey ? '[HIDDEN]' : 'MISSING'}`);
 
 const s3Client = new S3Client({
   region: awsRegion,

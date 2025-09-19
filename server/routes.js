@@ -192,9 +192,16 @@ router.get('/system-metrics', async (req, res) => {
         db.select({ count: sql`count(*)` }).from(documents).where(eq(documents.tenantId, parseInt(tenantId))) :
         db.select({ count: sql`count(*)` }).from(documents),
       tenantId ?
-        db.select({ count: sql`count(*)` }).from(activityLogs).where(and(eq(activityLogs.tenantId, parseInt(tenantId)), sql`created_at::timestamp >= NOW() - INTERVAL '24 hours'`)) :
-        db.select({ count: sql`count(*)` }).from(activityLogs).where(sql`created_at::timestamp >= NOW() - INTERVAL '24 hours'`),
-      Promise.resolve([{ total: 0 }])
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(and(eq(activityLogs.tenantId, parseInt(tenantId)), gte(activityLogs.createdAt, sql`NOW() - INTERVAL '24 hours'`))) :
+        db.select({ count: sql`count(*)` }).from(activityLogs).where(gte(activityLogs.createdAt, sql`NOW() - INTERVAL '24 hours'`)),
+      db.select({ 
+        total: sql`coalesce(sum(${payments.amount}), 0)` 
+      }).from(payments).where(
+        and(
+          eq(payments.status, 'completed'),
+          gte(payments.createdAt, sql`NOW() - INTERVAL '30 days'`)
+        )
+      )
     ]);
 
     // Calculate error rate percentage
@@ -398,7 +405,7 @@ router.get(
         .from(activityLogs)
         .leftJoin(tenants, eq(activityLogs.tenantId, tenants.id))
         .leftJoin(users, eq(activityLogs.userId, users.id))
-        .leftJoin(documents, eq(activityLogs.resourceId, documents.id));
+        .leftJoin(documents, eq(sql`CAST(${activityLogs.details}->>'documentId' as TEXT)`, sql`CAST(${documents.id} as TEXT)`));
 
       if (conditions.length > 0) {
         logsQuery.where(and(...conditions));
@@ -1584,26 +1591,9 @@ router.get('/super-admin/invoices', authenticateToken, requireSuperAdmin, async 
       endDate = ''
     } = req.query;
 
-    // Check if invoices table has any structure by trying a simple count first
-    const tableCheck = await db.execute(sql`SELECT COUNT(*) FROM invoices`).catch(() => null);
-    
-    if (!tableCheck) {
-      // Table doesn't exist or is inaccessible, return empty result
-      console.log('⚠️ Invoices table is not accessible, returning empty result');
-      return res.json({
-        invoices: [],
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: 0,
-          totalPages: 0
-        }
-      });
-    }
-
     const offset = (parseInt(page) - 1) * parseInt(limit);
     
-    // Build query conditions safely
+    // Build query conditions
     let query = db.select({
       id: invoices.id,
       invoiceNumber: invoices.invoiceNumber,
@@ -3945,7 +3935,7 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
     const monthlyUploadsData = await db
       .select({
         tenantName: tenants.name,
-        month: sql`TO_CHAR(${documents.createdAt}::timestamp, 'Mon')`,
+        month: sql`TO_CHAR(${documents.createdAt}, 'Mon')`,
         uploads: count()
       })
       .from(documents)
@@ -3953,27 +3943,27 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
       .where(and(
         eq(documents.status, 'active'),
         ne(tenants.status, 'deleted'),
-        sql`${documents.createdAt}::timestamp >= ${sixMonthsAgo}`
+        gte(documents.createdAt, sixMonthsAgo)
       ))
-      .groupBy(tenants.name, sql`TO_CHAR(${documents.createdAt}::timestamp, 'Mon')`, sql`EXTRACT(MONTH FROM ${documents.createdAt}::timestamp)`)
-      .orderBy(sql`EXTRACT(MONTH FROM ${documents.createdAt}::timestamp)`);
+      .groupBy(tenants.name, sql`TO_CHAR(${documents.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${documents.createdAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${documents.createdAt})`);
 
     // Query 4: Compliance trends (weekly document processing)
     const complianceTrendsData = await db
       .select({
-        period: sql`'Week ' || EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)::text`,
+        period: sql`'Week ' || EXTRACT(WEEK FROM ${documents.createdAt})::text`,
         total: count(),
-        week: sql`EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)`
+        week: sql`EXTRACT(WEEK FROM ${documents.createdAt})`
       })
       .from(documents)
       .leftJoin(tenants, eq(documents.tenantId, tenants.id))
       .where(and(
         eq(documents.status, 'active'),
         ne(tenants.status, 'deleted'),
-        sql`${documents.createdAt}::timestamp >= ${fourWeeksAgo}`
+        gte(documents.createdAt, fourWeeksAgo)
       ))
-      .groupBy(sql`EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)`)
-      .orderBy(sql`EXTRACT(WEEK FROM ${documents.createdAt}::timestamp)`);
+      .groupBy(sql`EXTRACT(WEEK FROM ${documents.createdAt})`)
+      .orderBy(sql`EXTRACT(WEEK FROM ${documents.createdAt})`);
 
     // Query 5: Tenant performance overview
     const tenantPerformanceData = await db
