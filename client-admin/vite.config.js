@@ -18,7 +18,7 @@ export default defineConfig({
   server: {
     port: 3000,
     allowedHosts: [
-      "efc5f8a8-7a9b-4dac-b22d-5709bedba5bb-00-p710mz2xhu7m.janeway.replit.dev",
+      "ebcfcb6d-a885-4385-8cca-9bccc32ba267-00-23atzs88dn1h1.worf.replit.dev",
       "dev-admin.insurcheck.ai",
     ],
     host: "0.0.0.0",
