@@ -611,7 +611,7 @@ export const adminForgotPassword = async (req, res) => {
       .where(eq(users.id, user.id));
 
     // Generate reset link for super admin panel
-    const adminFrontendUrl = 'https://dev-admin.insurcheck.ai';
+    const adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || 'https://dev-admin.insurcheck.ai';
     const resetLink = `${adminFrontendUrl}/super-admin/reset-password?token=${resetToken}`;
 
     // Send password reset email

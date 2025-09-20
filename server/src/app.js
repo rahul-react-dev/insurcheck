@@ -29,9 +29,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false,
-  // Remove trustProxy or set it to false for development
-  trustProxy: false
+  legacyHeaders: false
 });
 app.use('/api/', limiter);
 
@@ -41,8 +39,7 @@ const authLimiter = rateLimit({
   max: 5, // limit each IP to 5 forgot password requests per 15 minutes
   message: 'Too many password reset attempts. Please try again later.',
   standardHeaders: true,
-  legacyHeaders: false,
-  trustProxy: false
+  legacyHeaders: false
 });
 app.use('/api/auth/admin/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
