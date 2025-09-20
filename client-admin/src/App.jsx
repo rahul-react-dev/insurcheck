@@ -19,6 +19,7 @@ import InvoiceGeneration from "./pages/super-admin/InvoiceGeneration";
 import TenantActivityLogs from "./pages/super-admin/TenantActivityLogs";
 import TenantStateManagement from "./pages/super-admin/TenantStateManagement";
 import ForgotPassword from "./pages/super-admin/ForgotPassword";
+import ResetPassword from "./pages/super-admin/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
 import store from "./store";
@@ -205,6 +206,10 @@ function App() {
             <Route
               path="/super-admin/forgot-password"
               element={<ForgotPassword />}
+            />
+            <Route
+              path="/super-admin/reset-password"
+              element={<ResetPassword />}
             />
             <Route
               path="/super-admin/deleted-documents"

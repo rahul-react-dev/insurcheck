@@ -579,7 +579,7 @@ export const adminForgotPassword = async (req, res) => {
       .where(eq(users.email, email))
       .limit(1);
 
-    if (userResult.length === 0 || (userResult[0].role !== 'tenant-admin' && userResult[0].role !== 'admin')) {
+    if (userResult.length === 0 || (userResult[0].role !== 'tenant-admin' && userResult[0].role !== 'admin' && userResult[0].role !== 'super-admin')) {
       // For security, don't reveal if email exists or not
       return res.status(200).json({
         success: true,
@@ -597,13 +597,37 @@ export const adminForgotPassword = async (req, res) => {
       });
     }
 
-    // In a real implementation, you would:
-    // 1. Generate a secure reset token
-    // 2. Store it in the database with expiration
-    // 3. Send email with reset link
-    
-    // For now, we'll just log and return success
-    console.log(`Password reset would be sent to: ${email}`);
+    // Generate secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Update user with hashed reset token
+    await db.update(users)
+      .set({ 
+        passwordResetToken: hashedToken,
+        passwordResetExpires: resetExpires 
+      })
+      .where(eq(users.id, user.id));
+
+    // Generate reset link for super admin panel
+    const adminFrontendUrl = 'https://dev-admin.insurcheck.ai';
+    const resetLink = `${adminFrontendUrl}/super-admin/reset-password?token=${resetToken}`;
+
+    // Send password reset email
+    try {
+      const emailResult = await sendPasswordResetEmail(email, resetLink, user.firstName || user.email.split('@')[0]);
+      
+      if (!emailResult.success) {
+        console.error('❌ Failed to send password reset email:', emailResult);
+        // Still return success to user for security, but log the error
+      } else {
+        console.log(`✅ Password reset email sent successfully to: ${email}`);
+      }
+    } catch (emailError) {
+      console.error('❌ Exception during password reset email sending:', emailError);
+      // Still return success to user for security, but log the error
+    }
     
     res.status(200).json({
       success: true,
@@ -723,7 +747,7 @@ export const signup = async (req, res) => {
     }).returning();
 
     console.log(`✅ User created successfully - ID: ${newUser[0].id}, Email: ${email}`);
-    console.log(`🔑 Verification token generated: ${verificationToken.substring(0, 8)}...`);
+    console.log(`🔑 Verification token generated and sent via email`);
     console.log(`⏰ Token expires at: ${verificationExpiry.toISOString()}`);
 
     // Generate verification link - dynamically detect client-user frontend URL
@@ -861,7 +885,7 @@ export const verifyEmail = async (req, res) => {
 
     const { token, email } = req.body;
 
-    console.log(`Email verification attempt - Email: ${email}, Token: ${token.substring(0, 8)}...`);
+    console.log(`Email verification attempt for email: ${email}`);
 
     // Find user by email and token
     const userResult = await db.select()
@@ -1154,12 +1178,13 @@ export const validateResetToken = async (req, res) => {
       });
     }
 
-    console.log(`Token validation request for token: ${token?.substring(0, 8)}...`);
+    // Hash the token to compare with stored hashed token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Find user by reset token
+    // Find user by hashed reset token
     const userResult = await db.select()
       .from(users)
-      .where(eq(users.passwordResetToken, token))
+      .where(eq(users.passwordResetToken, hashedToken))
       .limit(1);
 
     if (userResult.length === 0) {
@@ -1221,12 +1246,14 @@ export const resetPassword = async (req, res) => {
     }
 
     const { token, password } = req.body;
-    console.log(`Password reset attempt with token: ${token?.substring(0, 8)}...`);
 
-    // Find user by reset token
+    // Hash the token to compare with stored hashed token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user by hashed reset token
     const userResult = await db.select()
       .from(users)
-      .where(eq(users.passwordResetToken, token))
+      .where(eq(users.passwordResetToken, hashedToken))
       .limit(1);
 
     if (userResult.length === 0) {

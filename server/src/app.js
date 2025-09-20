@@ -35,6 +35,18 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Stricter rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 forgot password requests per 15 minutes
+  message: 'Too many password reset attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  trustProxy: false
+});
+app.use('/api/auth/admin/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
 // CORS
 app.use(cors(corsOptions));
 

@@ -284,6 +284,16 @@ export const superAdminAPI = {
     method: 'POST',
     body: JSON.stringify(credentials),
   }),
+
+  forgotPassword: (email) => apiCall('/api/auth/admin/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  }),
+
+  resetPassword: (data) => apiCall('/api/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
   
   // Dashboard & Analytics
   getDashboardStats: () => apiCall('/api/system-metrics'),
