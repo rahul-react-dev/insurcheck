@@ -588,11 +588,22 @@ const sendPasswordResetEmail = async (to, resetLink, firstName) => {
     };
 
     console.log(`📧 Sending password reset email to: ${to}`);
+    console.log(`🔗 Reset link: ${resetLink}`);
+    console.log(`👤 Recipient name: ${firstName || 'User'}`);
     
     const result = await sgMail.send(msg);
     
+    console.log(`✅ SendGrid Response Status: ${result[0]?.statusCode}`);
+    console.log(`📬 Message ID: ${result[0]?.headers['x-message-id']}`);
     console.log(`✅ Password reset email sent successfully to: ${to}`);
-    return { success: true, message: 'Password reset email sent successfully' };
+    
+    // Return detailed response
+    return { 
+      success: true, 
+      message: 'Password reset email sent successfully',
+      messageId: result[0]?.headers['x-message-id'],
+      status: result[0]?.statusCode
+    };
     
   } catch (error) {
     console.error('❌ SendGrid password reset email error:', error.response?.body || error.message);

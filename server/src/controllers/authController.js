@@ -621,8 +621,6 @@ export const adminForgotPassword = async (req, res) => {
       if (!emailResult.success) {
         console.error('❌ Failed to send password reset email:', emailResult);
         // Still return success to user for security, but log the error
-      } else {
-        console.log(`✅ Password reset email sent successfully to: ${email}`);
       }
     } catch (emailError) {
       console.error('❌ Exception during password reset email sending:', emailError);
