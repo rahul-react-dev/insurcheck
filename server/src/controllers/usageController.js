@@ -332,7 +332,7 @@ export const getUsageAnalytics = async (req, res) => {
       data: {
         events,
         summary,
-        pagination: {
+        meta: {
           page: parseInt(page),
           limit: parseInt(limit),
           total,
