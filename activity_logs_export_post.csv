@@ -1,0 +1,4 @@
+Timestamp,Level,Action,User ID,Tenant ID,Tenant Name,IP Address,Details
+2025-09-23T07:12:44.221Z,error,document_upload_failed,"","1","SecureLife Insurance","192.168.1.100","File format not supported - .txt files are not allowed"
+2025-09-23T05:12:44.221Z,error,authentication_failed,"","2","HealthGuard Corp","10.0.0.15","Failed login attempt for user: john.doe@healthguard.com"
+2025-09-23T03:12:44.221Z,warning,storage_limit_exceeded,"user_789","1","SecureLife Insurance","192.168.1.105","Tenant has used 4.5GB of 5GB allocated storage"
