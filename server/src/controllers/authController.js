@@ -760,13 +760,13 @@ export const signup = async (req, res) => {
         frontendUrl = `${url.protocol}//${url.hostname}:3001`;
       } else if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
         // For local development
-        frontendUrl = 'http://localhost:3001';
+        frontendUrl = 'https://dev-user.insurcheck.ai';
       } else {
         // Fallback
-        frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+        frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
       }
     } else {
-      frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
     }
     
     const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
@@ -1031,7 +1031,7 @@ export const resendVerificationEmail = async (req, res) => {
       .where(eq(users.id, user.id));
 
     // Generate verification link
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
     const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
     // Send verification email
@@ -1128,7 +1128,7 @@ export const userForgotPassword = async (req, res) => {
       .where(eq(users.id, user.id));
 
     // Send reset email
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai'}/reset-password?token=${resetToken}`;
     
     try {
       await sendPasswordResetEmail(email, resetLink, user.firstName || 'User');
