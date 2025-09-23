@@ -1222,13 +1222,22 @@ export const validateResetToken = async (req, res) => {
     // Hash the token to compare with stored hashed token
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Find user by hashed reset token
-    const userResult = await db.select()
+    // First try to find user by raw token (current implementation)
+    let userResult = await db.select()
       .from(users)
-      .where(eq(users.passwordResetToken, hashedToken))
+      .where(eq(users.passwordResetToken, token))
       .limit(1);
 
+    // If not found with raw token, try with hashed token (for backward compatibility)
     if (userResult.length === 0) {
+      userResult = await db.select()
+        .from(users)
+        .where(eq(users.passwordResetToken, hashedToken))
+        .limit(1);
+    }
+
+    if (userResult.length === 0) {
+      console.log(`❌ Token validation failed - no user found with token`);
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired reset link',
@@ -1237,10 +1246,12 @@ export const validateResetToken = async (req, res) => {
     }
 
     const user = userResult[0];
+    console.log(`✅ Token validation - Found user: ${user.email}, Token expires: ${user.passwordResetExpires}`);
 
     // Check if token is expired
     const now = new Date();
     if (!user.passwordResetExpires || now > user.passwordResetExpires) {
+      console.log(`❌ Token expired - Now: ${now.toISOString()}, Expires: ${user.passwordResetExpires}`);
       // Clear expired token
       await db.update(users)
         .set({
@@ -1256,7 +1267,7 @@ export const validateResetToken = async (req, res) => {
       });
     }
 
-    console.log(`Token validation successful for user: ${user.email}`);
+    console.log(`✅ Token validation successful for user: ${user.email}`);
 
     res.status(200).json({
       success: true,

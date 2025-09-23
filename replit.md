@@ -52,6 +52,14 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
+## Password Reset Token Validation Fix (Complete)
+- **Issue**: Token validation was failing with 400 status code due to mismatch between token storage and validation logic
+- **Root Cause**: Tokens were stored as raw text but validation was hashing incoming tokens and searching for hashed versions
+- **Solution**: Updated `validateResetToken` function to handle both raw and hashed tokens for backward compatibility
+- **Backend Changes**: Enhanced `server/src/controllers/authController.js` with improved logging and dual token matching
+- **Testing**: Confirmed working on both localhost and external domains with proper CORS handling
+- **Architecture**: Maintains consistent centralized API pattern established across frontend
+
 ## Email Verification System Implementation (Complete)
 - **Database Schema**: Added email verification fields to users table
   - `emailVerificationToken` (VARCHAR): Unique verification token
