@@ -3651,24 +3651,24 @@ router.get('/super-admin/dashboard-stats', authenticateToken, requireSuperAdmin,
       db.select({ 
         count: sql`COUNT(*)::int`,
         activeCount: sql`COUNT(CASE WHEN status = 'active' THEN 1 END)::int`,
-        thisMonth: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`,
-        lastMonth: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`
+        thisMonth: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`,
+        lastMonth: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at::timestamp < DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`
       }).from(tenants),
 
       // Total users count and trend  
       db.select({
         count: sql`COUNT(*)::int`,
         activeCount: sql`COUNT(CASE WHEN is_active = true THEN 1 END)::int`,
-        thisMonth: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`,
-        lastMonth: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`
+        thisMonth: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`,
+        lastMonth: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at::timestamp < DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`
       }).from(users),
 
       // Total documents count and trend
       db.select({
         count: sql`COUNT(*)::int`,
         activeCount: sql`COUNT(CASE WHEN status != 'deleted' THEN 1 END)::int`,
-        thisMonth: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`,
-        lastMonth: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`
+        thisMonth: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`,
+        lastMonth: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at::timestamp < DATE_TRUNC('month', CURRENT_DATE) THEN 1 END)::int`
       }).from(documents),
 
       // Revenue calculations (mock for now - would integrate with payment system)
@@ -3806,15 +3806,15 @@ router.get('/super-admin/analytics', authenticateToken, requireSuperAdmin, async
 
       // Monthly growth trends
       db.select({
-        month: sql`TO_CHAR(created_at, 'Mon YYYY')`,
-        users: sql`COUNT(CASE WHEN created_at >= DATE_TRUNC('month', created_at) THEN 1 END)::int`,
+        month: sql`TO_CHAR(created_at::timestamp, 'Mon YYYY')`,
+        users: sql`COUNT(CASE WHEN created_at::timestamp >= DATE_TRUNC('month', created_at::timestamp) THEN 1 END)::int`,
         value: sql`COUNT(*)::int`,
-        period: sql`TO_CHAR(created_at, 'YYYY-MM')`
+        period: sql`TO_CHAR(created_at::timestamp, 'YYYY-MM')`
       })
       .from(users)
-      .where(sql`created_at >= CURRENT_DATE - INTERVAL '6 months'`)
-      .groupBy(sql`DATE_TRUNC('month', created_at), TO_CHAR(created_at, 'Mon YYYY'), TO_CHAR(created_at, 'YYYY-MM')`)
-      .orderBy(sql`DATE_TRUNC('month', created_at)`),
+      .where(sql`created_at::timestamp >= CURRENT_DATE - INTERVAL '6 months'`)
+      .groupBy(sql`DATE_TRUNC('month', created_at::timestamp), TO_CHAR(created_at::timestamp, 'Mon YYYY'), TO_CHAR(created_at::timestamp, 'YYYY-MM')`)
+      .orderBy(sql`DATE_TRUNC('month', created_at::timestamp)`),
 
       // Compliance metrics by tenant
       db.select({
@@ -3836,14 +3836,14 @@ router.get('/super-admin/analytics', authenticateToken, requireSuperAdmin, async
 
       // User growth trends
       db.select({
-        period: sql`TO_CHAR(created_at, 'Mon')`,
+        period: sql`TO_CHAR(created_at::timestamp, 'Mon')`,
         value: sql`COUNT(*)::int`,
-        month: sql`TO_CHAR(created_at, 'YYYY-MM')`
+        month: sql`TO_CHAR(created_at::timestamp, 'YYYY-MM')`
       })
       .from(users)
-      .where(sql`created_at >= CURRENT_DATE - INTERVAL '12 months'`)
-      .groupBy(sql`DATE_TRUNC('month', created_at), TO_CHAR(created_at, 'Mon'), TO_CHAR(created_at, 'YYYY-MM')`)
-      .orderBy(sql`DATE_TRUNC('month', created_at)`)
+      .where(sql`created_at::timestamp >= CURRENT_DATE - INTERVAL '12 months'`)
+      .groupBy(sql`DATE_TRUNC('month', created_at::timestamp), TO_CHAR(created_at::timestamp, 'Mon'), TO_CHAR(created_at::timestamp, 'YYYY-MM')`)
+      .orderBy(sql`DATE_TRUNC('month', created_at::timestamp)`)
     ]);
 
     const analyticsData = {
@@ -3935,7 +3935,7 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
     const monthlyUploadsData = await db
       .select({
         tenantName: tenants.name,
-        month: sql`TO_CHAR(${documents.createdAt}, 'Mon')`,
+        month: sql`TO_CHAR(${documents.createdAt}::timestamp, 'Mon')`,
         uploads: count()
       })
       .from(documents)
@@ -3943,9 +3943,9 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
       .where(and(
         eq(documents.status, 'active'),
         ne(tenants.status, 'deleted'),
-        gte(documents.createdAt, sixMonthsAgo)
+        gte(sql`${documents.createdAt}::timestamp`, sixMonthsAgo)
       ))
-      .groupBy(tenants.name, sql`TO_CHAR(${documents.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${documents.createdAt})`)
+      .groupBy(tenants.name, sql`TO_CHAR(${documents.createdAt}::timestamp, 'Mon')`, sql`EXTRACT(MONTH FROM ${documents.createdAt})`)
       .orderBy(sql`EXTRACT(MONTH FROM ${documents.createdAt})`);
 
     // Query 4: Compliance trends (weekly document processing)
@@ -3960,7 +3960,7 @@ router.get('/super-admin/tenant-analytics', authenticateToken, requireSuperAdmin
       .where(and(
         eq(documents.status, 'active'),
         ne(tenants.status, 'deleted'),
-        gte(documents.createdAt, fourWeeksAgo)
+        gte(sql`${documents.createdAt}::timestamp`, fourWeeksAgo)
       ))
       .groupBy(sql`EXTRACT(WEEK FROM ${documents.createdAt})`)
       .orderBy(sql`EXTRACT(WEEK FROM ${documents.createdAt})`);
