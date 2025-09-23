@@ -38,10 +38,21 @@ export const login = async (req, res) => {
     }
 
     const user = userResult[0];
-    console.log(`Found user - ID: ${user.id}, Role: ${user.role}, Active: ${user.isActive}`);
+    console.log(`Found user - ID: ${user.id}, Role: ${user.role}, Active: ${user.isActive}, Email Verified: ${user.emailVerified}`);
 
-    // Check if user is active
+    // Check if user is active and provide specific error messages
     if (user.isActive === false) {
+      // Check if it's due to email verification
+      if (!user.emailVerified) {
+        console.log(`Login blocked - Email not verified for user: ${email}`);
+        return res.status(401).json({
+          success: false,
+          message: 'Please verify your email address before logging in. Check your inbox for a verification link.',
+          needsEmailVerification: true
+        });
+      }
+      
+      console.log(`Login blocked - Account deactivated for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Account is deactivated'
