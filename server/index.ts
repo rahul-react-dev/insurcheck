@@ -128,8 +128,8 @@ app.use('/api/billing', usageRoutes);
 // API routes
 app.use('/api', routes);
 
-// Serve static files from client-user build directory (switched for testing user panel)
-app.use(express.static(path.join(__dirname, '../client-user/dist')));
+// Serve static files from client-admin build directory (for super-admin dashboard testing)
+app.use(express.static(path.join(__dirname, '../client-admin/dist')));
 
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -145,7 +145,7 @@ app.get('*', (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     res.status(404).json({ error: 'API route not found' });
   } else {
-    res.sendFile(path.join(__dirname, '../client-user/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../client-admin/dist/index.html'));
   }
 });
 
