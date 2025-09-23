@@ -186,6 +186,55 @@ authApi.resendVerification = async (emailData) => {
   }
 };
 
+// Password reset functions
+authApi.forgotPassword = async (emailData) => {
+  try {
+    if (import.meta.env.DEV) {
+      console.log('[API] Forgot password request initiated');
+    }
+    const response = await api.post('/auth/forgot-password', emailData);
+    if (import.meta.env.DEV) {
+      console.log('[API] Forgot password response received');
+    }
+    return response.data;
+  } catch (error) {
+    console.error('[API] Forgot password error:', error.response?.status || 'Network error');
+    throw error;
+  }
+};
+
+authApi.validateResetToken = async (token) => {
+  try {
+    if (import.meta.env.DEV) {
+      console.log('[API] Validate reset token request initiated');
+    }
+    const response = await api.get(`/auth/validate-reset-token?token=${encodeURIComponent(token)}`);
+    if (import.meta.env.DEV) {
+      console.log('[API] Validate reset token response received');
+    }
+    return response.data;
+  } catch (error) {
+    console.error('[API] Validate reset token error:', error.response?.status || 'Network error');
+    throw error;
+  }
+};
+
+authApi.resetPassword = async (resetData) => {
+  try {
+    if (import.meta.env.DEV) {
+      console.log('[API] Reset password request initiated');
+    }
+    const response = await api.post('/auth/reset-password', resetData);
+    if (import.meta.env.DEV) {
+      console.log('[API] Reset password response received');
+    }
+    return response.data;
+  } catch (error) {
+    console.error('[API] Reset password error:', error.response?.status || 'Network error');
+    throw error;
+  }
+};
+
 // Legacy export for backward compatibility
 export const loginApi = authApi.login;
 export const logoutApi = authApi.logout;

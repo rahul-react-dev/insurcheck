@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Lock, CheckCircle, XCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import Button from '../components/ui/Button';
+import { authApi } from '../utils/api';
 
 // Validation schema for password reset
 const resetPasswordSchema = z.object({
@@ -82,10 +83,9 @@ const ResetPassword = () => {
     // Validate token with backend
     const validateToken = async () => {
       try {
-        const response = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(resetToken)}`);
-        const result = await response.json();
+        const result = await authApi.validateResetToken(resetToken);
         
-        if (response.ok && result.success && result.valid) {
+        if (result.success && result.valid) {
           setIsTokenValid(true);
           console.log('Token validation successful');
         } else {
@@ -102,7 +102,7 @@ const ResetPassword = () => {
         toast({
           type: 'error',
           title: 'Validation Failed',
-          description: 'Unable to validate reset link. Please try again.'
+          description: error.message || 'Unable to validate reset link. Please try again.'
         });
       }
     };
@@ -123,20 +123,12 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: token,
-          password: data.newPassword
-        }),
+      const result = await authApi.resetPassword({
+        token: token,
+        password: data.newPassword
       });
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result.success) {
         toast({
           type: 'success',
           title: 'Password Reset Successful',
@@ -153,17 +145,7 @@ const ResetPassword = () => {
     } catch (error) {
       console.error('Password reset error:', error);
       
-      // Try to get the actual error message from the server response
-      let errorMessage = 'Failed to reset password. Please try again.';
-      
-      try {
-        // If it's a fetch error with response, try to parse it
-        if (error.message && typeof error.message === 'string') {
-          errorMessage = error.message;
-        }
-      } catch (parseError) {
-        console.error('Error parsing reset password error:', parseError);
-      }
+      const errorMessage = error.message || 'Failed to reset password. Please try again.';
       
       if (errorMessage.includes('Invalid or expired')) {
         setIsTokenValid(false);
