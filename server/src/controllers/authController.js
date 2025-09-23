@@ -894,7 +894,16 @@ export const verifyEmail = async (req, res) => {
 
     const { token, email } = req.body;
 
-    console.log(`Email verification attempt for email: ${email}`);
+    console.log(`📧 Email verification attempt for: ${email}`);
+    console.log(`🔑 Token received: ${token?.substring(0, 16)}...`);
+
+    if (!token || !email) {
+      console.log(`❌ Missing required fields - Token: ${!!token}, Email: ${!!email}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Verification token and email are required'
+      });
+    }
 
     // Find user by email and token
     const userResult = await db.select()
@@ -903,16 +912,19 @@ export const verifyEmail = async (req, res) => {
       .limit(1);
 
     if (userResult.length === 0) {
+      console.log(`❌ User not found for email: ${email}`);
       return res.status(400).json({
         success: false,
-        message: 'Invalid verification link'
+        message: 'Invalid verification link - user not found'
       });
     }
 
     const user = userResult[0];
+    console.log(`👤 Found user: ${user.id}, Email verified: ${user.emailVerified}, Has token: ${!!user.emailVerificationToken}`);
 
     // Check if already verified
     if (user.emailVerified) {
+      console.log(`✅ User already verified: ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Email already verified. You can now log in.',
@@ -922,21 +934,41 @@ export const verifyEmail = async (req, res) => {
 
     // Check if token matches
     if (user.emailVerificationToken !== token) {
+      console.log(`❌ Token mismatch for user: ${email}`);
+      console.log(`🔑 Expected: ${user.emailVerificationToken?.substring(0, 16)}...`);
+      console.log(`🔑 Received: ${token?.substring(0, 16)}...`);
+      
+      // Provide more specific error messages
+      if (!user.emailVerificationToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'No verification token found. Please request a new verification email.',
+          code: 'NO_TOKEN'
+        });
+      }
+      
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired verification link'
+        message: 'Invalid verification token. This link may be expired or already used. Please request a new verification email.',
+        code: 'TOKEN_MISMATCH'
       });
     }
 
     // Check if token has expired (24 hours)
     const now = new Date();
     if (!user.emailVerificationExpires || user.emailVerificationExpires < now) {
+      console.log(`⏰ Token expired for user: ${email}, Expiry: ${user.emailVerificationExpires}, Now: ${now}`);
       return res.status(400).json({
         success: false,
         message: 'Verification link has expired. Please request a new one.',
-        expired: true
+        expired: true,
+        expiredAt: user.emailVerificationExpires
       });
     }
+    
+    console.log(`🔓 Token validation successful for user: ${email}`);
+    console.log(`⏰ Token expires at: ${user.emailVerificationExpires}`);
+    console.log(`🕐 Current time: ${now}`);
 
     // Verify the email and activate the account
     await db.update(users)
