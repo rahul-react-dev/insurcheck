@@ -235,6 +235,60 @@ authApi.resetPassword = async (resetData) => {
   }
 };
 
+// User API functions for audit logs and other user-specific operations
+export const userApi = {
+  // Audit logs functionality
+  getActivityLogs: async (params = {}) => {
+    try {
+      if (import.meta.env.DEV) {
+        console.log('[API] Get activity logs request initiated');
+        console.log('[API] Params:', params);
+      }
+      const response = await api.get('/user/activity-logs', { params });
+      if (import.meta.env.DEV) {
+        console.log('[API] Activity logs response received');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('[API] Activity logs error:', error.response?.status || 'Network error');
+      throw error;
+    }
+  },
+
+  // Add other user-specific endpoints here as needed
+  getProfile: async () => {
+    try {
+      if (import.meta.env.DEV) {
+        console.log('[API] Get profile request initiated');
+      }
+      const response = await api.get('/user/profile');
+      if (import.meta.env.DEV) {
+        console.log('[API] Profile response received');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('[API] Profile error:', error.response?.status || 'Network error');
+      throw error;
+    }
+  },
+
+  updateProfile: async (profileData) => {
+    try {
+      if (import.meta.env.DEV) {
+        console.log('[API] Update profile request initiated');
+      }
+      const response = await api.put('/user/profile', profileData);
+      if (import.meta.env.DEV) {
+        console.log('[API] Update profile response received');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('[API] Update profile error:', error.response?.status || 'Network error');
+      throw error;
+    }
+  }
+};
+
 // Legacy export for backward compatibility
 export const loginApi = authApi.login;
 export const logoutApi = authApi.logout;

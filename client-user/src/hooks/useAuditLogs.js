@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { userApi } from '../utils/api';
 import { exportAuditLogs } from '../utils/exportUtils';
 
 /**
@@ -24,13 +24,7 @@ export const useAuditLogs = () => {
     sortOrder: 'desc'
   });
 
-  // API base configuration
-  const apiConfig = {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  };
+  // Note: Authorization is now handled automatically by the centralized API
 
   /**
    * Fetch audit logs from API
@@ -54,14 +48,11 @@ export const useAuditLogs = () => {
 
       console.log('🔍 Fetching audit logs with params:', cleanParams);
 
-      const response = await axios.get('/api/user/activity-logs', {
-        params: cleanParams,
-        ...apiConfig
-      });
+      const response = await userApi.getActivityLogs(cleanParams);
 
-      if (response.data.data) {
+      if (response.data) {
         // Map server data to match frontend expectations - provide both legacy and new fields
-        const mappedData = response.data.data.map(log => ({
+        const mappedData = response.data.map(log => ({
           // Database fields (for table display)
           id: log.id,
           action: log.action || 'Unknown Action',
@@ -83,7 +74,7 @@ export const useAuditLogs = () => {
         }));
         
         setData(mappedData);
-        setPagination(response.data.pagination || pagination);
+        setPagination(response.pagination || pagination);
         
         console.log(`✅ Loaded ${mappedData.length} audit logs`);
       } else {
@@ -182,14 +173,11 @@ export const useAuditLogs = () => {
 
       console.log('📥 Fetching all audit logs for export with params:', cleanParams);
 
-      const response = await axios.get('/api/user/activity-logs', {
-        params: cleanParams,
-        ...apiConfig
-      });
+      const response = await userApi.getActivityLogs(cleanParams);
 
-      if (response.data.data) {
+      if (response.data) {
         // Map server data to export format - use legacy field names for export utilities
-        const mappedData = response.data.data.map(log => ({
+        const mappedData = response.data.map(log => ({
           logId: log.id ? String(log.id).slice(0, 8) : 'N/A',
           documentName: log.resource || 'N/A',
           version: '1.0',
@@ -212,7 +200,7 @@ export const useAuditLogs = () => {
       console.error('❌ Error fetching all audit logs for export:', err);
       throw err;
     }
-  }, [filters, token, apiConfig]);
+  }, [filters, token]);
 
   /**
    * Handle export functionality
