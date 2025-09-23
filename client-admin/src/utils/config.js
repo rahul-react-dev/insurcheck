@@ -21,6 +21,17 @@ export const getApiBaseUrl = () => {
       return ''; // Empty string means relative to current origin
     }
     
+    // Handle production domains - map frontend domains to their API counterparts
+    if (hostname === 'dev-admin.insurcheck.ai') {
+      console.log('[API] Using production API URL for dev-admin domain');
+      return 'https://dev-api.insurcheck.ai';
+    }
+    
+    if (hostname === 'prod-admin.insurcheck.ai') {
+      console.log('[API] Using production API URL for prod-admin domain');
+      return 'https://prod-api.insurcheck.ai';
+    }
+    
     // Fallback - same origin
     return window.location.origin;
   }
