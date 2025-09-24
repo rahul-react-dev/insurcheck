@@ -185,18 +185,21 @@ async function checkAndGenerateDueInvoices() {
         console.log(`✅ Invoice generated for tenant ${config.tenantName}. Next generation: ${nextGenerationDate.toISOString()}`);
 
         // Create an audit log entry for automatic generation
+        // Note: invoiceId is left null because the actual invoice is created asynchronously
+        // The generationResult.logId refers to the processing log, not the final invoice
         await db.insert(invoiceGenerationLogs).values({
           tenantId: config.tenantId,
           tenantName: config.tenantName,
           configId: config.id,
           status: 'completed',  // Fixed: Use 'completed' status for successful automatic generation
-          invoiceId: generationResult.logId, // Reference the generated invoice log
+          // invoiceId: null, // Invoice ID will be set when the async invoice creation completes
           metadata: {
             generationType: 'automatic',
             scheduledBy: 'system-cron',
             frequency: config.frequency,
             nextScheduled: nextGenerationDate,
             generatedInvoiceLogId: generationResult.logId,
+            processedAt: new Date().toISOString(),
           },
           createdAt: new Date(),
         });
