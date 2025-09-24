@@ -52,6 +52,14 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
+## Admin Frontend API Domain Routing Fix (Complete)
+- **Issue**: Admin frontend API calls were going to dev-admin.insurcheck.ai instead of dev-api.insurcheck.ai
+- **Root Cause**: PasswordSetup.jsx was using direct fetch calls instead of centralized API configuration
+- **Solution**: Extended adminAuthApi with verifySetupToken and setupPassword functions, updated PasswordSetup.jsx to use centralized API
+- **Frontend Changes**: Added API functions to `client-admin/src/utils/api.js` and updated `client-admin/src/pages/admin/PasswordSetup.jsx`
+- **Architecture**: Maintains consistent API pattern where dev-admin.insurcheck.ai maps to dev-api.insurcheck.ai
+- **Testing**: Server running successfully with proper domain routing established
+
 ## Tenant Admin Setup URL Fix (Complete)
 - **Issue**: "Complete Your Account Setup" email was redirecting to wrong domain (dev-user.insurcheck.ai instead of dev-admin.insurcheck.ai)
 - **Root Cause**: Tenant admin setup URL was using FRONTEND_URL (user domain) instead of ADMIN_FRONTEND_URL (admin domain)

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import { adminAuthApi } from '../../utils/api';
 
 /**
  * Password Setup Page for New Tenant Admins
@@ -40,16 +41,9 @@ const PasswordSetup = () => {
   const verifyToken = async () => {
     try {
       setIsVerifying(true);
-      const response = await fetch(`/api/admin/verify-setup-token/${token}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
+      const data = await adminAuthApi.verifySetupToken(token);
       
-      if (!response.ok || !data.valid) {
+      if (!data.valid) {
         setError(data.message || 'Invalid or expired setup link.');
         setIsVerifying(false);
         return;
@@ -59,7 +53,7 @@ const PasswordSetup = () => {
       setIsVerifying(false);
     } catch (error) {
       console.error('Token verification error:', error);
-      setError('Failed to verify setup link. Please try again.');
+      setError(error.response?.data?.message || 'Failed to verify setup link. Please try again.');
       setIsVerifying(false);
     }
   };
@@ -114,24 +108,7 @@ const PasswordSetup = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/admin/setup-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          token,
-          password: formData.password
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Failed to setup password');
-        setIsLoading(false);
-        return;
-      }
+      const data = await adminAuthApi.setupPassword(token, formData.password);
 
       setSuccess('Password setup completed successfully! Redirecting to login...');
       
@@ -147,7 +124,7 @@ const PasswordSetup = () => {
 
     } catch (error) {
       console.error('Password setup error:', error);
-      setError('Failed to setup password. Please try again.');
+      setError(error.response?.data?.message || 'Failed to setup password. Please try again.');
       setIsLoading(false);
     }
   };

@@ -113,6 +113,16 @@ export const adminAuthApi = {
     method: 'POST',
     body: JSON.stringify({ email }),
   }),
+
+  // Admin setup functions
+  verifySetupToken: (token) => apiCall(`/api/admin/verify-setup-token/${token}`, {
+    method: 'GET',
+  }),
+
+  setupPassword: (token, password) => apiCall('/api/admin/setup-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  }),
   
   getDashboardStats: () => apiCall('/api/admin/dashboard-stats'),
   
