@@ -118,3 +118,24 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
   - Token expires in 24 hours
   - Rate limiting prevents spam (3 resends per hour)
   - Proper error handling and user feedback throughout
+
+## Automatic Invoice Generation System (Complete)
+- **Production-Ready Cron Job Implementation**: Automated hourly invoice generation using node-cron scheduler with timezone-aware processing
+- **Database Schema Support**: Utilizes existing invoice_generation_configs table with tenant-specific settings for frequency, timezone, and weekend preferences
+- **Timezone Handling**: Full Luxon library integration for accurate timezone-aware date calculations and weekend detection
+- **Key Features**:
+  - Hourly automated checks for due invoices across all tenants
+  - Support for monthly, quarterly, and yearly generation frequencies
+  - Tenant-specific timezone support (UTC, EST, PST, etc.)
+  - Weekend generation preferences with automatic business day rescheduling
+  - Integration with existing invoice generation logic for consistency
+  - Comprehensive audit logging with 'completed' status tracking
+  - Robust error handling and automatic retry mechanisms
+- **Technical Implementation**:
+  - `server/invoiceScheduler.js`: Main cron job scheduler with timezone-aware logic
+  - `server/index.ts`: Scheduler initialization during server startup
+  - Uses existing `generateInvoiceForTenant` function for consistency
+  - Automatic next generation date calculation based on frequency
+  - Proper status logging with 'completed' for successful runs and 'failed' for errors
+- **Production Deployment**: System runs automatically on server startup and performs hourly checks at minute 0
+- **Architecture**: Maintains separation of concerns with centralized invoice generation logic and scheduler orchestration
