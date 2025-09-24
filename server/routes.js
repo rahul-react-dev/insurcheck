@@ -5566,12 +5566,26 @@ router.get('/admin/verify-setup-token/:token', async (req, res) => {
     const [user] = await db.select({
       id: users.id,
       email: users.email,
-      tenantId: users.tenantId
+      tenantId: users.tenantId,
+      passwordResetExpires: users.passwordResetExpires
     })
     .from(users)
     .leftJoin(tenants, eq(users.tenantId, tenants.id))
-    .where(sql`password_reset_token = ${token} AND password_reset_expires > NOW()`)
+    .where(eq(users.passwordResetToken, token))
     .limit(1);
+
+    // Check token expiration properly - handle both text and timestamp formats
+    if (user && user.passwordResetExpires) {
+      const expiresAt = new Date(user.passwordResetExpires);
+      const now = new Date();
+      
+      if (expiresAt < now) {
+        return res.status(400).json({
+          valid: false,
+          message: 'Invalid or expired setup token'
+        });
+      }
+    }
 
     if (!user) {
       return res.status(400).json({

@@ -52,6 +52,15 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
+## Admin Token Verification 500 Error Fix (Complete)
+- **Issue**: `/api/admin/verify-setup-token` endpoint returning 500 Internal Server Error due to PostgreSQL type mismatch
+- **Root Cause**: Database query used `password_reset_expires > NOW()` but column was stored as text, not timestamp type
+- **Error**: `operator does not exist: text > timestamp with time zone`
+- **Solution**: Replaced SQL comparison with JavaScript-based date validation for type safety
+- **Backend Changes**: Updated query in `server/routes.js` to use `eq()` instead of raw SQL, added proper expiration checking
+- **Testing**: Endpoint now returns 200 OK with correct JSON response structure
+- **Architecture**: Maintains backward compatibility and works with any date storage format
+
 ## Admin Frontend API Domain Routing Fix (Complete)
 - **Issue**: Admin frontend API calls were going to dev-admin.insurcheck.ai instead of dev-api.insurcheck.ai
 - **Root Cause**: PasswordSetup.jsx was using direct fetch calls instead of centralized API configuration
