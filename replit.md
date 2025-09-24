@@ -52,13 +52,14 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
-## Admin Token Verification 500 Error Fix (Complete)
-- **Issue**: `/api/admin/verify-setup-token` endpoint returning 500 Internal Server Error due to PostgreSQL type mismatch
-- **Root Cause**: Database query used `password_reset_expires > NOW()` but column was stored as text, not timestamp type
+## Admin Setup Password & Token Verification 500 Error Fix (Complete)
+- **Issue**: Both `/api/admin/verify-setup-token` and `/api/admin/setup-password` endpoints returning 500 Internal Server Error due to PostgreSQL type mismatch
+- **Root Cause**: Database queries used `password_reset_expires > NOW()` but column was stored as text, not timestamp type
 - **Error**: `operator does not exist: text > timestamp with time zone`
-- **Solution**: Replaced SQL comparison with JavaScript-based date validation for type safety
-- **Backend Changes**: Updated query in `server/routes.js` to use `eq()` instead of raw SQL, added proper expiration checking
-- **Testing**: Endpoint now returns 200 OK with correct JSON response structure
+- **Solution**: Replaced SQL comparisons with JavaScript-based date validation for type safety in both endpoints
+- **Backend Changes**: Updated queries in `server/routes.js` to use `eq()` instead of raw SQL, added proper expiration checking
+- **Testing**: Both endpoints now return 200 OK with correct JSON response structure
+- **End-to-End Verified**: Complete tenant admin setup flow tested successfully (create tenant → verify token → setup password → login)
 - **Architecture**: Maintains backward compatibility and works with any date storage format
 
 ## Admin Frontend API Domain Routing Fix (Complete)
