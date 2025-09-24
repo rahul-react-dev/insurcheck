@@ -2443,8 +2443,30 @@ router.post('/super-admin/invoice-logs/:logId/retry', authenticateToken, require
   }
 });
 
+// Manual trigger endpoint for testing scheduler (development only)
+router.post('/super-admin/trigger-scheduler', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('🔧 Manual trigger: Invoice scheduler check requested by admin');
+    
+    // Dynamic import to avoid circular dependencies
+    const { triggerManualCheck } = await import('./invoiceScheduler.js');
+    await triggerManualCheck();
+    
+    res.json({ 
+      message: 'Scheduler check triggered successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error triggering scheduler:', error);
+    res.status(500).json({ 
+      error: 'Failed to trigger scheduler',
+      message: error.message 
+    });
+  }
+});
+
 // Helper function to generate invoice for a tenant
-async function generateInvoiceForTenant(tenantId, tenantName) {
+export async function generateInvoiceForTenant(tenantId, tenantName) {
   try {
     // Create generation log entry
     const logId = Math.random().toString(36).substr(2, 9);

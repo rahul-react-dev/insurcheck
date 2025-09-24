@@ -174,6 +174,10 @@ async function startServer() {
     // Initialize email service
     const emailService = await import('./services/emailService.js');
     emailService.initializeEmailService();
+
+    // Initialize invoice generation scheduler
+    const invoiceScheduler = await import('./invoiceScheduler.js');
+    invoiceScheduler.initializeInvoiceScheduler();
     
     app.listen(PORT, '0.0.0.0', () => {
       const timestamp = new Date().toLocaleTimeString();
