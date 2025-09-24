@@ -2540,6 +2540,56 @@ export async function generateInvoiceForTenant(tenantId, tenantName) {
           })
           .returning();
 
+        // Generate PDF and send email
+        try {
+          console.log(`📄 Generating PDF for invoice: ${invoiceNumber}`);
+          
+          // Import PDF and email services
+          const { generateInvoicePDF, generateInvoiceFilename } = await import('./services/pdfInvoiceService.js');
+          const { sendInvoiceEmailWithRetry } = await import('./services/emailService.js');
+          
+          // Get full tenant data
+          const [tenantInfo] = await db.select()
+            .from(tenants)
+            .where(eq(tenants.id, tenantId))
+            .limit(1);
+          
+          if (tenantInfo) {
+            // Generate PDF
+            const pdfBuffer = await generateInvoicePDF(newInvoice, tenantInfo);
+            const filename = generateInvoiceFilename(newInvoice, tenantInfo);
+            
+            console.log(`✅ PDF generated: ${filename} (${pdfBuffer.length} bytes)`);
+            
+            // Send email with PDF attachment
+            // Check if tenant has billing email configured
+            const billingEmail = tenantInfo.email || 'billing@example.com'; // Fallback email
+            
+            if (billingEmail && billingEmail !== 'billing@example.com') {
+              console.log(`📧 Sending invoice email to: ${billingEmail}`);
+              
+              const emailResult = await sendInvoiceEmailWithRetry({
+                to: billingEmail,
+                invoiceData: newInvoice,
+                tenantData: tenantInfo,
+                pdfAttachment: pdfBuffer,
+                filename: filename
+              });
+              
+              if (emailResult.success) {
+                console.log(`✅ Invoice email sent successfully to: ${billingEmail}`);
+              } else {
+                console.error(`❌ Failed to send invoice email: ${emailResult.error}`);
+              }
+            } else {
+              console.log(`⚠️ No billing email configured for tenant ${tenantName}, skipping email`);
+            }
+          }
+        } catch (pdfError) {
+          console.error(`❌ PDF/Email generation failed for invoice ${invoiceNumber}:`, pdfError);
+          // Continue with the process even if PDF/email fails
+        }
+
         // Update generation log to completed
         await db.update(invoiceGenerationLogs)
           .set({

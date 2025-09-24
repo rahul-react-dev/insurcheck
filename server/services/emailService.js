@@ -770,6 +770,281 @@ const sendAuditLogEmailWithRetry = async (params) => {
 };
 
 /**
+ * Send invoice email with PDF attachment
+ * @param {Object} params - Email parameters
+ * @param {string} params.to - Recipient email address
+ * @param {Object} params.invoiceData - Complete invoice data
+ * @param {Object} params.tenantData - Tenant information
+ * @param {Buffer} params.pdfAttachment - PDF invoice buffer
+ * @param {string} params.filename - PDF filename
+ */
+const sendInvoiceEmail = async ({ to, invoiceData, tenantData, pdfAttachment, filename }) => {
+  try {
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log('📧 Email service disabled - would send invoice to:', to);
+      console.log('📋 Invoice ID:', invoiceData.invoiceNumber);
+      return { success: false, reason: 'Email service not configured' };
+    }
+
+    const msg = {
+      to,
+      from: {
+        email: 'rahul.soni@solulab.co',
+        name: 'InsurCheck Billing'
+      },
+      subject: `Invoice ${invoiceData.invoiceNumber} from ${tenantData.name}`,
+      html: generateInvoiceEmailHTML({ to, invoiceData, tenantData }),
+      text: generateInvoiceEmailText({ to, invoiceData, tenantData }),
+      attachments: [
+        {
+          content: pdfAttachment.toString('base64'),
+          filename: filename,
+          type: 'application/pdf',
+          disposition: 'attachment'
+        }
+      ]
+    };
+
+    console.log(`📧 Sending invoice email to: ${to}`);
+    console.log(`📤 Invoice details:`, {
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject,
+      invoiceNumber: invoiceData.invoiceNumber,
+      amount: invoiceData.totalAmount,
+      attachmentSize: pdfAttachment.length,
+      filename: filename
+    });
+    
+    const result = await sgMail.send(msg);
+    
+    console.log(`✅ SendGrid response:`, result[0]?.statusCode, result[0]?.headers);
+    console.log(`✅ Invoice email sent successfully to: ${to}`);
+    return { 
+      success: true, 
+      message: 'Invoice email sent successfully',
+      messageId: result[0]?.headers['x-message-id'],
+      status: result[0]?.statusCode
+    };
+    
+  } catch (error) {
+    console.error('❌ SendGrid invoice email error:', error.response?.body || error.message);
+    return { 
+      success: false, 
+      error: error.message,
+      details: error.response?.body 
+    };
+  }
+};
+
+/**
+ * Generate HTML email template for invoice
+ */
+const generateInvoiceEmailHTML = ({ to, invoiceData, tenantData }) => {
+  const recipientName = to.split('@')[0];
+  const dueDate = new Date(invoiceData.dueDate).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Invoice ${invoiceData.invoiceNumber}</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 40px 30px; text-align: center; }
+            .content { padding: 40px 30px; }
+            .invoice-summary { background-color: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .amount { font-size: 28px; font-weight: bold; color: #1d4ed8; text-align: center; margin: 10px 0; }
+            .button { display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+            .footer { background-color: #f8fafc; padding: 20px 30px; text-align: center; font-size: 14px; color: #6b7280; }
+            .warning { background-color: #fef3c7; color: #92400e; padding: 16px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+            .success { background-color: #ecfdf5; color: #065f46; padding: 16px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #10b981; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; }
+            th { background-color: #f8fafc; font-weight: 600; color: #374151; }
+            .icon { font-size: 48px; margin-bottom: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="icon">📄</div>
+                <h1 style="margin: 0; font-size: 28px;">Invoice ${invoiceData.invoiceNumber}</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">From ${tenantData.name}</p>
+            </div>
+            
+            <div class="content">
+                <h2 style="color: #1f2937; margin-top: 0;">Hello ${recipientName},</h2>
+                
+                <p style="color: #374151; line-height: 1.6;">
+                    Thank you for your business with <strong>${tenantData.name}</strong>. 
+                    Please find attached your invoice for our services.
+                </p>
+                
+                <div class="invoice-summary">
+                    <h3 style="color: #1d4ed8; margin-top: 0; text-align: center;">Invoice Summary</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Invoice Number:</strong></td>
+                            <td>${invoiceData.invoiceNumber}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Issue Date:</strong></td>
+                            <td>${new Date(invoiceData.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Due Date:</strong></td>
+                            <td>${dueDate}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td><span style="color: ${getStatusColor(invoiceData.status)}; font-weight: bold; text-transform: uppercase;">${invoiceData.status}</span></td>
+                        </tr>
+                    </table>
+                    
+                    <div class="amount">
+                        Total: ${formatCurrency(invoiceData.totalAmount)}
+                    </div>
+                </div>
+
+                ${invoiceData.status === 'paid' 
+                  ? `<div class="success">
+                       <strong>✅ Payment Received</strong><br>
+                       Thank you! Your payment has been successfully processed.
+                     </div>`
+                  : `<div class="warning">
+                       <strong>Payment Due:</strong> This invoice is due by ${dueDate}. 
+                       Please process payment to avoid any service interruption.
+                     </div>`
+                }
+                
+                <p style="color: #374151; line-height: 1.6;">
+                    The detailed invoice is attached as a PDF file to this email. You can also find all your invoices 
+                    in your InsurCheck dashboard.
+                </p>
+                
+                <h3 style="color: #374151; margin-top: 30px;">Payment Information</h3>
+                <p style="color: #6b7280; line-height: 1.6;">
+                    If you have any questions about this invoice or need assistance with payment, 
+                    please don't hesitate to contact our billing support team.
+                </p>
+                
+                <ul style="color: #6b7280; line-height: 1.8;">
+                    <li>Email: billing@insurcheck.com</li>
+                    <li>Phone: 1-800-INSURCHECK</li>
+                    <li>Support Hours: Monday-Friday, 9AM-5PM EST</li>
+                </ul>
+                
+                <p style="color: #374151; line-height: 1.6; margin-top: 30px;">
+                    Thank you for choosing InsurCheck for your insurance management needs!
+                </p>
+            </div>
+            
+            <div class="footer">
+                <p style="margin: 0;">
+                    This invoice was generated automatically by InsurCheck Platform<br>
+                    ${tenantData.name} • ${tenantData.domain || 'InsurCheck Client'}
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Generate plain text email template for invoice
+ */
+const generateInvoiceEmailText = ({ to, invoiceData, tenantData }) => {
+  const recipientName = to.split('@')[0];
+  const dueDate = new Date(invoiceData.dueDate).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  return `
+Invoice ${invoiceData.invoiceNumber} from ${tenantData.name}
+
+Hello ${recipientName},
+
+Thank you for your business with ${tenantData.name}. Please find attached your invoice for our services.
+
+INVOICE SUMMARY:
+Invoice Number: ${invoiceData.invoiceNumber}
+Issue Date: ${new Date(invoiceData.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+Due Date: ${dueDate}
+Status: ${invoiceData.status.toUpperCase()}
+Total Amount: ${formatCurrency(invoiceData.totalAmount)}
+
+${invoiceData.status === 'paid' 
+  ? '✅ PAYMENT RECEIVED: Thank you! Your payment has been successfully processed.'
+  : `⚠️ PAYMENT DUE: This invoice is due by ${dueDate}. Please process payment to avoid any service interruption.`
+}
+
+The detailed invoice is attached as a PDF file to this email. You can also find all your invoices in your InsurCheck dashboard.
+
+PAYMENT INFORMATION:
+If you have any questions about this invoice or need assistance with payment, please contact our billing support team:
+
+• Email: billing@insurcheck.com
+• Phone: 1-800-INSURCHECK  
+• Support Hours: Monday-Friday, 9AM-5PM EST
+
+Thank you for choosing InsurCheck for your insurance management needs!
+
+---
+This invoice was generated automatically by InsurCheck Platform
+${tenantData.name} • ${tenantData.domain || 'InsurCheck Client'}
+  `;
+};
+
+/**
+ * Send invoice email with retry logic
+ */
+const sendInvoiceEmailWithRetry = async (params) => {
+  return retryEmailDelivery(sendInvoiceEmail, params, 3);
+};
+
+// Helper functions for email templates
+function formatCurrency(amount) {
+  if (!amount && amount !== 0) return '$0.00';
+  
+  try {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(num);
+  } catch (error) {
+    return '$0.00';
+  }
+}
+
+function getStatusColor(status) {
+  switch (status?.toLowerCase()) {
+    case 'paid':
+      return '#059669';
+    case 'sent':
+      return '#3b82f6';
+    case 'overdue':
+      return '#dc2626';
+    case 'cancelled':
+      return '#6b7280';
+    case 'draft':
+    default:
+      return '#d97706';
+  }
+}
+
+/**
  * Generate HTML email template for audit log
  */
 const generateAuditLogHTML = ({ to, auditLog }) => {
@@ -904,5 +1179,6 @@ export {
   sendEmailVerification,
   sendPasswordResetEmail,
   sendAuditLogEmailWithRetry,
+  sendInvoiceEmailWithRetry,
   retryEmailDelivery
 };
