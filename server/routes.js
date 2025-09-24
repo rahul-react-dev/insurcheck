@@ -885,7 +885,8 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
 
     // Send invitation email
     const emailService = await import('./services/emailService.js');
-    const setupLink = `${process.env.FRONTEND_URL || 'https://6e9b2d76-9443-4b59-a8a6-fa1af7c6d252-00-2yj1ojsu1e06t.riker.replit.dev:3000'}/admin/setup-password?token=${invitationToken}`;
+    const adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || 'https://dev-admin.insurcheck.ai';
+    const setupLink = `${adminFrontendUrl}/admin/setup-password?token=${invitationToken}`;
     
     const emailResult = await emailService.sendTenantAdminInvitation({
       to: email,
@@ -909,7 +910,7 @@ router.post('/tenants', authenticateToken, requireSuperAdmin, async (req, res) =
         email: tenantAdmin.email,
         setupRequired: true,
         invitationToken: invitationToken, // Include in response for development
-        setupLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/setup-password?token=${invitationToken}`
+        setupLink: `${adminFrontendUrl}/admin/setup-password?token=${invitationToken}`
       }
     });
   } catch (error) {

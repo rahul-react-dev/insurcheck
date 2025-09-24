@@ -52,6 +52,14 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
+## Tenant Admin Setup URL Fix (Complete)
+- **Issue**: "Complete Your Account Setup" email was redirecting to wrong domain (dev-user.insurcheck.ai instead of dev-admin.insurcheck.ai)
+- **Root Cause**: Tenant admin setup URL was using FRONTEND_URL (user domain) instead of ADMIN_FRONTEND_URL (admin domain)
+- **Solution**: Updated tenant creation logic in `server/routes.js` to use correct admin frontend URL
+- **Backend Changes**: Fixed setupLink generation to use `process.env.ADMIN_FRONTEND_URL || 'https://dev-admin.insurcheck.ai'`
+- **Testing**: Verified all other email flows remain correct (user invitations, password resets, email verification)
+- **Logic Verified**: Confirmed proper URL routing for all email types across user and admin domains
+
 ## Password Reset Token Validation Fix (Complete)
 - **Issue**: Token validation was failing with 400 status code due to mismatch between token storage and validation logic
 - **Root Cause**: Tokens were stored as raw text but validation was hashing incoming tokens and searching for hashed versions
