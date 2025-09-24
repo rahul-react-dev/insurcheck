@@ -5518,8 +5518,21 @@ router.post('/admin/setup-password', async (req, res) => {
     // Find user with valid token
     const [user] = await db.select()
       .from(users)
-      .where(sql`password_reset_token = ${token} AND password_reset_expires > NOW()`)
+      .where(eq(users.passwordResetToken, token))
       .limit(1);
+
+    // Check token expiration properly - handle both text and timestamp formats
+    if (user && user.passwordResetExpires) {
+      const expiresAt = new Date(user.passwordResetExpires);
+      const now = new Date();
+      
+      if (expiresAt < now) {
+        return res.status(400).json({
+          error: 'Invalid or expired token',
+          message: 'The setup link is invalid or has expired. Please contact your super admin.'
+        });
+      }
+    }
 
     if (!user) {
       return res.status(400).json({
