@@ -46,7 +46,7 @@ export const sendOTP = async (phoneNumber) => {
  */
 export const verifyOTP = async (phoneNumber, code) => {
   try {
-    console.log(`🔍 Verifying OTP for phone number: ${phoneNumber}, code: ${code}`);
+    console.log(`🔍 Verifying OTP for phone number: ${phoneNumber}`);
     
     const verificationCheck = await client.verify.v2
       .services(verifySid)

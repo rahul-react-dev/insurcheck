@@ -128,7 +128,7 @@ router.post('/verify-otp', [
     const { phoneNumber, code } = req.body;
     const formattedPhone = formatPhoneNumber(phoneNumber);
     
-    console.log(`🔍 OTP verification for phone: ${formattedPhone}, code: ${code}`);
+    console.log(`🔍 OTP verification for phone: ${formattedPhone}`);
     
     const result = await verifyOTP(formattedPhone, code);
     
