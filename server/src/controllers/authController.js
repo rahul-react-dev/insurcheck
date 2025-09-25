@@ -622,8 +622,26 @@ export const adminForgotPassword = async (req, res) => {
       })
       .where(eq(users.id, user.id));
 
-    // Generate reset link for super admin panel
-    const adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || 'https://dev-admin.insurcheck.ai';
+    // Generate reset link for super admin panel - dynamically detect admin frontend URL
+    let adminFrontendUrl;
+    const origin = req.get('origin') || req.get('referer');
+    
+    if (origin) {
+      const url = new URL(origin);
+      if (url.hostname.includes('replit.dev') || url.hostname.includes('repl.co')) {
+        // For Replit, construct the admin URL (port 3000)
+        adminFrontendUrl = `${url.protocol}//${url.hostname}:3000`;
+      } else if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        // For local development
+        adminFrontendUrl = 'http://localhost:3000';
+      } else {
+        // Fallback to environment variable or production
+        adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || 'https://dev-admin.insurcheck.ai';
+      }
+    } else {
+      adminFrontendUrl = process.env.ADMIN_FRONTEND_URL || 'http://localhost:3000';
+    }
+    
     const resetLink = `${adminFrontendUrl}/super-admin/reset-password?token=${resetToken}`;
 
     // Send password reset email
@@ -778,11 +796,30 @@ export const signup = async (req, res) => {
     console.log(`🔑 Verification token generated and sent via email`);
     console.log(`⏰ Token expires at: ${verificationExpiry.toISOString()}`);
 
-    // Always use production frontend URL for email links - NEVER use replit domains
-    const frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
+    // Generate verification link - dynamically detect client-user frontend URL
+    let frontendUrl;
+    const origin = req.get('origin') || req.get('referer');
+    
+    if (origin) {
+      // Extract the base URL and replace port 3001 for client-user frontend
+      const url = new URL(origin);
+      if (url.hostname.includes('replit.dev') || url.hostname.includes('repl.co')) {
+        // For Replit, construct the client-user URL (port 3001)
+        frontendUrl = `${url.protocol}//${url.hostname}:3001`;
+      } else if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        // For local development
+        frontendUrl = 'http://localhost:3001';
+      } else {
+        // Fallback
+        frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
+      }
+    } else {
+      frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    }
     
     const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
-    console.log(`🔗 Using frontend URL: ${frontendUrl}`);
+    console.log(`🔗 Detected origin: ${origin}`);
+    console.log(`🔗 Constructed frontend URL: ${frontendUrl}`);
     console.log(`🔗 Verification link generated: ${verificationLink}`);
 
     // Send verification email
@@ -1073,8 +1110,26 @@ export const resendVerificationEmail = async (req, res) => {
       })
       .where(eq(users.id, user.id));
 
-    // Generate verification link
-    const frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
+    // Generate verification link - dynamically detect frontend URL
+    let frontendUrl;
+    const origin = req.get('origin') || req.get('referer');
+    
+    if (origin) {
+      const url = new URL(origin);
+      if (url.hostname.includes('replit.dev') || url.hostname.includes('repl.co')) {
+        // For Replit, construct the client-user URL (port 3001)
+        frontendUrl = `${url.protocol}//${url.hostname}:3001`;
+      } else if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        // For local development
+        frontendUrl = 'http://localhost:3001';
+      } else {
+        // Fallback
+        frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
+      }
+    } else {
+      frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    }
+    
     const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
     // Send verification email
@@ -1170,8 +1225,27 @@ export const userForgotPassword = async (req, res) => {
       })
       .where(eq(users.id, user.id));
 
-    // Send reset email
-    const resetLink = `${process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai'}/reset-password?token=${resetToken}`;
+    // Generate reset link - dynamically detect frontend URL
+    let frontendUrl;
+    const origin = req.get('origin') || req.get('referer');
+    
+    if (origin) {
+      const url = new URL(origin);
+      if (url.hostname.includes('replit.dev') || url.hostname.includes('repl.co')) {
+        // For Replit, construct the client-user URL (port 3001)
+        frontendUrl = `${url.protocol}//${url.hostname}:3001`;
+      } else if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        // For local development
+        frontendUrl = 'http://localhost:3001';
+      } else {
+        // Fallback
+        frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai';
+      }
+    } else {
+      frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    }
+    
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
     
     try {
       await sendPasswordResetEmail(email, resetLink, user.firstName || 'User');
