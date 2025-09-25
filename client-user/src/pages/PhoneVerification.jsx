@@ -31,6 +31,8 @@ const PhoneVerification = () => {
   const [countdown, setCountdown] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState(null); // 'success' | 'error' | null
   const [hasInitialOtpSent, setHasInitialOtpSent] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isCompletingSignup, setIsCompletingSignup] = useState(false);
   
   // Refs for OTP inputs
   const inputRefs = useRef([]);
@@ -96,9 +98,55 @@ const PhoneVerification = () => {
   useEffect(() => {
     if (phoneNumber && !hasInitialOtpSent) {
       setHasInitialOtpSent(true);
-      handleSendOtp();
+      // Call the function directly to avoid dependency issues
+      (async () => {
+        setIsSendingOtp(true);
+        try {
+          const response = await fetch('/api/auth/send-otp', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phoneNumber }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            toast({
+              title: "OTP Sent",
+              description: `Verification code sent to ${phoneNumber}`,
+              type: "success"
+            });
+            setCountdown(60);
+            setVerificationStatus(null);
+          } else {
+            const errorMessage = data.message || "Failed to send OTP";
+            let userFriendlyMessage = errorMessage;
+            
+            if (errorMessage.includes("unverified") && errorMessage.includes("Trial accounts")) {
+              userFriendlyMessage = `This phone number needs to be verified in your Twilio account first. Trial accounts can only send to verified numbers. Please verify ${phoneNumber} at twilio.com/console/phone-numbers/verified`;
+            }
+            
+            toast({
+              title: "Error Sending OTP",
+              description: userFriendlyMessage,
+              type: "error"
+            });
+          }
+        } catch (error) {
+          console.error('Send OTP error:', error);
+          toast({
+            title: "Error",
+            description: "Network error. Please try again.",
+            type: "error"
+          });
+        } finally {
+          setIsSendingOtp(false);
+        }
+      })();
     }
-  }, [phoneNumber, hasInitialOtpSent, handleSendOtp]);
+  }, [phoneNumber, hasInitialOtpSent, toast]);
 
   const handleOtpChange = (index, value) => {
     // Only allow digits
@@ -188,6 +236,7 @@ const PhoneVerification = () => {
   };
 
   const handleCompleteSignup = async () => {
+    setIsCompletingSignup(true);
     try {
       // Add phone verification status to signup data
       const completeSignupData = {
@@ -206,11 +255,12 @@ const PhoneVerification = () => {
       const data = await response.json();
 
       if (data.success) {
-        navigate('/login', { 
-          state: { 
-            message: 'Account created successfully! Please check your email to verify your account.',
-            messageType: 'success'
-          } 
+        // Show success modal instead of direct redirect
+        setShowSuccessModal(true);
+        toast({
+          type: 'success',
+          title: 'Account Created Successfully!',
+          description: 'Please check your email for verification.',
         });
       } else {
         toast({
@@ -226,7 +276,19 @@ const PhoneVerification = () => {
         description: "Failed to complete signup. Please try again.",
         type: "error"
       });
+    } finally {
+      setIsCompletingSignup(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowSuccessModal(false);
+    navigate('/login', { 
+      state: { 
+        message: 'Account created successfully! Please check your email to verify your account.',
+        messageType: 'success'
+      } 
+    });
   };
 
   const handleGoBack = () => {
@@ -364,6 +426,48 @@ const PhoneVerification = () => {
           </Button>
         </div>
       </motion.div>
+      
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Account Created Successfully!
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Your account has been created and a verification link has been sent to your email address. 
+                Please check your email and click the verification link to activate your account.
+              </p>
+              <div className="space-y-3">
+                <Button
+                  onClick={handleModalClose}
+                  className="w-full"
+                  disabled={isCompletingSignup}
+                  data-testid="button-continue-to-login"
+                >
+                  {isCompletingSignup ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    'Continue to Login'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
