@@ -23,5 +23,13 @@ export const config = {
   // Other services
   sendgridApiKey: process.env.SENDGRID_API_KEY,
   sendgridFromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@insurcheck.com',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  // CORS allowed client URLs
+  clientUrls: [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'https://insurcheck-admin.replit.app',
+    'https://dev-admin.insurcheck.ai',
+    'https://dev-user.insurcheck.ai'
+  ]
 };
