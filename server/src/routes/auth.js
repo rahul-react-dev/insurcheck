@@ -2,6 +2,7 @@ import express from 'express';
 import { body } from 'express-validator';
 import * as authController from '../controllers/authController.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { sendOTP, verifyOTP, formatPhoneNumber } from '../../services/twilioService.js';
 
 const router = express.Router();
 
@@ -85,6 +86,73 @@ router.post('/verify-email', [
 router.post('/resend-verification', [
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email')
 ], authController.resendVerificationEmail);
+
+// OTP verification endpoints
+router.post('/send-otp', [
+  body('phoneNumber').isMobilePhone().withMessage('Please enter a valid phone number')
+], async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    
+    console.log(`📱 OTP request for phone: ${formattedPhone}`);
+    
+    const result = await sendOTP(formattedPhone);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'OTP sent successfully',
+        status: result.status
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.error || 'Failed to send OTP'
+      });
+    }
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+router.post('/verify-otp', [
+  body('phoneNumber').isMobilePhone().withMessage('Please enter a valid phone number'),
+  body('code').isLength({ min: 6, max: 6 }).withMessage('Please enter a valid 6-digit code')
+], async (req, res) => {
+  try {
+    const { phoneNumber, code } = req.body;
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    
+    console.log(`🔍 OTP verification for phone: ${formattedPhone}, code: ${code}`);
+    
+    const result = await verifyOTP(formattedPhone, code);
+    
+    if (result.success && result.verified) {
+      res.json({
+        success: true,
+        message: 'Phone number verified successfully',
+        verified: true
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid verification code',
+        verified: false
+      });
+    }
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
 
 router.post('/register', registerValidation, authController.register);
 router.post('/logout', authController.logout);

@@ -34,8 +34,8 @@ const signUpSchema = z.object({
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/, 'Password must be at least 10 characters with uppercase, lowercase, number, and special character'),
   confirmPassword: z.string(),
   phoneNumber: z.string()
-    .optional()
-    .refine((val) => !val || /^\+?[\d\s\-()]{10,15}$/.test(val), 'Invalid phone number format'),
+    .min(1, 'Phone number is required')
+    .refine((val) => /^\+?[\d\s\-()]{10,15}$/.test(val), 'Invalid phone number format'),
   companyName: z.string()
     .min(1, 'Company Name is required')
     .max(100, 'Company Name must be 100 characters or less'),
@@ -168,15 +168,20 @@ const SignUp = () => {
       return;
     }
 
-    // Dispatch signup request
-    dispatch(signupRequest({
-      fullName: data.fullName,
-      email: data.email,
-      password: data.password,
-      phoneNumber: data.phoneNumber || null,
-      companyName: data.companyName,
-      trialPeriod: 7,
-    }));
+    // Navigate to phone verification instead of direct signup
+    navigate('/phone-verification', {
+      state: {
+        phoneNumber: data.phoneNumber,
+        signupData: {
+          fullName: data.fullName,
+          email: data.email,
+          password: data.password,
+          phoneNumber: data.phoneNumber,
+          companyName: data.companyName,
+          trialPeriod: 7,
+        }
+      }
+    });
   };
 
   const features = [
@@ -422,7 +427,7 @@ const SignUp = () => {
                 <Input
                   {...register('phoneNumber')}
                   type="tel"
-                  label="Phone Number (Optional)"
+                  label="Phone Number"
                   placeholder="+1 (555) 123-4567"
                   icon={<Phone className="h-4 w-4 text-gray-400" />}
                   error={errors.phoneNumber?.message}

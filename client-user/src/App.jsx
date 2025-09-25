@@ -13,6 +13,7 @@ import './index.css';
 const Homepage = lazy(() => import('./pages/Homepage'));
 const Login = lazy(() => import('./pages/Login'));
 const SignUp = lazy(() => import('./pages/SignUp'));
+const PhoneVerification = lazy(() => import('./pages/PhoneVerification'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AIChat = lazy(() => import('./pages/AIChat'));
@@ -31,6 +32,7 @@ function AppContent() {
           <Route path="/" element={<Homepage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/phone-verification" element={<PhoneVerification />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/ai-chat" element={<AIChat />} />
