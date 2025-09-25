@@ -30,12 +30,13 @@ const PhoneVerification = () => {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState(null); // 'success' | 'error' | null
-  const [hasInitialOtpSent, setHasInitialOtpSent] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isCompletingSignup, setIsCompletingSignup] = useState(false);
   
-  // Refs for OTP inputs
+  // Refs for OTP inputs and tracking
   const inputRefs = useRef([]);
+  const hasInitialOtpSent = useRef(false);
+  const sessionKey = `otp_sent_${phoneNumber}_${Date.now()}`.slice(0, 50); // Unique session key
 
   // Start countdown timer for resend OTP
   useEffect(() => {
@@ -94,12 +95,17 @@ const PhoneVerification = () => {
     }
   }, [phoneNumber, toast]);
 
-  // Auto-send OTP on component mount (only once)
+  // Auto-send OTP on component mount (only once) - Using ref and sessionStorage to prevent duplicates
   useEffect(() => {
-    if (phoneNumber && !hasInitialOtpSent) {
-      setHasInitialOtpSent(true);
-      // Call the function directly to avoid dependency issues
-      (async () => {
+    // Check if we've already sent OTP for this session
+    const alreadySent = sessionStorage.getItem(sessionKey);
+    
+    if (phoneNumber && !hasInitialOtpSent.current && !alreadySent) {
+      hasInitialOtpSent.current = true;
+      sessionStorage.setItem(sessionKey, 'true');
+      
+      // Add a small delay to prevent race conditions
+      const timeoutId = setTimeout(async () => {
         setIsSendingOtp(true);
         try {
           const response = await fetch('/api/auth/send-otp', {
@@ -144,9 +150,21 @@ const PhoneVerification = () => {
         } finally {
           setIsSendingOtp(false);
         }
-      })();
+      }, 100); // Small delay to prevent React Strict Mode double execution
+      
+      return () => clearTimeout(timeoutId);
+    } else if (alreadySent) {
+      // If already sent, just set countdown
+      setCountdown(60);
     }
-  }, [phoneNumber, hasInitialOtpSent, toast]);
+  }, [phoneNumber, sessionKey, toast]);
+
+  // Cleanup sessionStorage on unmount
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem(sessionKey);
+    };
+  }, [sessionKey]);
 
   const handleOtpChange = (index, value) => {
     // Only allow digits
