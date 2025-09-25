@@ -7,6 +7,7 @@ import { users, tenants } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import { sendEmailVerification, sendPasswordResetEmail } from '../../services/emailService.js';
+import { parsePhoneNumber } from 'libphonenumber-js';
 
 export const login = async (req, res) => {
   try {
@@ -737,6 +738,23 @@ export const signup = async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
 
+    // Parse phone number to extract country code
+    let parsedPhoneNumber = null;
+    let countryCode = null;
+    if (phoneNumber) {
+      try {
+        parsedPhoneNumber = parsePhoneNumber(phoneNumber);
+        if (parsedPhoneNumber && parsedPhoneNumber.isValid()) {
+          countryCode = parsedPhoneNumber.country; // e.g., 'US', 'IN', 'UK'
+          console.log(`📱 Parsed phone number - Country: ${countryCode}, Number: ${phoneNumber}`);
+        } else {
+          console.log(`⚠️ Invalid phone number provided: ${phoneNumber}`);
+        }
+      } catch (phoneError) {
+        console.error(`❌ Error parsing phone number ${phoneNumber}:`, phoneError.message);
+      }
+    }
+
     // Create user with email verification pending
     const newUser = await db.insert(users).values({
       firstName: firstName,
@@ -744,6 +762,7 @@ export const signup = async (req, res) => {
       email: email,
       password: hashedPassword,
       phoneNumber: phoneNumber || null,
+      countryCode: countryCode || null,
       companyName: companyName,
       role: 'user',
       tenantId: null, // Individual user without tenant

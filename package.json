@@ -83,6 +83,7 @@
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.2",
     "jspdf-autotable": "^5.0.2",
+    "libphonenumber-js": "^1.12.22",
     "lucide-react": "^0.453.0",
     "luxon": "^3.7.2",
     "memorystore": "^1.6.7",
