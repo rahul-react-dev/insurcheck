@@ -52,6 +52,16 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
+## Email Verification URL Production Fix (Complete)
+- **Issue**: Email verification links were using Replit URLs instead of production URLs even with FRONTEND_URL set
+- **Root Cause**: Dynamic hostname detection logic in `authController.js` was prioritizing request origin over FRONTEND_URL environment variable
+- **Problematic Code**: `if (url.hostname.includes('replit.dev'))` forced Replit URLs for all email verification links
+- **Solution**: Replaced dynamic detection with fixed production URL logic: `const frontendUrl = process.env.FRONTEND_URL || 'https://dev-user.insurcheck.ai'`
+- **Files Changed**: `server/src/controllers/authController.js` - both signup (lines 802-807) and resend verification (lines 1124-1129) endpoints
+- **Testing**: Confirmed email verification links now use https://dev-user.insurcheck.ai instead of Replit URLs
+- **Architecture**: Email verification links should ALWAYS use production URLs regardless of development environment
+- **Prevention**: Email systems must never use dynamic hostname detection - always use explicit production URLs
+
 ## Admin Setup Password & Token Verification 500 Error Fix (Complete)
 - **Issue**: Both `/api/admin/verify-setup-token` and `/api/admin/setup-password` endpoints returning 500 Internal Server Error due to PostgreSQL type mismatch
 - **Root Cause**: Database queries used `password_reset_expires > NOW()` but column was stored as text, not timestamp type
