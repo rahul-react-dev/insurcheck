@@ -17,12 +17,28 @@ const PhoneVerification = () => {
   const phoneNumber = location.state?.phoneNumber;
   const signupData = location.state?.signupData;
   
+  // Add loading state for checking navigation state
+  const [isCheckingState, setIsCheckingState] = useState(true);
+  
   // Redirect if no phone number provided
   useEffect(() => {
-    if (!phoneNumber || !signupData) {
-      navigate('/signup');
-    }
-  }, [phoneNumber, signupData, navigate]);
+    // Give a brief moment for React Router state to settle
+    const checkTimer = setTimeout(() => {
+      if (!phoneNumber || !signupData) {
+        navigate('/signup', { 
+          replace: true,
+          state: { 
+            message: 'Please complete the signup process to verify your phone number.',
+            messageType: 'info' 
+          } 
+        });
+      } else {
+        setIsCheckingState(false);
+      }
+    }, 100);
+    
+    return () => clearTimeout(checkTimer);
+  }, [phoneNumber, signupData, navigate, location.state]);
 
   // State
   const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
@@ -97,6 +113,9 @@ const PhoneVerification = () => {
 
   // Auto-send OTP on component mount (only once) - Using ref and sessionStorage to prevent duplicates
   useEffect(() => {
+    // Only run if we have valid state (not checking state anymore)
+    if (isCheckingState) return;
+    
     // Check if we've already sent OTP for this session
     const alreadySent = sessionStorage.getItem(sessionKey);
     
@@ -157,7 +176,7 @@ const PhoneVerification = () => {
       // If already sent, just set countdown
       setCountdown(60);
     }
-  }, [phoneNumber, sessionKey, toast]);
+  }, [phoneNumber, sessionKey, toast, isCheckingState]);
 
   // Cleanup sessionStorage on unmount
   useEffect(() => {
@@ -313,7 +332,8 @@ const PhoneVerification = () => {
     navigate('/signup', { state: { formData: signupData } });
   };
 
-  if (!phoneNumber) {
+  // Show loading while checking state or if missing data
+  if (isCheckingState || !phoneNumber) {
     return <LoadingSpinner />;
   }
 
