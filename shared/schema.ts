@@ -89,6 +89,7 @@ export const users = pgTable('users', {
   lastName: varchar('last_name', { length: 255 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
   phoneNumber: varchar('phone_number', { length: 20 }),
+  countryCode: varchar('country_code', { length: 3 }), // Country code like US, IN, UK
   companyName: varchar('company_name', { length: 255 }),
   password: varchar('password', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('user'),

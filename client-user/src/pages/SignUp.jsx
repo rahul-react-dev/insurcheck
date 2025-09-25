@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Building, Phone, Eye, EyeOff, Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -35,7 +37,7 @@ const signUpSchema = z.object({
   confirmPassword: z.string(),
   phoneNumber: z.string()
     .min(1, 'Phone number is required')
-    .refine((val) => /^\+?[\d\s\-()]{10,15}$/.test(val), 'Invalid phone number format'),
+    .refine((val) => val && val.length >= 10, 'Please enter a valid phone number'),
   companyName: z.string()
     .min(1, 'Company Name is required')
     .max(100, 'Company Name must be 100 characters or less'),
@@ -72,6 +74,7 @@ const SignUp = () => {
     formState: { errors, touchedFields },
     watch,
     setError,
+    control,
     clearErrors,
   } = useForm({
     resolver: zodResolver(signUpSchema),
@@ -422,17 +425,38 @@ const SignUp = () => {
                 />
               </div>
 
-              {/* Phone Number Field (Optional) */}
+              {/* Phone Number Field with Country Selection */}
               <div>
-                <Input
-                  {...register('phoneNumber')}
-                  type="tel"
-                  label="Phone Number"
-                  placeholder="+1 (555) 123-4567"
-                  icon={<Phone className="h-4 w-4 text-gray-400" />}
-                  error={errors.phoneNumber?.message}
-                  data-testid="input-phone"
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <span className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <span>Phone Number</span>
+                  </span>
+                </label>
+                <Controller
+                  name="phoneNumber"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <PhoneInput
+                      international
+                      countryCallingCodeEditable={false}
+                      defaultCountry="US"
+                      value={value}
+                      onChange={onChange}
+                      className={cn(
+                        "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200",
+                        errors.phoneNumber ? "border-red-500 focus:ring-red-500" : ""
+                      )}
+                      placeholder="Enter phone number"
+                      data-testid="input-phone"
+                    />
+                  )}
                 />
+                {errors.phoneNumber && (
+                  <p className="mt-1 text-sm text-red-600" data-testid="error-phone">
+                    {errors.phoneNumber.message}
+                  </p>
+                )}
               </div>
 
               {/* Company Name Field */}
