@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Phone, ArrowLeft, RotateCcw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -30,6 +30,7 @@ const PhoneVerification = () => {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState(null); // 'success' | 'error' | null
+  const [hasInitialOtpSent, setHasInitialOtpSent] = useState(false);
   
   // Refs for OTP inputs
   const inputRefs = useRef([]);
@@ -43,14 +44,7 @@ const PhoneVerification = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Auto-send OTP on component mount
-  useEffect(() => {
-    if (phoneNumber && countdown === 0) {
-      handleSendOtp();
-    }
-  }, []); // Only run on mount
-
-  const handleSendOtp = async () => {
+  const handleSendOtp = useCallback(async () => {
     setIsSendingOtp(true);
     try {
       const response = await fetch('/api/auth/send-otp', {
@@ -72,9 +66,17 @@ const PhoneVerification = () => {
         setCountdown(60); // 60 seconds countdown
         setVerificationStatus(null);
       } else {
+        // Handle specific Twilio trial account error
+        const errorMessage = data.message || "Failed to send OTP";
+        let userFriendlyMessage = errorMessage;
+        
+        if (errorMessage.includes("unverified") && errorMessage.includes("Trial accounts")) {
+          userFriendlyMessage = `This phone number needs to be verified in your Twilio account first. Trial accounts can only send to verified numbers. Please verify ${phoneNumber} at twilio.com/console/phone-numbers/verified`;
+        }
+        
         toast({
-          title: "Error",
-          description: data.message || "Failed to send OTP",
+          title: "Error Sending OTP",
+          description: userFriendlyMessage,
           type: "error"
         });
       }
@@ -88,7 +90,15 @@ const PhoneVerification = () => {
     } finally {
       setIsSendingOtp(false);
     }
-  };
+  }, [phoneNumber, toast]);
+
+  // Auto-send OTP on component mount (only once)
+  useEffect(() => {
+    if (phoneNumber && !hasInitialOtpSent) {
+      setHasInitialOtpSent(true);
+      handleSendOtp();
+    }
+  }, [phoneNumber, hasInitialOtpSent, handleSendOtp]);
 
   const handleOtpChange = (index, value) => {
     // Only allow digits
