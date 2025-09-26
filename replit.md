@@ -52,6 +52,19 @@ Security features include JWT tokens for stateless authentication, bcrypt for pa
 
 # Recent Changes
 
+## Frontend API URL Detection Priority Fix (Complete)
+- **Issue**: Frontend API calls using wrong base URL - should use VITE_API_BASE_URL for production, Replit URLs for development
+- **Root Cause**: User frontend config checked hostname FIRST, then VITE_API_BASE_URL only inside specific conditions, falling back to window.location.origin
+- **Problematic Flow**: `hostname detection → specific checks → window.location.origin fallback` instead of `VITE_API_BASE_URL → hostname detection`
+- **Solution**: Reordered priority to match admin config pattern: `VITE_API_BASE_URL` takes first priority, then hostname detection
+- **Files Changed**: 
+  - `client-user/src/utils/config.js` - Reordered priority logic (lines 3-8)
+  - `client-user/.env` - Added missing `VITE_API_BASE_URL=https://dev-api.insurcheck.ai`
+- **Testing**: Both scenarios work - Replit development uses relative URLs, production uses VITE_API_BASE_URL
+- **Two Scenarios**: 1) Replit development → relative URLs (Vite proxy), 2) Production → VITE_API_BASE_URL
+- **Architecture**: Frontend API configs must prioritize environment variables over dynamic hostname detection
+- **Prevention**: Always check VITE_API_BASE_URL FIRST, then fallback to hostname-based logic
+
 ## Email Verification URL Production Fix (Complete)
 - **Issue**: Email verification links were using Replit URLs instead of production URLs even with FRONTEND_URL set
 - **Root Cause**: Dynamic hostname detection logic in `authController.js` was prioritizing request origin over FRONTEND_URL environment variable
